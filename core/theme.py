@@ -261,8 +261,10 @@ small {{ color: {txt2} !important; }}
 [data-testid="stAlert"] {{
     background-color: {card} !important;
     border-radius: 8px !important;
+    border: 1px solid {border} !important;
 }}
-[data-testid="stAlert"] p {{ color: {txt} !important; }}
+[data-testid="stAlert"] p,
+[data-testid="stAlert"] div {{ color: {txt} !important; }}
 
 /* ── Barra de progresso ────────────────────────────────────────────────── */
 [data-testid="stProgressBar"] > div > div {{
@@ -444,25 +446,29 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 /* ── File uploader ─────────────────────────────────────────────────────── */
 [data-testid="stFileUploaderDropzone"] {{
     background-color: {inp_bg} !important;
-    border: 1px dashed {border} !important;
+    border: 1.5px dashed {"rgba(232,237,246,0.35)" if dark else "rgba(28,43,95,0.18)"} !important;
     border-radius: 8px !important;
 }}
-[data-testid="stFileUploaderDropzone"] small {{
+[data-testid="stFileUploaderDropzone"] small,
+[data-testid="stFileUploaderDropzone"] span {{
     color: {txt2} !important;
 }}
-/*
- * "uploadUpload": o input[type=file] nativo do browser renderiza seu próprio
- * texto "upload". Ocultamos via color:transparent sem tirar do DOM
- * (o elemento precisa existir para o file picker funcionar).
- */
+/* Botão Upload dentro do dropzone */
+[data-testid="stFileUploaderDropzone"] button {{
+    background-color: {bg2} !important;
+    color: {txt} !important;
+    border: 1px solid {"rgba(232,237,246,0.25)" if dark else "rgba(28,43,95,0.20)"} !important;
+    border-radius: 6px !important;
+}}
+[data-testid="stFileUploaderDropzone"] button:hover {{
+    background-color: {"rgba(196,21,58,0.15)" if dark else "rgba(196,21,58,0.08)"} !important;
+    border-color: {accent} !important;
+}}
+/* Oculta texto nativo do input (evita "uploadUpload") */
 [data-testid="stFileUploaderDropzone"] input[type="file"] {{
     color: transparent !important;
     -webkit-text-fill-color: transparent !important;
 }}
-/*
- * Streamlit também duplica o texto do botão internamente para animação.
- * Escondemos o segundo elemento (aria-hidden ou :nth-child(n+2)).
- */
 [data-testid="stFileUploaderDropzone"] [aria-hidden="true"] {{
     display: none !important;
 }}

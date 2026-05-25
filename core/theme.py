@@ -295,19 +295,19 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     position: absolute;
     pointer-events: none;
 }}
-/* Onda esquerda: canto superior-esquerdo (mesma lógica do lado direito) */
+/* Onda esquerda: canto INFERIOR-esquerdo (igual ao rodapé do site) */
 .cpd-onda-esq {{
-    left: -80px;
-    top:  -120px;
-    width: 300px;
-    height: 280px;
+    left:   -50px;
+    bottom: -60px;
+    width:  240px;
+    height: 220px;
 }}
-/* Onda direita: canto superior-direito */
+/* Onda direita: canto SUPERIOR-direito (diagonal oposta, igual ao site) */
 .cpd-onda-dir {{
-    right: -80px;
-    top:   -120px;
-    width: 300px;
-    height: 280px;
+    right: -50px;
+    top:   -60px;
+    width:  240px;
+    height: 220px;
 }}
 
 /* Conteúdo do banner (logo + espaço) */

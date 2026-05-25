@@ -34,13 +34,13 @@ logo_html = (
 
 st.markdown(f"""
 <div class="cpd-banner">
-    <!-- Onda esquerda — canto superior esquerdo, UM arco bem grosso -->
-    <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="0" cy="0" r="210" fill="none" stroke="#C4153A" stroke-width="64"/>
+    <!-- Onda esquerda — canto INFERIOR esquerdo, linha fina elegante -->
+    <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="0" cy="220" r="185" fill="none" stroke="#C4153A" stroke-width="14"/>
     </svg>
-    <!-- Onda direita — canto superior direito, UM arco bem grosso -->
-    <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="300" cy="0" r="210" fill="none" stroke="#C4153A" stroke-width="64"/>
+    <!-- Onda direita — canto SUPERIOR direito, linha fina elegante -->
+    <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="240" cy="0" r="185" fill="none" stroke="#C4153A" stroke-width="14"/>
     </svg>
     <!-- Logo -->
     <div class="cpd-banner-inner">

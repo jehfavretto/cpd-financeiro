@@ -1,9 +1,10 @@
 import streamlit as st
 from pathlib import Path
 
+_icon = Path(__file__).parent / "CDP_LOGO_CIRCULAR_A (1).png"
 st.set_page_config(
     page_title="CPD Financeiro",
-    page_icon="🏫",
+    page_icon=str(_icon) if _icon.exists() else "🏫",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -75,20 +76,21 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ── Logo na sidebar ────────────────────────────────────────────────────────────
-_logo = Path(__file__).parent / "logo.png"
-if _logo.exists():
-    st.logo(str(_logo), size="large")
-
 # ── Cabeçalho lateral ──────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("""
-    <div class="cpd-header">
-        <p class="cpd-title">Colégio Primeiros Degraus</p>
-        <p class="cpd-sub">Evoluindo a cada passo.</p>
-    </div>
-    <hr class="cpd-divider"/>
-    """, unsafe_allow_html=True)
+    _logo = Path(__file__).parent / "logo.png"
+    if _logo.exists():
+        st.markdown('<div style="background:#FFFFFF; border-radius:10px; padding:14px 12px 10px 12px; margin:8px 4px 12px 4px; text-align:center;">', unsafe_allow_html=True)
+        st.image(str(_logo), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="cpd-header">
+            <p class="cpd-title">Colégio Primeiros Degraus</p>
+            <p class="cpd-sub">Evoluindo a cada passo.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    st.markdown('<hr class="cpd-divider"/>', unsafe_allow_html=True)
 
 # ── Navegação ──────────────────────────────────────────────────────────────────
 pages = {

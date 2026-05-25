@@ -15,19 +15,45 @@ st.set_page_config(
 if "tema" not in st.session_state:
     st.session_state["tema"] = "light"
 
+tema_atual = st.session_state["tema"]
+
 # Injeta CSS do tema escolhido
-st.markdown(css_completo(st.session_state["tema"]), unsafe_allow_html=True)
+st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
+
+# ── Header principal (logo esquerda + toggle direita) ──────────────────────────
+_logo = Path(__file__).parent / "logo.png"
+_logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""
+
+icone_tema = "☀️" if tema_atual == "dark" else "🌙"
+
+col_logo, _col_gap, col_toggle = st.columns([3, 9, 1])
+
+with col_logo:
+    if _logo_b64:
+        st.markdown(
+            f'<div style="padding:4px 0 2px 0;">'
+            f'<img src="data:image/png;base64,{_logo_b64}" style="height:40px; width:auto;">'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown("**Colégio Primeiros Degraus**")
+
+with col_toggle:
+    st.markdown('<div class="cpd-toggle-wrap">', unsafe_allow_html=True)
+    if st.button(icone_tema, key="btn_tema", help="Alternar tema claro/escuro"):
+        st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<hr class="cpd-header-divider"/>', unsafe_allow_html=True)
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Logo em card branco (visível na sidebar escura)
-    _logo = Path(__file__).parent / "logo.png"
-    if _logo.exists():
-        _img_b64 = base64.b64encode(_logo.read_bytes()).decode()
+    if _logo_b64:
         st.markdown(
-            f'<div style="background:#FFFFFF; border-radius:10px; padding:14px 12px 10px 12px;'
-            f' margin:8px 4px 12px 4px; text-align:center;">'
-            f'<img src="data:image/png;base64,{_img_b64}" style="max-width:100%; height:auto;">'
+            f'<div style="text-align:center; padding:10px 4px 6px 4px;">'
+            f'<img src="data:image/png;base64,{_logo_b64}" style="max-width:85%; height:auto;">'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -35,20 +61,8 @@ with st.sidebar:
         st.markdown("""
         <div style="text-align:center; padding:12px 0 4px 0;">
             <p style="font-size:1.1rem; font-weight:800; color:#FFF; margin:0;">Colégio Primeiros Degraus</p>
-            <p style="font-size:0.75rem; color:rgba(255,255,255,0.65); margin:0; font-style:italic;">Evoluindo a cada passo.</p>
         </div>
         """, unsafe_allow_html=True)
-
-    st.markdown('<hr class="cpd-divider"/>', unsafe_allow_html=True)
-
-    # ── Toggle claro / escuro ──────────────────────────────────────────────
-    tema_atual = st.session_state["tema"]
-    icone  = "☀️" if tema_atual == "dark" else "🌙"
-    rotulo = "Modo Claro" if tema_atual == "dark" else "Modo Escuro"
-
-    if st.button(f"{icone} {rotulo}", key="btn_tema", use_container_width=True):
-        st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
-        st.rerun()
 
     st.markdown('<hr class="cpd-divider"/>', unsafe_allow_html=True)
 

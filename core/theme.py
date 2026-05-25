@@ -248,6 +248,35 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 /* ── Spinner ───────────────────────────────────────────────────────────── */
 [data-testid="stSpinner"] {{ color: {txt} !important; }}
 
+/* ── Header CPD (logo + toggle) ────────────────────────────────────────── */
+.cpd-header-divider {{
+    border: none !important;
+    border-top: 1px solid {border} !important;
+    margin: 4px 0 0 0 !important;
+}}
+
+/* Botão toggle de tema — ícone circular pequeno */
+.cpd-toggle-wrap .stButton > button {{
+    background-color: transparent !important;
+    border: 1.5px solid {border} !important;
+    color: {txt} !important;
+    border-radius: 50% !important;
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    font-size: 1.1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 2px !important;
+}}
+.cpd-toggle-wrap .stButton > button:hover {{
+    background-color: rgba(196,21,58,0.08) !important;
+    border-color: {accent} !important;
+    transform: none !important;
+    box-shadow: none !important;
+}}
+
 /* ── File uploader ─────────────────────────────────────────────────────── */
 [data-testid="stFileUploaderDropzone"] {{
     background-color: {inp_bg} !important;

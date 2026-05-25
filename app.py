@@ -34,16 +34,13 @@ logo_html = (
 
 st.markdown(f"""
 <div class="cpd-banner">
-    <!-- Onda esquerda — canto inferior esquerdo, igual ao rodapé do site CPD -->
+    <!-- Onda esquerda — canto inferior esquerdo, UM arco bem grosso -->
     <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="0"   cy="280" r="240" fill="none" stroke="#C4153A" stroke-width="30"/>
-        <circle cx="0"   cy="280" r="200" fill="none" stroke="#A01030" stroke-width="16" opacity="0.50"/>
+        <circle cx="0" cy="280" r="210" fill="none" stroke="#C4153A" stroke-width="80"/>
     </svg>
-    <!-- Onda direita — canto superior direito, três arcos concêntricos (igual ao site) -->
+    <!-- Onda direita — canto superior direito, UM arco bem grosso -->
     <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="300" cy="0"   r="240" fill="none" stroke="#C4153A" stroke-width="30"/>
-        <circle cx="300" cy="0"   r="200" fill="none" stroke="#8B1030" stroke-width="18" opacity="0.65"/>
-        <circle cx="300" cy="0"   r="160" fill="none" stroke="#6B0E25" stroke-width="14" opacity="0.42"/>
+        <circle cx="300" cy="0" r="210" fill="none" stroke="#C4153A" stroke-width="80"/>
     </svg>
     <!-- Logo -->
     <div class="cpd-banner-inner">

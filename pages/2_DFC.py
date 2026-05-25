@@ -112,80 +112,55 @@ with st.expander("✏️ Ajustes manuais (AR / AD)", expanded=False):
 
 st.divider()
 
-# ── Tabela DFC detalhada ──────────────────────────────────────────────────────
-st.subheader("Demonstração completa")
+# ── Demonstração: resumo compacto + analítico retrátil ────────────────────────
+st.subheader("Demonstração")
 
-# Monta tabela de exibição
 _desc_por_codigo = dict(zip(plano_df["codigo"], plano_df["descricao"]))
 
-rows_display = []
-for sec_prefix, sec_info in SECOES.items():
-    sec_total = dfc.total_secao(sec_prefix)
-    if sec_prefix == "1.":
-        sec_total += dfc.ar
-    if sec_prefix == "3.":
-        sec_total += dfc.ad
+# Calcula totais por seção
+sec_totals = {}
+for sp, si in SECOES.items():
+    t = dfc.total_secao(sp)
+    if sp == "1.":
+        t += dfc.ar
+    if sp == "3.":
+        t += dfc.ad
+    sec_totals[sp] = t
 
-    rows_display.append({
-        "Código": sec_prefix,
-        "Descrição": f"**{sec_info['label']}**",
-        "Valor (R$)": sec_total,
-        "_nivel": "secao",
-    })
+# Tabela resumo compacta (sempre visível)
+resumo = [
+    {"Seção": si["label"], "Valor (R$)": f"R$ {sec_totals[sp]:,.2f}"}
+    for sp, si in SECOES.items()
+]
+resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": f"R$ {dfc.resultado_liquido:,.2f}"})
+st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=215)
 
-    grupos_da_secao = {k: v for k, v in GRUPOS.items() if k.startswith(sec_prefix[0])}
-    for grp_prefix, grp_label in grupos_da_secao.items():
-        contas = dfc.dados.get(sec_prefix, {}).get(grp_prefix, {})
-        grp_total = sum(contas.values())
-
-        rows_display.append({
-            "Código": grp_prefix,
-            "Descrição": f"  {grp_label}",
-            "Valor (R$)": grp_total,
-            "_nivel": "grupo",
-        })
-
-        for cod, val in sorted(contas.items()):
-            if val == 0:
+# Expanders analíticos por seção
+for sp, si in SECOES.items():
+    with st.expander(f"{si['label']}  —  R$ {sec_totals[sp]:,.2f}"):
+        det = []
+        for grp_prefix, grp_label in {k: v for k, v in GRUPOS.items() if k.startswith(sp[0])}.items():
+            contas = dfc.dados.get(sp, {}).get(grp_prefix, {})
+            grp_total = sum(contas.values())
+            if not contas:
                 continue
-            rows_display.append({
-                "Código": cod,
-                "Descrição": f"    {_desc_por_codigo.get(cod, cod)}",
-                "Valor (R$)": val,
-                "_nivel": "conta",
-            })
-
-    if sec_prefix == "1." and dfc.ar != 0:
-        rows_display.append({"Código": "AR", "Descrição": "  AJUSTE RECEITA",
-                              "Valor (R$)": dfc.ar, "_nivel": "ajuste"})
-    if sec_prefix == "3." and dfc.ad != 0:
-        rows_display.append({"Código": "AD", "Descrição": "  AJUSTE DESPESA",
-                              "Valor (R$)": dfc.ad, "_nivel": "ajuste"})
-
-# Resultado final
-rows_display.append({"Código": "", "Descrição": "**RESULTADO LÍQUIDO**",
-                     "Valor (R$)": dfc.resultado_liquido, "_nivel": "resultado"})
-
-df_display = pd.DataFrame(rows_display)
-
-# Formata valores
-def fmt_valor(v, nivel):
-    if v == 0 and nivel == "conta":
-        return ""
-    cor = "color: green" if v > 0 else ("color: red" if v < 0 else "color: gray")
-    return f"R$ {v:,.2f}"
-
-# Exibe com st.dataframe + highlight por nível
-st.dataframe(
-    df_display[["Código", "Descrição", "Valor (R$)"]].assign(
-        **{"Valor (R$)": df_display.apply(
-            lambda r: f"R$ {r['Valor (R$)']:,.2f}" if r["Valor (R$)"] != 0 else "—", axis=1
-        )}
-    ),
-    use_container_width=True,
-    height=700,
-    hide_index=True,
-)
+            det.append({"Descrição": grp_label,
+                        "Valor (R$)": f"R$ {grp_total:,.2f}"})
+            for cod, val in sorted(contas.items()):
+                if val == 0:
+                    continue
+                det.append({"Descrição": f"    {_desc_por_codigo.get(cod, cod)}",
+                            "Valor (R$)": f"R$ {val:,.2f}"})
+        if sp == "1." and dfc.ar != 0:
+            det.append({"Descrição": "    Ajuste Receita (AR)",
+                        "Valor (R$)": f"R$ {dfc.ar:,.2f}"})
+        if sp == "3." and dfc.ad != 0:
+            det.append({"Descrição": "    Ajuste Despesa (AD)",
+                        "Valor (R$)": f"R$ {dfc.ad:,.2f}"})
+        if det:
+            st.dataframe(pd.DataFrame(det), hide_index=True, use_container_width=True)
+        else:
+            st.caption("Sem lançamentos nesta seção.")
 
 st.divider()
 

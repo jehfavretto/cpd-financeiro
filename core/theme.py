@@ -248,5 +248,48 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 /* ── Spinner ───────────────────────────────────────────────────────────── */
 [data-testid="stSpinner"] {{ color: {txt} !important; }}
 
+/* ── File uploader ─────────────────────────────────────────────────────── */
+[data-testid="stFileUploaderDropzone"] {{
+    background-color: {inp_bg} !important;
+    border-color: {border} !important;
+    border-radius: 8px !important;
+}}
+[data-testid="stFileUploaderDropzone"] * {{
+    color: {txt} !important;
+}}
+/* Corrige duplicação do texto "uploadupload" no botão */
+[data-testid="stFileUploaderDropzone"] button span + span {{
+    display: none !important;
+}}
+[data-testid="stFileUploaderDropzone"] button {{
+    background-color: {accent} !important;
+    border-color: {accent} !important;
+    color: #FFFFFF !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+}}
+[data-testid="stFileUploaderDropzone"] button:hover {{
+    background-color: {accent_h} !important;
+    border-color: {accent_h} !important;
+}}
+[data-testid="stFileUploaderDropzone"] button span {{
+    color: #FFFFFF !important;
+}}
+
+/* ── Radio buttons ─────────────────────────────────────────────────────── */
+[data-testid="stRadio"] label span {{
+    color: {txt} !important;
+}}
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+[data-testid="stCheckbox"] label span {{
+    color: {txt} !important;
+}}
+
+/* ── Slider ────────────────────────────────────────────────────────────── */
+[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {{
+    background-color: {accent} !important;
+}}
+
 </style>
 """

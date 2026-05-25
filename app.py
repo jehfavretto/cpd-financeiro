@@ -54,9 +54,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Ondinha decorativa abaixo do banner ───────────────────────────────────────
-st.markdown('<div class="cpd-ondinha"></div>', unsafe_allow_html=True)
-
 # ── Toggle de tema na sidebar (abaixo da navegação) ────────────────────────────
 with st.sidebar:
     st.markdown('<div class="cpd-sidebar-toggle">', unsafe_allow_html=True)

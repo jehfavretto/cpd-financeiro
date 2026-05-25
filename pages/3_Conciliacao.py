@@ -15,6 +15,7 @@ import pandas as pd
 from datetime import datetime
 import db.client as db
 from core.parser import MESES_ABREV
+from core.utils import fmt_br
 
 st.title("🔍 Conciliação")
 st.markdown("Vincule os lançamentos do Sponte com o extrato bancário.")
@@ -154,14 +155,14 @@ with aba_pend:
             "Data":      pd.to_datetime(sponte_pendente["data"]).dt.strftime("%d/%m"),
             "Categoria": sponte_pendente["categoria"].str[:22],
             "E/S":       sponte_pendente["es"],
-            "Valor":     sponte_pendente["valor"].map(lambda v: f"R$ {abs(v):,.2f}"),
+            "Valor":     sponte_pendente["valor"].map(lambda v: fmt_br(abs(v))),
         })
 
         bk_show = pd.DataFrame({
             "Data":      banco_pendente["data_fmt"].str[:5],
             "Histórico": banco_pendente["historico"].str[:22],
             "E/S":       banco_pendente["deb_cred"].map({"C": "E", "D": "S"}),
-            "Valor":     banco_pendente["valor"].map(lambda v: f"R$ {abs(float(v)):,.2f}"),
+            "Valor":     banco_pendente["valor"].map(lambda v: fmt_br(abs(float(v)))),
         })
 
         with col_sp:
@@ -202,11 +203,11 @@ with aba_pend:
                 bk_r = banco_pendente.iloc[bk_idx]
                 st.success(
                     f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n"
-                    f"R$ {abs(sp_r['valor']):,.2f}"
+                    f"{fmt_br(abs(sp_r['valor']))}"
                 )
                 st.info(
                     f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n"
-                    f"R$ {abs(float(bk_r['valor'])):,.2f}"
+                    f"{fmt_br(abs(float(bk_r['valor'])))}"
                 )
                 if st.button("🔗 Vincular", type="primary", use_container_width=True):
                     db.salvar_conciliacao(mes, ano, "manual",
@@ -217,7 +218,7 @@ with aba_pend:
 
             elif sp_idx is not None:
                 sp_r = sponte_pendente.iloc[sp_idx]
-                st.info(f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \nR$ {abs(sp_r['valor']):,.2f}")
+                st.info(f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n{fmt_br(abs(sp_r['valor']))}")
                 with st.form(key=f"form_isp_{cnt}"):
                     just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
                     if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
@@ -229,7 +230,7 @@ with aba_pend:
 
             elif bk_idx is not None:
                 bk_r = banco_pendente.iloc[bk_idx]
-                st.info(f"**Banco**  \n{str(bk_r['historico'])[:22]}  \nR$ {abs(float(bk_r['valor'])):,.2f}")
+                st.info(f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n{fmt_br(abs(float(bk_r['valor'])))}")
                 with st.form(key=f"form_ibk_{cnt}"):
                     just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")
                     if st.form_submit_button("🙈 Ignorar Banco", use_container_width=True):
@@ -260,8 +261,8 @@ with aba_conc:
             sp_r = sponte_df[sponte_df["chave"] == chave].iloc[0]
             bk_r = banco_df[banco_df["chave"] == chave].iloc[0]
             auto_rows.append({
-                "Sponte": f"{pd.to_datetime(sp_r['data']).strftime('%d/%m')} | {str(sp_r['categoria'])[:30]} | R$ {abs(sp_r['valor']):,.2f}",
-                "Banco":  f"{bk_r['data_fmt'][:5]} | {str(bk_r['historico'])[:30]} | R$ {abs(float(bk_r['valor'])):,.2f}",
+                "Sponte": f"{pd.to_datetime(sp_r['data']).strftime('%d/%m')} | {str(sp_r['categoria'])[:30]} | {fmt_br(abs(sp_r['valor']))}",
+                "Banco":  f"{bk_r['data_fmt'][:5]} | {str(bk_r['historico'])[:30]} | {fmt_br(abs(float(bk_r['valor'])))}",
             })
         st.dataframe(pd.DataFrame(auto_rows), use_container_width=True,
                      hide_index=True, height=min(300, 38 + 35 * n_auto))
@@ -273,9 +274,9 @@ with aba_conc:
         for _, c in manual_df.iterrows():
             sp_rows = sponte_df[sponte_df["chave"] == c["sponte_chave"]]
             bk_rows = banco_df[banco_df["chave"] == c["banco_chave"]]
-            sp_text = (f"{pd.to_datetime(sp_rows.iloc[0]['data']).strftime('%d/%m')} | {str(sp_rows.iloc[0]['categoria'])[:25]} | R$ {abs(sp_rows.iloc[0]['valor']):,.2f}"
+            sp_text = (f"{pd.to_datetime(sp_rows.iloc[0]['data']).strftime('%d/%m')} | {str(sp_rows.iloc[0]['categoria'])[:25]} | {fmt_br(abs(sp_rows.iloc[0]['valor']))}"
                        if not sp_rows.empty else c["sponte_chave"])
-            bk_text = (f"{bk_rows.iloc[0]['data_fmt'][:5]} | {str(bk_rows.iloc[0]['historico'])[:25]} | R$ {abs(float(bk_rows.iloc[0]['valor'])):,.2f}"
+            bk_text = (f"{bk_rows.iloc[0]['data_fmt'][:5]} | {str(bk_rows.iloc[0]['historico'])[:25]} | {fmt_br(abs(float(bk_rows.iloc[0]['valor'])))}"
                        if not bk_rows.empty else c["banco_chave"])
             ca, cb, cc = st.columns([5, 5, 1])
             ca.write(f"🔵 {sp_text}")
@@ -292,11 +293,11 @@ with aba_conc:
             just = f" — *{c['justificativa']}*" if c.get("justificativa") else ""
             if c["tipo"] == "ignorado_sponte" and pd.notna(c.get("sponte_chave")):
                 sp_rows = sponte_df[sponte_df["chave"] == c["sponte_chave"]]
-                texto = (f"Sponte — {pd.to_datetime(sp_rows.iloc[0]['data']).strftime('%d/%m')} | {str(sp_rows.iloc[0]['categoria'])[:25]} | R$ {abs(sp_rows.iloc[0]['valor']):,.2f}"
+                texto = (f"Sponte — {pd.to_datetime(sp_rows.iloc[0]['data']).strftime('%d/%m')} | {str(sp_rows.iloc[0]['categoria'])[:25]} | {fmt_br(abs(sp_rows.iloc[0]['valor']))}"
                          if not sp_rows.empty else f"Sponte — {c['sponte_chave']}")
             else:
                 bk_rows = banco_df[banco_df["chave"] == c.get("banco_chave", "")]
-                texto = (f"Banco — {bk_rows.iloc[0]['data_fmt'][:5]} | {str(bk_rows.iloc[0]['historico'])[:25]} | R$ {abs(float(bk_rows.iloc[0]['valor'])):,.2f}"
+                texto = (f"Banco — {bk_rows.iloc[0]['data_fmt'][:5]} | {str(bk_rows.iloc[0]['historico'])[:25]} | {fmt_br(abs(float(bk_rows.iloc[0]['valor'])))}"
                          if not bk_rows.empty else f"Banco — {c.get('banco_chave', '')}")
             ca, cb = st.columns([11, 1])
             ca.write(f"🙈 {texto}{just}")

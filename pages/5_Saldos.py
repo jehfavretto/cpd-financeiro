@@ -7,6 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import db.client as db
 from core.parser import MESES_ABREV
+from core.utils import fmt_br
 
 st.title("💰 Saldos")
 st.markdown("Saldo em banco, aplicação e caixa ao longo do ano.")
@@ -34,14 +35,40 @@ saldos_df["total"] = (
 )
 
 # ── KPIs do último mês ────────────────────────────────────────────────────────
-ultimo = saldos_df.iloc[-1]
-st.subheader(f"Posição em {MESES_ABREV[int(ultimo['mes'])]}/{ano}")
+ultimo   = saldos_df.iloc[-1]
+banco    = float(ultimo["saldo_banco"])
+aplicacao= float(ultimo["saldo_aplicacao"])
+caixa    = float(ultimo["saldo_caixa"])
+total    = float(ultimo["total"])
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("🏦 Banco",       f"R$ {ultimo['saldo_banco']:,.2f}")
-c2.metric("📈 Aplicação",   f"R$ {ultimo['saldo_aplicacao']:,.2f}")
-c3.metric("💵 Caixa",       f"R$ {ultimo['saldo_caixa']:,.2f}")
-c4.metric("✅ Total",        f"R$ {ultimo['total']:,.2f}")
+tot_color = "#1a7f37" if total >= 0 else "#C4153A"
+tot_bg    = "#eaffea" if total >= 0 else "#fff0f0"
+
+st.subheader(f"Posição em {MESES_ABREV[int(ultimo['mes'])]}/{ano}")
+st.markdown(f"""
+<div style="display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
+  <div style="flex:1; min-width:150px; background:#f8f9fb; border-left:4px solid #1C2B5F;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">🏦 Banco</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#1C2B5F;">{fmt_br(banco)}</div>
+  </div>
+  <div style="flex:1; min-width:150px; background:#f8f9fb; border-left:4px solid #2A9D8F;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">📈 Aplicação</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#2A9D8F;">{fmt_br(aplicacao)}</div>
+  </div>
+  <div style="flex:1; min-width:150px; background:#f8f9fb; border-left:4px solid #E9A020;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">💵 Caixa</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#E9A020;">{fmt_br(caixa)}</div>
+  </div>
+  <div style="flex:1; min-width:150px; background:{tot_bg}; border-left:4px solid {tot_color};
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">✅ Total</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{tot_color};">{fmt_br(total)}</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 st.divider()
 
@@ -71,41 +98,48 @@ with st.expander("✏️ Editar saldos de um mês", expanded=False):
             format="%.2f", step=10.0, key="edit_caixa"
         )
 
-    if st.button("Salvar saldos", type="secondary"):
+    if st.button("Salvar saldos", type="primary"):
         db.salvar_saldos(mes_edit, ano, novo_banco, novo_aplic, novo_caixa)
         st.success("Saldos atualizados!")
         st.rerun()
 
 st.divider()
 
-# ── Gráfico de área empilhada ─────────────────────────────────────────────────
+# ── Gráfico de linha — evolução dos saldos ────────────────────────────────────
 st.subheader("Evolução dos saldos")
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(
     name="Banco", x=saldos_df["mes_nome"], y=saldos_df["saldo_banco"],
-    fill="tozeroy", mode="lines+markers",
-    line=dict(color="#1E6FBA", width=2),
-    marker=dict(size=6),
+    mode="lines+markers",
+    line=dict(color="#1C2B5F", width=2),
+    marker=dict(size=7),
 ))
 fig.add_trace(go.Scatter(
     name="Aplicação", x=saldos_df["mes_nome"], y=saldos_df["saldo_aplicacao"],
-    fill="tozeroy", mode="lines+markers",
+    mode="lines+markers",
     line=dict(color="#2A9D8F", width=2),
-    marker=dict(size=6),
+    marker=dict(size=7),
 ))
 fig.add_trace(go.Scatter(
     name="Caixa", x=saldos_df["mes_nome"], y=saldos_df["saldo_caixa"],
-    fill="tozeroy", mode="lines+markers",
-    line=dict(color="#E9C46A", width=2),
-    marker=dict(size=6),
+    mode="lines+markers",
+    line=dict(color="#E9A020", width=2),
+    marker=dict(size=7),
+))
+fig.add_trace(go.Scatter(
+    name="Total", x=saldos_df["mes_nome"], y=saldos_df["total"],
+    mode="lines+markers",
+    line=dict(color="#C4153A", width=2, dash="dot"),
+    marker=dict(size=7),
 ))
 fig.update_layout(
     height=380,
-    yaxis=dict(tickprefix="R$ ", tickformat=",.0f"),
+    yaxis=dict(tickformat=",.0f", gridcolor="#eee"),
     plot_bgcolor="white",
     legend=dict(orientation="h", yanchor="bottom", y=1.02),
     margin=dict(t=10, b=10),
+    hovermode="x unified",
 )
 st.plotly_chart(fig, use_container_width=True)
 
@@ -118,6 +152,6 @@ df_tab = saldos_df[["mes_nome", "saldo_banco", "saldo_aplicacao",
                      "saldo_caixa", "total"]].copy()
 df_tab.columns = ["Mês", "Banco", "Aplicação", "Caixa", "Total"]
 for col in ["Banco", "Aplicação", "Caixa", "Total"]:
-    df_tab[col] = df_tab[col].apply(lambda v: f"R$ {v:,.2f}")
+    df_tab[col] = df_tab[col].apply(fmt_br)
 
 st.dataframe(df_tab, use_container_width=True, hide_index=True)

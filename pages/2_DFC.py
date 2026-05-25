@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from core.dfc import calcular_dfc, SECOES, GRUPOS
 import db.client as db
 from core.parser import MESES_ABREV
+from core.utils import fmt_br, fmt_br_kpi
 
 st.title("📊 DFC — Demonstração de Fluxo de Caixa")
 
@@ -50,9 +51,7 @@ dfc = calcular_dfc(
 # ── KPIs principais ───────────────────────────────────────────────────────────
 st.subheader(f"{MESES_ABREV[mes]}/{ano}")
 
-def _br(v: float) -> str:
-    """Formata valor em Real brasileiro sem centavos para KPI."""
-    return f"R$ {abs(v):,.0f}".replace(",", ".")
+_br = fmt_br_kpi  # alias para KPI cards (sem centavos)
 
 resultado = dfc.resultado_liquido
 res_color  = "#1a7f37" if resultado >= 0 else "#C4153A"
@@ -117,9 +116,7 @@ st.subheader("Demonstração")
 
 _desc_por_codigo = dict(zip(plano_df["codigo"], plano_df["descricao"]))
 
-def _fmt_br(v: float) -> str:
-    """Formata valor em Real no padrão brasileiro: R$ 71.028,99"""
-    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+_fmt_br = fmt_br  # alias para tabelas (com centavos)
 
 # Calcula totais por seção
 sec_totals = {}

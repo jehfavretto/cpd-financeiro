@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import db.client as db
 from core.dfc import calcular_dfc, SECOES
 from core.parser import MESES_ABREV
+from core.utils import fmt_br, fmt_br_kpi
 
 st.title("📈 Evolução Mensal")
 
@@ -53,8 +54,7 @@ if df.empty:
 n = len(df)
 
 # ── KPIs acumulados do ano ────────────────────────────────────────────────────
-def _br(v: float) -> str:
-    return f"R$ {abs(v):,.0f}".replace(",", ".")
+_br = fmt_br_kpi
 
 res_ytd    = df["resultado"].sum()
 res_color  = "#1a7f37" if res_ytd >= 0 else "#C4153A"
@@ -155,8 +155,7 @@ st.divider()
 # ── Tabela resumo ─────────────────────────────────────────────────────────────
 st.subheader("Tabela resumo")
 
-def _fmt(v):
-    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+_fmt = fmt_br
 
 tab = df[["label", "receitas", "saidas", "resultado"]].copy()
 tab.columns = ["Mês", "Receitas", "Saídas", "Resultado"]

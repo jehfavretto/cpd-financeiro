@@ -12,6 +12,7 @@ from core.parser import (
     MESES_ABREV,
 )
 import db.client as db
+from core.utils import fmt_br
 
 # ── Helper (definido antes de ser usado) ──────────────────────────────────────
 _CONTAS_SEM_MATCH = {
@@ -88,8 +89,8 @@ with st.expander("📋 Preview — FluxoCaixa Sponte", expanded=False):
     entradas = sponte_df[sponte_df["es"] == "E"]["valor"].sum()
     saidas   = sponte_df[sponte_df["es"] == "S"]["valor"].sum()
     c1, c2 = st.columns(2)
-    c1.metric("Entradas", f"R$ {entradas:,.2f}")
-    c2.metric("Saídas",   f"R$ {saidas:,.2f}")
+    c1.metric("Entradas", fmt_br(entradas))
+    c2.metric("Saídas",   fmt_br(saidas))
     st.dataframe(
         sponte_df[["data", "categoria", "es", "origem_destino", "valor"]],
         use_container_width=True, height=250,
@@ -99,8 +100,8 @@ with st.expander("🏦 Preview — Extrato CEF", expanded=False):
     entradas_b = banco_df[banco_df["deb_cred"] == "C"]["valor_num"].sum()
     saidas_b   = banco_df[banco_df["deb_cred"] == "D"]["valor_num"].sum()
     c1, c2 = st.columns(2)
-    c1.metric("Créditos (C)", f"R$ {entradas_b:,.2f}")
-    c2.metric("Débitos (D)",  f"R$ {saidas_b:,.2f}")
+    c1.metric("Créditos (C)", fmt_br(entradas_b))
+    c2.metric("Débitos (D)",  fmt_br(saidas_b))
     st.dataframe(
         banco_df[["data_mov", "historico", "valor_num", "deb_cred"]],
         use_container_width=True, height=250,

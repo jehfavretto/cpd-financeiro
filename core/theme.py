@@ -27,9 +27,8 @@ def css_completo(tema: str) -> str:
     txt_pos   = "#2ed64f"      if dark else "#1a7f37"
     txt_neg   = "#E63A5C"      if dark else "#C4153A"
 
-    return f"""
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
+    return f"""<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
 /* ── Fonte global (Nunito — mesma do site CPD) ─────────────────────────── */
 html, body, *, button, input, select, textarea,

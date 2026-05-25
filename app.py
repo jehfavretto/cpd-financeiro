@@ -27,9 +27,9 @@ _logo_sid = _logo_ass if _logo_ass.exists() else _logo
 if _logo_sid.exists():
     try:
         _img = PILImage.open(str(_logo_sid))
-        # Corta os ~22% inferiores para remover "Evoluindo a cada passo."
+        # Corta os ~15% inferiores para remover "Evoluindo a cada passo."
         w, h = _img.size
-        _img_crop = _img.crop((0, 0, w, int(h * 0.78)))
+        _img_crop = _img.crop((0, 0, w, int(h * 0.85)))
         st.logo(_img_crop, size="medium")
     except Exception:
         pass

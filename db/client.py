@@ -243,18 +243,14 @@ def salvar_conciliacao(
 
 def carregar_conciliacoes(mes: int, ano: int) -> list[dict]:
     client = get_client()
-    try:
-        res = (
-            client.table("conciliacoes")
-            .select("*")
-            .eq("mes", mes)
-            .eq("ano", ano)
-            .execute()
-        )
-        return res.data or []
-    except Exception as e:
-        # Expõe o erro real para diagnóstico
-        raise RuntimeError(f"Erro ao carregar conciliações: {type(e).__name__}: {e}") from e
+    res = (
+        client.table("conciliacoes")
+        .select("*")
+        .eq("mes", mes)
+        .eq("ano", ano)
+        .execute()
+    )
+    return res.data or []
 
 
 def deletar_conciliacao(id_conc: int):

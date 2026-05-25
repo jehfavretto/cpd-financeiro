@@ -74,7 +74,11 @@ banco_df["chave"]     = banco_df.apply(make_key_banco, axis=1)
 banco_df["data_fmt"]  = banco_df["data_mov"].apply(_data_banco_fmt)
 
 # ── Carrega conciliações já salvas ─────────────────────────────────────────────
-conciliacoes = db.carregar_conciliacoes(mes, ano)
+try:
+    conciliacoes = db.carregar_conciliacoes(mes, ano)
+except Exception as _e:
+    st.error(f"DEBUG — erro em carregar_conciliacoes: {type(_e).__name__}: {_e}")
+    st.stop()
 if conciliacoes:
     conc_df = pd.DataFrame(conciliacoes)
 else:

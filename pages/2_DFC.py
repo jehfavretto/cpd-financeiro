@@ -117,6 +117,10 @@ st.subheader("Demonstração")
 
 _desc_por_codigo = dict(zip(plano_df["codigo"], plano_df["descricao"]))
 
+def _fmt_br(v: float) -> str:
+    """Formata valor em Real no padrão brasileiro: R$ 71.028,99"""
+    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
 # Calcula totais por seção
 sec_totals = {}
 for sp, si in SECOES.items():
@@ -129,15 +133,15 @@ for sp, si in SECOES.items():
 
 # Tabela resumo compacta (sempre visível)
 resumo = [
-    {"Seção": si["label"], "Valor (R$)": f"R$ {sec_totals[sp]:,.2f}"}
+    {"Seção": si["label"], "Valor (R$)": _fmt_br(sec_totals[sp])}
     for sp, si in SECOES.items()
 ]
-resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": f"R$ {dfc.resultado_liquido:,.2f}"})
+resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": _fmt_br(dfc.resultado_liquido)})
 st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=215)
 
 # Expanders analíticos por seção
 for sp, si in SECOES.items():
-    with st.expander(f"{si['label']}  —  R$ {sec_totals[sp]:,.2f}"):
+    with st.expander(f"{si['label']}  —  {_fmt_br(sec_totals[sp])}"):
         det = []
         for grp_prefix, grp_label in {k: v for k, v in GRUPOS.items() if k.startswith(sp[0])}.items():
             contas = dfc.dados.get(sp, {}).get(grp_prefix, {})
@@ -145,18 +149,18 @@ for sp, si in SECOES.items():
             if not contas:
                 continue
             det.append({"Descrição": grp_label,
-                        "Valor (R$)": f"R$ {grp_total:,.2f}"})
+                        "Valor (R$)": _fmt_br(grp_total)})
             for cod, val in sorted(contas.items()):
                 if val == 0:
                     continue
                 det.append({"Descrição": f"    {_desc_por_codigo.get(cod, cod)}",
-                            "Valor (R$)": f"R$ {val:,.2f}"})
+                            "Valor (R$)": _fmt_br(val)})
         if sp == "1." and dfc.ar != 0:
             det.append({"Descrição": "    Ajuste Receita (AR)",
-                        "Valor (R$)": f"R$ {dfc.ar:,.2f}"})
+                        "Valor (R$)": _fmt_br(dfc.ar)})
         if sp == "3." and dfc.ad != 0:
             det.append({"Descrição": "    Ajuste Despesa (AD)",
-                        "Valor (R$)": f"R$ {dfc.ad:,.2f}"})
+                        "Valor (R$)": _fmt_br(dfc.ad)})
         if det:
             st.dataframe(pd.DataFrame(det), hide_index=True, use_container_width=True)
         else:

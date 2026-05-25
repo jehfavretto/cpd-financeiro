@@ -109,14 +109,15 @@ small {{ color: {txt2} !important; }}
     background-color: {sidebar} !important;
     border-right: 4px solid #C4153A !important;
 }}
-/* Logo na sidebar — cartão branco para visibilidade sobre fundo escuro */
-[data-testid="stLogo"],
-[data-testid="stLogoSidebar"],
-[data-testid="stSidebarHeader"] {{
+/* Logo na sidebar — cartão branco compacto ao redor apenas da imagem */
+[data-testid="stLogo"] img,
+[data-testid="stLogoSidebar"] img,
+[data-testid="stSidebarHeader"] img {{
     background: #FFFFFF !important;
-    border-radius: 10px !important;
-    padding: 8px 14px !important;
-    margin: 10px 10px 6px 10px !important;
+    border-radius: 8px !important;
+    padding: 6px !important;
+    max-height: 48px !important;
+    width: auto !important;
     display: block !important;
 }}
 [data-testid="stSidebar"] * {{
@@ -391,18 +392,35 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     letter-spacing: -0.3px;
 }}
 
-/* ── Toggle de tema — fixo no canto superior direito ─────────────────── */
+/* ── Toggle de tema — DOM na sidebar, fixado no canto via :has() ─────── */
 /*
- * Usamos button[title=] porque Streamlit NÃO cria relação pai-filho entre
- * st.markdown('<div id=...>') e st.button() — eles ficam irmãos no DOM.
- * O parâmetro help="..." gera o atributo title no <button>, que podemos
- * selecionar diretamente.
+ * Streamlit renderiza st.markdown('<div id=...>') e st.button() como IRMÃOS
+ * no DOM (não pai-filho). Usamos :has() para ir do marcador até o botão irmão
+ * e aplicar position:fixed para fixá-lo no canto superior direito da tela.
  */
-button[title="Alternar tema claro/escuro"] {{
+
+/* Marcador: sem espaço visual */
+#cpd-theme-marker {{
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}}
+/* Container do botão: colapsa espaço, mas deixa o fixed vazar via overflow:visible */
+.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButton"],
+.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButtonGroup"] {{
+    height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}}
+/* O botão em si: fixado no canto sup-direito da viewport */
+.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButton"] button,
+.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButtonGroup"] button {{
     position: fixed !important;
     top: 62px !important;
     right: 22px !important;
-    z-index: 999 !important;
+    z-index: 9999 !important;
     background-color: {bg} !important;
     border: 1px solid {border} !important;
     color: {txt} !important;
@@ -413,21 +431,14 @@ button[title="Alternar tema claro/escuro"] {{
     padding: 0 !important;
     font-size: 1.15rem !important;
     line-height: 38px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.14) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     transform: none !important;
 }}
-button[title="Alternar tema claro/escuro"]:hover {{
+.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButton"] button:hover,
+.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButtonGroup"] button:hover {{
     background-color: {bg2} !important;
     border-color: {accent} !important;
     box-shadow: 0 4px 12px rgba(196,21,58,0.22) !important;
-}}
-/* Colapsa a linha de colunas do toggle — sem ocupar espaço vertical */
-[data-testid="stHorizontalBlock"]:has(button[title="Alternar tema claro/escuro"]) {{
-    height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
 }}
 
 /* ── File uploader ─────────────────────────────────────────────────────── */

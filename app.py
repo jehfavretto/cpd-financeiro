@@ -19,11 +19,13 @@ if "tema" not in st.session_state:
 tema_atual = st.session_state["tema"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Logo no topo da sidebar (acima dos itens de navegação) ────────────────────
-_logo = Path(__file__).parent / "logo.png"
-if _logo.exists():
+# ── Logo no topo da sidebar — símbolo circular (acima dos itens de navegação) ─
+_logo     = Path(__file__).parent / "logo.png"
+_logo_icn = Path(__file__).parent / "CDP_LOGO_CIRCULAR_A (1).png"
+_logo_sid = _logo_icn if _logo_icn.exists() else _logo
+if _logo_sid.exists():
     try:
-        st.logo(PILImage.open(str(_logo)))
+        st.logo(PILImage.open(str(_logo_sid)), size="medium")
     except Exception:
         pass
 
@@ -54,13 +56,13 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Toggle de tema na sidebar (abaixo da navegação) ────────────────────────────
-with st.sidebar:
-    st.markdown('<div class="cpd-sidebar-toggle">', unsafe_allow_html=True)
+# ── Toggle de tema — canto superior direito (fixo via CSS) ─────────────────────
+# O botão é renderizado aqui mas posicionado via CSS position:fixed no canto
+_, col_btn = st.columns([30, 1])
+with col_btn:
     if st.button(icone_tema, key="btn_tema", help="Alternar tema claro/escuro"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # ── Navegação ──────────────────────────────────────────────────────────────────
 pages = {

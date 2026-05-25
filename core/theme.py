@@ -391,25 +391,43 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     letter-spacing: -0.3px;
 }}
 
-/* ── Toggle de tema — botão na sidebar ────────────────────────────────── */
-.cpd-sidebar-toggle {{
-    padding: 8px 8px 0 8px !important;
-}}
-.cpd-sidebar-toggle .stButton > button {{
-    background-color: rgba(255,255,255,0.10) !important;
-    border: 1px solid rgba(255,255,255,0.22) !important;
-    color: #FFFFFF !important;
-    border-radius: 8px !important;
-    width: 100% !important;
-    font-size: 0.85rem !important;
-    font-weight: 600 !important;
-    padding: 6px 12px !important;
-    letter-spacing: 0.3px;
-}}
-.cpd-sidebar-toggle .stButton > button:hover {{
-    background-color: rgba(196,21,58,0.25) !important;
-    border-color: #C4153A !important;
+/* ── Toggle de tema — fixo no canto superior direito ─────────────────── */
+/*
+ * Usamos button[title=] porque Streamlit NÃO cria relação pai-filho entre
+ * st.markdown('<div id=...>') e st.button() — eles ficam irmãos no DOM.
+ * O parâmetro help="..." gera o atributo title no <button>, que podemos
+ * selecionar diretamente.
+ */
+button[title="Alternar tema claro/escuro"] {{
+    position: fixed !important;
+    top: 62px !important;
+    right: 22px !important;
+    z-index: 999 !important;
+    background-color: {bg} !important;
+    border: 1px solid {border} !important;
+    color: {txt} !important;
+    border-radius: 50% !important;
+    width: 38px !important;
+    height: 38px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    font-size: 1.15rem !important;
+    line-height: 38px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.14) !important;
     transform: none !important;
+}}
+button[title="Alternar tema claro/escuro"]:hover {{
+    background-color: {bg2} !important;
+    border-color: {accent} !important;
+    box-shadow: 0 4px 12px rgba(196,21,58,0.22) !important;
+}}
+/* Colapsa a linha de colunas do toggle — sem ocupar espaço vertical */
+[data-testid="stHorizontalBlock"]:has(button[title="Alternar tema claro/escuro"]) {{
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
 }}
 
 /* ── File uploader ─────────────────────────────────────────────────────── */

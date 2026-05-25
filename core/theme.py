@@ -109,22 +109,24 @@ small {{ color: {txt2} !important; }}
     background-color: {sidebar} !important;
     border-right: 4px solid #C4153A !important;
 }}
-/* Logo na sidebar — cartão branco ao redor do link/imagem (compacto) */
-[data-testid="stSidebarHeader"] {{
-    background: transparent !important;
-    padding: 10px 12px 6px 12px !important;
-}}
-[data-testid="stSidebarHeader"] a,
-[data-testid="stLogo"] a {{
-    display: inline-flex !important;
-    align-items: center !important;
+/* Logo sidebar — banner branco no topo (padrão comum em dashboards) */
+[data-testid="stSidebarHeader"],
+[data-testid="stLogo"],
+[data-testid="stLogoSidebar"] {{
     background: #FFFFFF !important;
-    border-radius: 10px !important;
-    padding: 8px 14px !important;
+    border-radius: 0 0 10px 10px !important;
+    padding: 12px 20px !important;
+    margin: 0 0 10px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }}
 [data-testid="stSidebarHeader"] img,
-[data-testid="stLogo"] img {{
-    max-height: 44px !important;
+[data-testid="stLogo"] img,
+[data-testid="stLogoSidebar"] img {{
+    max-height: 42px !important;
     width: auto !important;
     background: transparent !important;
     padding: 0 !important;

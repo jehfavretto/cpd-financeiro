@@ -54,10 +54,12 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Toggle de tema ─────────────────────────────────────────────────────────────
-col_sp, col_btn = st.columns([30, 1])
-with col_btn:
-    st.markdown('<div id="cpd-toggle-anchor">', unsafe_allow_html=True)
+# ── Ondinha decorativa abaixo do banner ───────────────────────────────────────
+st.markdown('<div class="cpd-ondinha"></div>', unsafe_allow_html=True)
+
+# ── Toggle de tema na sidebar (abaixo da navegação) ────────────────────────────
+with st.sidebar:
+    st.markdown('<div class="cpd-sidebar-toggle">', unsafe_allow_html=True)
     if st.button(icone_tema, key="btn_tema", help="Alternar tema claro/escuro"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
         st.rerun()

@@ -31,6 +31,9 @@ def css_completo(tema: str) -> str:
     return f"""<style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
+/* ── Tamanho base ligeiramente reduzido ────────────────────────────────── */
+html {{ font-size: 14px; }}
+
 /* ── Fonte global (Nunito — mesma do site CPD) ─────────────────────────── */
 /* Seletores específicos evitam sobrescrever fontes de ícones do Streamlit */
 html, body, button, select, textarea,
@@ -92,6 +95,9 @@ h1, h2, h3, h4, h5, h6 {{
     font-weight: 800 !important;
     letter-spacing: -0.3px;
 }}
+h1 {{ font-size: 1.55rem !important; }}
+h2 {{ font-size: 1.2rem  !important; }}
+h3 {{ font-size: 1.05rem !important; }}
 [data-testid="stCaptionContainer"] p {{
     color: {txt2} !important;
     font-size: 0.82rem !important;
@@ -101,6 +107,17 @@ small {{ color: {txt2} !important; }}
 /* ── Sidebar ───────────────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {{
     background-color: {sidebar} !important;
+    border-right: 4px solid #C4153A !important;
+}}
+/* Logo na sidebar — cartão branco para visibilidade sobre fundo escuro */
+[data-testid="stLogo"],
+[data-testid="stLogoSidebar"],
+[data-testid="stSidebarHeader"] {{
+    background: #FFFFFF !important;
+    border-radius: 10px !important;
+    padding: 8px 14px !important;
+    margin: 10px 10px 6px 10px !important;
+    display: block !important;
 }}
 [data-testid="stSidebar"] * {{
     color: #FFFFFF !important;
@@ -274,6 +291,40 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 /* ── Spinner ───────────────────────────────────────────────────────────── */
 [data-testid="stSpinner"] {{ color: {txt} !important; }}
 
+/* ── Modo escuro: corrige elementos com cor hardcoded ─────────────────── */
+/* Download button */
+[data-testid="stDownloadButton"] > button {{
+    background-color: {card} !important;
+    color: {txt} !important;
+    border: 1px solid {border} !important;
+    border-radius: 8px !important;
+}}
+/* Selectbox options dropdown */
+[data-baseweb="popover"] li,
+[data-baseweb="menu"] li {{
+    background-color: {card} !important;
+    color: {txt} !important;
+}}
+[data-baseweb="popover"] li:hover,
+[data-baseweb="menu"] li:hover {{
+    background-color: {bg2} !important;
+}}
+/* DataFrame header e células */
+[data-testid="stDataFrame"] iframe {{
+    color-scheme: {"dark" if dark else "light"};
+}}
+/* Tooltip / popover genérico */
+[data-baseweb="tooltip"] div {{
+    background-color: {card} !important;
+    color: {txt} !important;
+}}
+/* Número input — botões + e - */
+[data-testid="stNumberInput"] button {{
+    background-color: {inp_bg} !important;
+    color: {txt} !important;
+    border-color: {border} !important;
+}}
+
 /* ══════════════════════════════════════════════════════════════════════════
    BANNER CPD — cabeçalho com identidade visual (azul marinho + ondas vermelhas)
    Inspirado no rodapé do site colegiocpd.com.br
@@ -340,24 +391,24 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     letter-spacing: -0.3px;
 }}
 
-/* ── Toggle de tema — ícone compacto abaixo/direita do banner ─────────── */
-#cpd-toggle-anchor .stButton > button {{
-    background-color: {card} !important;
-    border: 1px solid {border} !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10) !important;
-    color: {txt} !important;
-    border-radius: 50% !important;
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    font-size: 1.15rem !important;
-    line-height: 1 !important;
-    margin-top: -40px !important;   /* sobe para ficar ao lado do banner */
+/* ── Toggle de tema — botão na sidebar ────────────────────────────────── */
+.cpd-sidebar-toggle {{
+    padding: 8px 8px 0 8px !important;
 }}
-#cpd-toggle-anchor .stButton > button:hover {{
-    background-color: {bg2} !important;
-    border-color: {accent} !important;
-    box-shadow: 0 4px 12px rgba(196,21,58,0.20) !important;
+.cpd-sidebar-toggle .stButton > button {{
+    background-color: rgba(255,255,255,0.10) !important;
+    border: 1px solid rgba(255,255,255,0.22) !important;
+    color: #FFFFFF !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    padding: 6px 12px !important;
+    letter-spacing: 0.3px;
+}}
+.cpd-sidebar-toggle .stButton > button:hover {{
+    background-color: rgba(196,21,58,0.25) !important;
+    border-color: #C4153A !important;
     transform: none !important;
 }}
 
@@ -411,6 +462,7 @@ h1 {{
     border-left: 5px solid {accent} !important;
     padding-left: 14px !important;
     margin-bottom: 4px !important;
+    font-size: 1.55rem !important;
 }}
 
 /* Métricas — card limpo com borda-esquerda colorida */

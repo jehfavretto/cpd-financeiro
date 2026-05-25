@@ -278,16 +278,16 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
    Inspirado no rodapé do site colegiocpd.com.br
    ══════════════════════════════════════════════════════════════════════════ */
 .cpd-banner {{
-    background: #0C1628;         /* azul marinho profundo, igual ao site */
+    background: #1C2B5F;         /* azul marinho CPD — igual ao site */
     position: relative;
     overflow: hidden;
     border-radius: 14px;
-    height: 106px;               /* um pouco mais alto para as ondas aparecerem */
+    height: 106px;
     display: flex;
     align-items: center;
     padding: 0 40px;
     margin-bottom: 6px;
-    box-shadow: 0 6px 32px rgba(12,22,40,0.45);
+    box-shadow: 0 6px 32px rgba(28,43,95,0.35);
 }}
 
 /* Ondas decorativas (SVGs grandes nos cantos, igual ao site CPD) */

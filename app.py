@@ -19,14 +19,18 @@ if "tema" not in st.session_state:
 tema_atual = st.session_state["tema"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Logo sidebar: versão horizontal (sem subtítulo) ───────────────────────────
-_logo     = Path(__file__).parent / "logo.png"                    # banner
-_logo_hor = Path(__file__).parent / "CDP_LOGO_HOR_ASS_A (4).png"  # sidebar horizontal
-_logo_sid = _logo_hor if _logo_hor.exists() else _logo
+# ── Logo sidebar: versão sem subtítulo ────────────────────────────────────────
+_logo     = Path(__file__).parent / "logo.png"               # banner
+_logo_ass = Path(__file__).parent / "CDP_LOGO_ASS_A (1).png" # sidebar
+_logo_sid = _logo_ass if _logo_ass.exists() else _logo
 
 if _logo_sid.exists():
     try:
-        st.logo(PILImage.open(str(_logo_sid)), size="medium")
+        _img = PILImage.open(str(_logo_sid))
+        # Corta os ~22% inferiores para remover "Evoluindo a cada passo."
+        w, h = _img.size
+        _img_crop = _img.crop((0, 0, w, int(h * 0.78)))
+        st.logo(_img_crop, size="medium")
     except Exception:
         pass
 

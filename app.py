@@ -1,5 +1,6 @@
 import streamlit as st
 from pathlib import Path
+import base64
 
 _icon = Path(__file__).parent / "CDP_LOGO_CIRCULAR_A (1).png"
 st.set_page_config(
@@ -80,9 +81,14 @@ st.markdown("""
 with st.sidebar:
     _logo = Path(__file__).parent / "logo.png"
     if _logo.exists():
-        st.markdown('<div style="background:#FFFFFF; border-radius:10px; padding:14px 12px 10px 12px; margin:8px 4px 12px 4px; text-align:center;">', unsafe_allow_html=True)
-        st.image(str(_logo), use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        _img_b64 = base64.b64encode(_logo.read_bytes()).decode()
+        st.markdown(
+            f'<div style="background:#FFFFFF; border-radius:10px; padding:14px 12px 10px 12px;'
+            f' margin:8px 4px 12px 4px; text-align:center;">'
+            f'<img src="data:image/png;base64,{_img_b64}" style="max-width:100%; height:auto;">'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
     else:
         st.markdown("""
         <div class="cpd-header">

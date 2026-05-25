@@ -1,6 +1,7 @@
 import streamlit as st
 from pathlib import Path
 import base64
+from core.theme import css_completo
 
 _icon = Path(__file__).parent / "CDP_LOGO_CIRCULAR_A (1).png"
 st.set_page_config(
@@ -10,75 +11,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Identidade visual CPD ──────────────────────────────────────────────────────
-st.markdown("""
-<style>
-/* Sidebar: fundo azul escuro CPD */
-[data-testid="stSidebar"] {
-    background-color: #1C2B5F !important;
-}
-[data-testid="stSidebar"] * {
-    color: #FFFFFF !important;
-}
-[data-testid="stSidebar"] .stSelectbox label,
-[data-testid="stSidebar"] .stRadio label {
-    color: #FFFFFF !important;
-}
-/* Links de navegação na sidebar */
-[data-testid="stSidebarNav"] a {
-    color: rgba(255,255,255,0.85) !important;
-    border-radius: 6px;
-    padding: 4px 8px;
-}
-[data-testid="stSidebarNav"] a:hover,
-[data-testid="stSidebarNav"] a[aria-current="page"] {
-    background-color: rgba(196,21,58,0.25) !important;
-    color: #FFFFFF !important;
-}
-/* Botões primários: vermelho CPD */
-.stButton > button[kind="primary"] {
-    background-color: #C4153A !important;
-    border-color: #C4153A !important;
-    color: #FFFFFF !important;
-    border-radius: 6px;
-}
-.stButton > button[kind="primary"]:hover {
-    background-color: #A01030 !important;
-    border-color: #A01030 !important;
-}
-/* Métricas: borda azul esquerda */
-[data-testid="stMetric"] {
-    border-left: 4px solid #C4153A;
-    padding-left: 12px;
-}
-/* Cabeçalho da sidebar */
-.cpd-header {
-    text-align: center;
-    padding: 12px 0 4px 0;
-}
-.cpd-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #FFFFFF;
-    margin: 0;
-    line-height: 1.3;
-}
-.cpd-sub {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.65);
-    margin: 0;
-    font-style: italic;
-}
-.cpd-divider {
-    border: none;
-    border-top: 1px solid rgba(255,255,255,0.2);
-    margin: 10px 0;
-}
-</style>
-""", unsafe_allow_html=True)
+# ── Tema (claro / escuro) ──────────────────────────────────────────────────────
+if "tema" not in st.session_state:
+    st.session_state["tema"] = "light"
 
-# ── Cabeçalho lateral ──────────────────────────────────────────────────────────
+# Injeta CSS do tema escolhido
+st.markdown(css_completo(st.session_state["tema"]), unsafe_allow_html=True)
+
+# ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
+    # Logo em card branco (visível na sidebar escura)
     _logo = Path(__file__).parent / "logo.png"
     if _logo.exists():
         _img_b64 = base64.b64encode(_logo.read_bytes()).decode()
@@ -91,11 +33,23 @@ with st.sidebar:
         )
     else:
         st.markdown("""
-        <div class="cpd-header">
-            <p class="cpd-title">Colégio Primeiros Degraus</p>
-            <p class="cpd-sub">Evoluindo a cada passo.</p>
+        <div style="text-align:center; padding:12px 0 4px 0;">
+            <p style="font-size:1.1rem; font-weight:800; color:#FFF; margin:0;">Colégio Primeiros Degraus</p>
+            <p style="font-size:0.75rem; color:rgba(255,255,255,0.65); margin:0; font-style:italic;">Evoluindo a cada passo.</p>
         </div>
         """, unsafe_allow_html=True)
+
+    st.markdown('<hr class="cpd-divider"/>', unsafe_allow_html=True)
+
+    # ── Toggle claro / escuro ──────────────────────────────────────────────
+    tema_atual = st.session_state["tema"]
+    icone  = "☀️" if tema_atual == "dark" else "🌙"
+    rotulo = "Modo Claro" if tema_atual == "dark" else "Modo Escuro"
+
+    if st.button(f"{icone} {rotulo}", key="btn_tema", use_container_width=True):
+        st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
+        st.rerun()
+
     st.markdown('<hr class="cpd-divider"/>', unsafe_allow_html=True)
 
 # ── Navegação ──────────────────────────────────────────────────────────────────

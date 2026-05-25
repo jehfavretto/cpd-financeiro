@@ -238,6 +238,17 @@ small {{ color: {txt2} !important; }}
     box-shadow: {shadow} !important;
     overflow: hidden !important;
     border: 1px solid {border} !important;
+    color-scheme: {"dark" if dark else "light"} !important;
+}}
+/* Forçar fundo escuro nos wrappers internos do Glide Data Grid */
+[data-testid="stDataFrame"] > div,
+[data-testid="stDataFrame"] > div > div {{
+    background-color: {card} !important;
+}}
+/* Iframe do grid com color-scheme para o componente interno */
+[data-testid="stDataFrame"] iframe {{
+    color-scheme: {"dark" if dark else "light"} !important;
+    background: {card} !important;
 }}
 
 /* ── Selectbox / inputs ────────────────────────────────────────────────── */
@@ -325,10 +336,6 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 [data-baseweb="popover"] li:hover,
 [data-baseweb="menu"] li:hover {{
     background-color: {bg2} !important;
-}}
-/* DataFrame header e células */
-[data-testid="stDataFrame"] iframe {{
-    color-scheme: {"dark" if dark else "light"};
 }}
 /* Tooltip / popover genérico */
 [data-baseweb="tooltip"] div {{

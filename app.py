@@ -56,11 +56,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Toggle de tema — renderizado na sidebar, fixado no canto via CSS ───────────
-# Estratégia: um div marcador (#cpd-theme-marker) antes do botão permite
-# usar CSS :has() para identificá-lo e aplicar position:fixed ao botão.
+# ── Toggle de tema — único botão na sidebar, fixado no canto via CSS ───────────
 with st.sidebar:
-    st.markdown('<div id="cpd-theme-marker"></div>', unsafe_allow_html=True)
     if st.button(icone_tema, key="btn_tema"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
         st.rerun()

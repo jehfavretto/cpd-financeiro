@@ -392,31 +392,18 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     letter-spacing: -0.3px;
 }}
 
-/* ── Toggle de tema — DOM na sidebar, fixado no canto via :has() ─────── */
+/* ── Toggle de tema — único stButton na sidebar → position:fixed ──────── */
 /*
- * Streamlit renderiza st.markdown('<div id=...>') e st.button() como IRMÃOS
- * no DOM (não pai-filho). Usamos :has() para ir do marcador até o botão irmão
- * e aplicar position:fixed para fixá-lo no canto superior direito da tela.
+ * O toggle é o único [data-testid="stButton"] dentro da sidebar
+ * (links de navegação são <a>, não <button>). Seletor direto e confiável.
  */
-
-/* Marcador: sem espaço visual */
-#cpd-theme-marker {{
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-}}
-/* Container do botão: colapsa espaço, mas deixa o fixed vazar via overflow:visible */
-.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButton"],
-.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButtonGroup"] {{
+[data-testid="stSidebar"] [data-testid="stButton"] {{
     height: 0 !important;
     overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
 }}
-/* O botão em si: fixado no canto sup-direito da viewport */
-.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButton"] button,
-.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButtonGroup"] button {{
+[data-testid="stSidebar"] [data-testid="stButton"] button {{
     position: fixed !important;
     top: 62px !important;
     right: 22px !important;
@@ -434,8 +421,7 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     transform: none !important;
 }}
-.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButton"] button:hover,
-.stMarkdown:has(#cpd-theme-marker) ~ [data-testid="stButtonGroup"] button:hover {{
+[data-testid="stSidebar"] [data-testid="stButton"] button:hover {{
     background-color: {bg2} !important;
     border-color: {accent} !important;
     box-shadow: 0 4px 12px rgba(196,21,58,0.22) !important;

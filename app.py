@@ -34,15 +34,16 @@ logo_html = (
 
 st.markdown(f"""
 <div class="cpd-banner">
-    <!-- Onda esquerda (dois arcos concêntricos) -->
-    <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 170 140" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="14" cy="14" r="105" fill="none" stroke="#C4153A" stroke-width="20"/>
-        <circle cx="14" cy="14" r="80"  fill="none" stroke="#C4153A" stroke-width="10" opacity="0.45"/>
+    <!-- Onda esquerda — canto inferior esquerdo, igual ao rodapé do site CPD -->
+    <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="0"   cy="280" r="240" fill="none" stroke="#C4153A" stroke-width="30"/>
+        <circle cx="0"   cy="280" r="200" fill="none" stroke="#A01030" stroke-width="16" opacity="0.50"/>
     </svg>
-    <!-- Onda direita (dois arcos concêntricos) -->
-    <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 170 140" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="156" cy="126" r="105" fill="none" stroke="#C4153A" stroke-width="20"/>
-        <circle cx="156" cy="126" r="80"  fill="none" stroke="#C4153A" stroke-width="10" opacity="0.45"/>
+    <!-- Onda direita — canto superior direito, três arcos concêntricos (igual ao site) -->
+    <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="300" cy="0"   r="240" fill="none" stroke="#C4153A" stroke-width="30"/>
+        <circle cx="300" cy="0"   r="200" fill="none" stroke="#8B1030" stroke-width="18" opacity="0.65"/>
+        <circle cx="300" cy="0"   r="160" fill="none" stroke="#6B0E25" stroke-width="14" opacity="0.42"/>
     </svg>
     <!-- Logo -->
     <div class="cpd-banner-inner">

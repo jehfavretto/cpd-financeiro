@@ -115,7 +115,7 @@ small {{ color: {txt2} !important; }}
 [data-testid="stLogoSidebar"] {{
     background: #FFFFFF !important;
     border-radius: 0 0 10px 10px !important;
-    padding: 14px 16px !important;
+    padding: 10px 16px !important;
     margin: 0 0 10px 0 !important;
     display: flex !important;
     align-items: center !important;
@@ -126,8 +126,8 @@ small {{ color: {txt2} !important; }}
 [data-testid="stSidebarHeader"] img,
 [data-testid="stLogo"] img,
 [data-testid="stLogoSidebar"] img {{
-    max-height: 62px !important;
-    max-width: 200px !important;
+    max-height: 48px !important;
+    max-width: 190px !important;
     width: auto !important;
     height: auto !important;
     background: transparent !important;

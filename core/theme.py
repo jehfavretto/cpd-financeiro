@@ -238,18 +238,10 @@ small {{ color: {txt2} !important; }}
     box-shadow: {shadow} !important;
     overflow: hidden !important;
     border: 1px solid {border} !important;
-    color-scheme: {"dark" if dark else "light"} !important;
 }}
-/* Forçar fundo escuro nos wrappers internos do Glide Data Grid */
-[data-testid="stDataFrame"] > div,
-[data-testid="stDataFrame"] > div > div {{
-    background-color: {card} !important;
-}}
-/* Iframe do grid com color-scheme para o componente interno */
-[data-testid="stDataFrame"] iframe {{
-    color-scheme: {"dark" if dark else "light"} !important;
-    background: {card} !important;
-}}
+/* Aplica color-scheme somente no modo escuro, evitando interferência no claro */
+{"[data-testid='stDataFrame'] { color-scheme: dark !important; }" if dark else ""}
+{"[data-testid='stDataFrame'] iframe { color-scheme: dark !important; background: #1A2550 !important; }" if dark else ""}
 
 /* ── Selectbox / inputs ────────────────────────────────────────────────── */
 [data-baseweb="select"] > div:first-child {{

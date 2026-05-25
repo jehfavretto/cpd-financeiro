@@ -34,9 +34,9 @@ logo_html = (
 
 st.markdown(f"""
 <div class="cpd-banner">
-    <!-- Onda esquerda — canto inferior esquerdo, UM arco bem grosso -->
+    <!-- Onda esquerda — canto superior esquerdo, UM arco bem grosso -->
     <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="0" cy="280" r="210" fill="none" stroke="#C4153A" stroke-width="80"/>
+        <circle cx="0" cy="0" r="210" fill="none" stroke="#C4153A" stroke-width="80"/>
     </svg>
     <!-- Onda direita — canto superior direito, UM arco bem grosso -->
     <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 300 280" xmlns="http://www.w3.org/2000/svg">

@@ -295,18 +295,18 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     position: absolute;
     pointer-events: none;
 }}
-/* Onda esquerda: posicionada no canto inferior-esquerdo */
+/* Onda esquerda: canto superior-esquerdo (mesma lógica do lado direito) */
 .cpd-onda-esq {{
-    left:   -80px;
-    bottom: -120px;
-    width:  300px;
+    left: -80px;
+    top:  -120px;
+    width: 300px;
     height: 280px;
 }}
-/* Onda direita: posicionada no canto superior-direito */
+/* Onda direita: canto superior-direito */
 .cpd-onda-dir {{
-    right:  -80px;
-    top:    -120px;
-    width:  300px;
+    right: -80px;
+    top:   -120px;
+    width: 300px;
     height: 280px;
 }}
 

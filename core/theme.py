@@ -285,12 +285,30 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 [data-testid="stFileUploaderDropzone"] small {{
     color: {txt2} !important;
 }}
-/* Corrige texto duplicado: segundo <p> dentro do botão é decorativo/oculto */
-[data-testid="stFileUploaderDropzone"] p[aria-hidden="true"],
-[data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-content"] > p:nth-child(2) {{
+/*
+ * O Streamlit renderiza o texto do botão duplicado internamente (técnica de
+ * animação da borda). O bloco aria-hidden ou :nth-child(n+2) é o duplicado.
+ * Escondemos com display:none para evitar "uploadUpload".
+ */
+[data-testid="stFileUploaderDropzone"] [aria-hidden="true"] {{
     display: none !important;
+}}
+[data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-content"] > *:nth-child(n+2) {{
+    display: none !important;
+    position: absolute !important;
+    opacity: 0 !important;
     width: 0 !important;
+    height: 0 !important;
     overflow: hidden !important;
+    pointer-events: none !important;
+}}
+/* Garante que o botão não transborde o duplicado */
+[data-testid="stFileUploaderDropzone"] button {{
+    overflow: hidden !important;
+}}
+[data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-content"] {{
+    overflow: hidden !important;
+    width: max-content !important;
 }}
 
 /* ── Radio / Checkbox / Slider ─────────────────────────────────────────── */

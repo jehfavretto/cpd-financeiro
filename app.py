@@ -20,12 +20,8 @@ tema_atual = st.session_state["tema"]
 # Injeta CSS do tema escolhido
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Logo: topo da sidebar (via API oficial — renderiza ACIMA dos itens de nav) ──
-_logo = Path(__file__).parent / "logo.png"
-if _logo.exists():
-    st.logo(str(_logo))
-
 # ── Header do conteúdo principal: logo esquerda + toggle direita ───────────────
+_logo = Path(__file__).parent / "logo.png"
 _logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""
 icone_tema = "☀️" if tema_atual == "dark" else "🌙"
 

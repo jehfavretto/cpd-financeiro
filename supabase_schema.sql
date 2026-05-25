@@ -60,9 +60,23 @@ CREATE TABLE IF NOT EXISTS ajustes (
     UNIQUE (mes, ano, tipo)
 );
 
+-- Conciliações: vínculos manuais e itens ignorados
+-- tipo: 'manual' | 'ignorado_sponte' | 'ignorado_banco'
+CREATE TABLE IF NOT EXISTS conciliacoes (
+    id              BIGSERIAL PRIMARY KEY,
+    mes             INT  NOT NULL,
+    ano             INT  NOT NULL,
+    tipo            TEXT NOT NULL,
+    sponte_chave    TEXT,
+    banco_chave     TEXT,
+    justificativa   TEXT,
+    criado_em       TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Índices para acelerar consultas por mês/ano
 CREATE INDEX IF NOT EXISTS idx_plano_mes_ano       ON plano_contas      (mes, ano);
 CREATE INDEX IF NOT EXISTS idx_lancamentos_mes_ano ON lancamentos_sponte (mes, ano);
 CREATE INDEX IF NOT EXISTS idx_banco_mes_ano       ON transacoes_banco  (mes, ano);
 CREATE INDEX IF NOT EXISTS idx_saldos_mes_ano      ON saldos            (mes, ano);
 CREATE INDEX IF NOT EXISTS idx_ajustes_mes_ano     ON ajustes           (mes, ano);
+CREATE INDEX IF NOT EXISTS idx_conciliacoes_mes_ano ON conciliacoes     (mes, ano);

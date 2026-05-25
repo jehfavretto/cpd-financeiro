@@ -217,3 +217,49 @@ def carregar_ajustes(mes: int, ano: int) -> dict:
     for row in (res.data or []):
         result[row["tipo"]] = float(row["valor"])
     return result
+
+
+# ── Conciliacoes ─────────────────────────────────────────────────────────────
+
+def salvar_conciliacao(
+    mes: int,
+    ano: int,
+    tipo: str,
+    sponte_chave: str | None = None,
+    banco_chave: str | None = None,
+    justificativa: str | None = None,
+):
+    """Salva um vínculo manual ou registro de ignorado."""
+    client = get_client()
+    client.table("conciliacoes").insert({
+        "mes": mes,
+        "ano": ano,
+        "tipo": tipo,
+        "sponte_chave": sponte_chave,
+        "banco_chave": banco_chave,
+        "justificativa": justificativa,
+    }).execute()
+
+
+def carregar_conciliacoes(mes: int, ano: int) -> list[dict]:
+    client = get_client()
+    res = (
+        client.table("conciliacoes")
+        .select("*")
+        .eq("mes", mes)
+        .eq("ano", ano)
+        .order("criado_em")
+        .execute()
+    )
+    return res.data or []
+
+
+def deletar_conciliacao(id_conc: int):
+    client = get_client()
+    client.table("conciliacoes").delete().eq("id", id_conc).execute()
+
+
+def limpar_conciliacoes_mes(mes: int, ano: int):
+    """Remove todas as conciliações de um mês (ao re-importar os dados)."""
+    client = get_client()
+    client.table("conciliacoes").delete().eq("mes", mes).eq("ano", ano).execute()

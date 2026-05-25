@@ -255,69 +255,59 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     margin: 4px 0 0 0 !important;
 }}
 
-/* Botão toggle de tema — ícone circular pequeno */
+/* Botão toggle de tema — só o símbolo, sem borda */
 .cpd-toggle-wrap .stButton > button {{
     background-color: transparent !important;
-    border: 1.5px solid {border} !important;
+    border: none !important;
+    box-shadow: none !important;
     color: {txt} !important;
     border-radius: 50% !important;
-    width: 38px !important;
-    height: 38px !important;
+    width: 36px !important;
+    height: 36px !important;
     padding: 0 !important;
-    font-size: 1.1rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    font-size: 1.2rem !important;
+    line-height: 1 !important;
     margin-top: 2px !important;
 }}
 .cpd-toggle-wrap .stButton > button:hover {{
-    background-color: rgba(196,21,58,0.08) !important;
-    border-color: {accent} !important;
-    transform: none !important;
+    background-color: rgba(28,43,95,0.07) !important;
+    border: none !important;
     box-shadow: none !important;
+    transform: none !important;
 }}
 
 /* ── File uploader ─────────────────────────────────────────────────────── */
 [data-testid="stFileUploaderDropzone"] {{
     background-color: {inp_bg} !important;
-    border-color: {border} !important;
+    border: 1px dashed {border} !important;
     border-radius: 8px !important;
 }}
-[data-testid="stFileUploaderDropzone"] * {{
-    color: {txt} !important;
+[data-testid="stFileUploaderDropzone"] small {{
+    color: {txt2} !important;
 }}
-/* Corrige duplicação do texto "uploadupload" no botão */
-[data-testid="stFileUploaderDropzone"] button span + span {{
+/* Corrige texto duplicado: segundo <p> dentro do botão é decorativo/oculto */
+[data-testid="stFileUploaderDropzone"] p[aria-hidden="true"],
+[data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-content"] > p:nth-child(2) {{
     display: none !important;
-}}
-[data-testid="stFileUploaderDropzone"] button {{
-    background-color: {accent} !important;
-    border-color: {accent} !important;
-    color: #FFFFFF !important;
-    border-radius: 6px !important;
-    font-weight: 700 !important;
-}}
-[data-testid="stFileUploaderDropzone"] button:hover {{
-    background-color: {accent_h} !important;
-    border-color: {accent_h} !important;
-}}
-[data-testid="stFileUploaderDropzone"] button span {{
-    color: #FFFFFF !important;
+    width: 0 !important;
+    overflow: hidden !important;
 }}
 
-/* ── Radio buttons ─────────────────────────────────────────────────────── */
-[data-testid="stRadio"] label span {{
-    color: {txt} !important;
-}}
-
-/* ── Checkbox ──────────────────────────────────────────────────────────── */
-[data-testid="stCheckbox"] label span {{
-    color: {txt} !important;
-}}
-
-/* ── Slider ────────────────────────────────────────────────────────────── */
+/* ── Radio / Checkbox / Slider ─────────────────────────────────────────── */
+[data-testid="stRadio"] label span,
+[data-testid="stCheckbox"] label span {{ color: {txt} !important; }}
 [data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {{
     background-color: {accent} !important;
+}}
+
+/* ── Logo sidebar (st.logo) ────────────────────────────────────────────── */
+[data-testid="stSidebarHeader"] {{
+    background-color: {sidebar} !important;
+    padding: 12px 16px !important;
+}}
+[data-testid="stSidebarHeader"] img {{
+    max-width: 100% !important;
+    height: auto !important;
 }}
 
 </style>

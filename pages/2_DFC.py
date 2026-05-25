@@ -50,22 +50,44 @@ dfc = calcular_dfc(
 # ── KPIs principais ───────────────────────────────────────────────────────────
 st.subheader(f"{MESES_ABREV[mes]}/{ano}")
 
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("📈 Receitas",    f"R$ {dfc.total_receitas:,.2f}",
-          delta_color="normal")
-c2.metric("🏭 Custos",      f"R$ {dfc.total_custos:,.2f}",
-          delta=f"R$ {dfc.total_custos:,.2f}", delta_color="inverse")
-c3.metric("🏢 Despesas",    f"R$ {dfc.total_despesas:,.2f}",
-          delta=f"R$ {dfc.total_despesas:,.2f}", delta_color="inverse")
-c4.metric("🏛️ Impostos",   f"R$ {dfc.total_impostos:,.2f}",
-          delta=f"R$ {dfc.total_impostos:,.2f}", delta_color="inverse")
+def _br(v: float) -> str:
+    """Formata valor em Real brasileiro sem centavos para KPI."""
+    return f"R$ {abs(v):,.0f}".replace(",", ".")
 
 resultado = dfc.resultado_liquido
-c5.metric(
-    "💡 Resultado Líquido", f"R$ {resultado:,.2f}",
-    delta=f"R$ {resultado:,.2f}",
-    delta_color="normal" if resultado >= 0 else "inverse",
-)
+res_color  = "#1a7f37" if resultado >= 0 else "#C4153A"
+res_bg     = "#eaffea" if resultado >= 0 else "#fff0f0"
+res_sinal  = "▲" if resultado >= 0 else "▼"
+
+st.markdown(f"""
+<div style="display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
+  <div style="flex:1; min-width:140px; background:#f8f9fb; border-left:4px solid #1C2B5F;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">📈 Receitas</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#1C2B5F;">{_br(dfc.total_receitas)}</div>
+  </div>
+  <div style="flex:1; min-width:140px; background:#f8f9fb; border-left:4px solid #C4153A;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">🏭 Custos</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#C4153A;">{_br(dfc.total_custos)}</div>
+  </div>
+  <div style="flex:1; min-width:140px; background:#f8f9fb; border-left:4px solid #C4153A;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">🏢 Despesas</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#C4153A;">{_br(dfc.total_despesas)}</div>
+  </div>
+  <div style="flex:1; min-width:140px; background:#f8f9fb; border-left:4px solid #C4153A;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">🏛️ Impostos</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#C4153A;">{_br(dfc.total_impostos)}</div>
+  </div>
+  <div style="flex:1.2; min-width:160px; background:{res_bg}; border-left:4px solid {res_color};
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">💡 Resultado Líquido</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{res_color};">{res_sinal} {_br(resultado)}</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 st.divider()
 

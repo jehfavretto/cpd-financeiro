@@ -136,7 +136,7 @@ with st.expander(
             sp_r = sponte_df[sponte_df["chave"] == chave].iloc[0]
             bk_r = banco_df[banco_df["chave"] == chave].iloc[0]
             auto_rows.append({
-                "Sponte": f"{sp_r['data']} | {str(sp_r['categoria'])[:35]} | R$ {sp_r['valor']:,.2f}",
+                "Sponte": f"{pd.to_datetime(sp_r['data']).strftime('%d/%m')} | {str(sp_r['categoria'])[:35]} | R$ {sp_r['valor']:,.2f}",
                 "Banco":  f"{bk_r['data_fmt']} | {str(bk_r['historico'])[:35]} | R$ {abs(float(bk_r['valor'])):,.2f}",
             })
         st.dataframe(
@@ -221,16 +221,16 @@ bk_key = f"dfbk_{mes}_{ano}_{cnt}"
 col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
 sp_show = pd.DataFrame({
-    "Data":      sponte_pendente["data"].astype(str),
-    "Categoria": sponte_pendente["categoria"].str[:32],
+    "Data":      pd.to_datetime(sponte_pendente["data"]).dt.strftime("%d/%m"),
+    "Categoria": sponte_pendente["categoria"].str[:22],
     "E/S":       sponte_pendente["es"],
     "Valor":     sponte_pendente["valor"].map(lambda v: f"R$ {v:,.2f}"),
 })
 
 bk_show = pd.DataFrame({
-    "Data":      banco_pendente["data_fmt"],
-    "Histórico": banco_pendente["historico"].str[:32],
-    "D/C":       banco_pendente["deb_cred"],
+    "Data":      banco_pendente["data_fmt"].str[:5],   # DD/MM
+    "Histórico": banco_pendente["historico"].str[:22],
+    "E/S":       banco_pendente["deb_cred"].map({"C": "E", "D": "S"}),
     "Valor":     banco_pendente["valor"].map(lambda v: f"R$ {abs(float(v)):,.2f}"),
 })
 

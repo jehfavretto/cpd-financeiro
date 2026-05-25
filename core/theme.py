@@ -31,9 +31,34 @@ def css_completo(tema: str) -> str:
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
 /* ── Fonte global (Nunito — mesma do site CPD) ─────────────────────────── */
-html, body, *, button, input, select, textarea,
-.stMarkdown, .stText, [data-testid] {{
+/* Seletores específicos evitam sobrescrever fontes de ícones do Streamlit */
+html, body, button, select, textarea,
+p, li, td, th, label, a,
+h1, h2, h3, h4, h5, h6,
+.stMarkdown, .stText {{
     font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}}
+input:not([type="file"]) {{
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}}
+/* div e span: sem !important, para não sobrescrever Material Symbols (ícones) */
+div, span {{
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+}}
+/* Garante que ícones Material Symbols do Streamlit mantenham a fonte correta */
+.material-symbols-rounded,
+.material-symbols-outlined,
+.material-icons,
+[class*="material-symbol"],
+[class*="material-icon"] {{
+    font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    direction: ltr !important;
 }}
 
 /* ── Fundo principal ───────────────────────────────────────────────────── */
@@ -286,29 +311,28 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     color: {txt2} !important;
 }}
 /*
- * O Streamlit renderiza o texto do botão duplicado internamente (técnica de
- * animação da borda). O bloco aria-hidden ou :nth-child(n+2) é o duplicado.
- * Escondemos com display:none para evitar "uploadUpload".
+ * "uploadUpload": o input[type=file] nativo do browser renderiza seu próprio
+ * texto "upload". Ocultamos via color:transparent sem tirar do DOM
+ * (o elemento precisa existir para o file picker funcionar).
+ */
+[data-testid="stFileUploaderDropzone"] input[type="file"] {{
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+}}
+/*
+ * Streamlit também duplica o texto do botão internamente para animação.
+ * Escondemos o segundo elemento (aria-hidden ou :nth-child(n+2)).
  */
 [data-testid="stFileUploaderDropzone"] [aria-hidden="true"] {{
     display: none !important;
 }}
 [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-content"] > *:nth-child(n+2) {{
     display: none !important;
-    position: absolute !important;
-    opacity: 0 !important;
     width: 0 !important;
     height: 0 !important;
     overflow: hidden !important;
-    pointer-events: none !important;
-}}
-/* Garante que o botão não transborde o duplicado */
-[data-testid="stFileUploaderDropzone"] button {{
-    overflow: hidden !important;
-}}
-[data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-content"] {{
-    overflow: hidden !important;
-    width: max-content !important;
+    position: absolute !important;
+    opacity: 0 !important;
 }}
 
 /* ── Radio / Checkbox / Slider ─────────────────────────────────────────── */

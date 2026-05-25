@@ -19,13 +19,11 @@ if "tema" not in st.session_state:
 tema_atual = st.session_state["tema"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Logo no topo da sidebar — símbolo circular (acima dos itens de navegação) ─
-_logo     = Path(__file__).parent / "logo.png"
-_logo_icn = Path(__file__).parent / "CDP_LOGO_CIRCULAR_A (1).png"
-_logo_sid = _logo_icn if _logo_icn.exists() else _logo
-if _logo_sid.exists():
+# ── Logo no topo da sidebar — logo completo com texto ────────────────────────
+_logo = Path(__file__).parent / "logo.png"
+if _logo.exists():
     try:
-        st.logo(PILImage.open(str(_logo_sid)), size="medium")
+        st.logo(PILImage.open(str(_logo)), size="medium")
     except Exception:
         pass
 

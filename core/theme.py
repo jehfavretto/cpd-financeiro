@@ -109,16 +109,26 @@ small {{ color: {txt2} !important; }}
     background-color: {sidebar} !important;
     border-right: 4px solid #C4153A !important;
 }}
-/* Logo na sidebar — cartão branco compacto ao redor apenas da imagem */
-[data-testid="stLogo"] img,
-[data-testid="stLogoSidebar"] img,
-[data-testid="stSidebarHeader"] img {{
+/* Logo na sidebar — cartão branco ao redor do link/imagem (compacto) */
+[data-testid="stSidebarHeader"] {{
+    background: transparent !important;
+    padding: 10px 12px 6px 12px !important;
+}}
+[data-testid="stSidebarHeader"] a,
+[data-testid="stLogo"] a {{
+    display: inline-flex !important;
+    align-items: center !important;
     background: #FFFFFF !important;
-    border-radius: 8px !important;
-    padding: 6px !important;
-    max-height: 48px !important;
+    border-radius: 10px !important;
+    padding: 8px 14px !important;
+}}
+[data-testid="stSidebarHeader"] img,
+[data-testid="stLogo"] img {{
+    max-height: 44px !important;
     width: auto !important;
-    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
 }}
 [data-testid="stSidebar"] * {{
     color: #FFFFFF !important;

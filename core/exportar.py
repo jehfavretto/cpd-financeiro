@@ -340,49 +340,60 @@ def gerar_pdf_ceo(
             fig2.patch.set_facecolor(WHITE_RGB)
             _page_header(fig2, "Desempenho Mensal", periodo)
 
+            # Largura de barra adaptativa: máx 0.35, menor se poucos meses
+            w    = min(0.35, 0.5 / max(n_meses, 3))
+            x    = list(range(n_meses))
+            # Margens: pelo menos 0.8 de cada lado para barras não ficarem gigantes
+            margin = max(0.8, 1.5 - n_meses * 0.1)
+
+            def _fmt_ax(v, _):
+                """Formatter de eixo em R$ sem abs (mostra negativos)."""
+                return f"R$ {v:,.0f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
             # Gráfico 1: Receitas vs Saídas
-            ax1 = fig2.add_axes([0.06, 0.52, 0.88, 0.36])
-            x = range(n_meses)
-            w = 0.35
+            ax1 = fig2.add_axes([0.09, 0.52, 0.86, 0.36])
             bars1 = ax1.bar([i - w/2 for i in x], evolucao_df["receitas"],
                             width=w, color=[(*TEAL_RGB, 0.85)], label="Receitas")
             bars2 = ax1.bar([i + w/2 for i in x], evolucao_df["saidas"],
                             width=w, color=[(*RED_RGB, 0.85)], label="Saídas")
-            ax1.set_xticks(list(x)); ax1.set_xticklabels(labels, fontsize=9)
+            ax1.set_xticks(x); ax1.set_xticklabels(labels, fontsize=9)
+            ax1.set_xlim(-margin, n_meses - 1 + margin)
             ax1.set_title("Receitas × Saídas por Mês", fontsize=11, fontweight="bold",
                           color=NAVY_RGB, pad=8)
             ax1.set_facecolor(LGRAY_RGB)
-            ax1.spines[["top","right"]].set_visible(False)
-            ax1.yaxis.set_major_formatter(
-                plt.FuncFormatter(lambda v, _: fmt_br_kpi(v)))
+            ax1.spines[["top", "right"]].set_visible(False)
+            ax1.yaxis.set_major_formatter(plt.FuncFormatter(_fmt_ax))
             ax1.legend(fontsize=8)
             ax1.tick_params(axis="y", labelsize=8)
 
-            # Labels nas barras
             for bar in [*bars1, *bars2]:
                 h = bar.get_height()
-                ax1.text(bar.get_x() + bar.get_width()/2, h + h*0.01,
-                         fmt_br_kpi(h), ha="center", va="bottom", fontsize=7)
+                if h > 0:
+                    ax1.text(bar.get_x() + bar.get_width()/2, h * 1.01,
+                             fmt_br_kpi(h), ha="center", va="bottom", fontsize=7)
 
             # Gráfico 2: Resultado mensal
-            ax2 = fig2.add_axes([0.06, 0.10, 0.88, 0.34])
+            ax2 = fig2.add_axes([0.09, 0.10, 0.86, 0.34])
             colors_res = [(*GREEN_RGB, 0.85) if v >= 0 else (*RED_RGB, 0.85)
                           for v in evolucao_df["resultado"]]
-            bars3 = ax2.bar(labels, evolucao_df["resultado"], color=colors_res)
+            bars3 = ax2.bar(x, evolucao_df["resultado"],
+                            width=w * 1.8, color=colors_res)
+            ax2.set_xticks(x); ax2.set_xticklabels(labels, fontsize=9)
+            ax2.set_xlim(-margin, n_meses - 1 + margin)
             ax2.axhline(0, color="gray", linewidth=0.8, linestyle="--")
             ax2.set_title("Resultado Líquido por Mês", fontsize=11, fontweight="bold",
                           color=NAVY_RGB, pad=8)
             ax2.set_facecolor(LGRAY_RGB)
-            ax2.spines[["top","right"]].set_visible(False)
-            ax2.yaxis.set_major_formatter(
-                plt.FuncFormatter(lambda v, _: fmt_br_kpi(v)))
+            ax2.spines[["top", "right"]].set_visible(False)
+            ax2.yaxis.set_major_formatter(plt.FuncFormatter(_fmt_ax))
             ax2.tick_params(axis="both", labelsize=8)
 
             for bar in bars3:
                 h = bar.get_height()
                 va  = "bottom" if h >= 0 else "top"
-                off = h * 0.03 if h >= 0 else h * 0.03
-                ax2.text(bar.get_x() + bar.get_width()/2, h + off,
+                off = abs(h) * 0.03
+                ax2.text(bar.get_x() + bar.get_width()/2,
+                         h + (off if h >= 0 else -off),
                          fmt_br_kpi(h), ha="center", va=va, fontsize=8, fontweight="bold")
 
             ax_rodape2 = fig2.add_axes([0, 0, 1, 0.06])

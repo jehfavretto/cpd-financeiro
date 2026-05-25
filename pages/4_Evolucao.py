@@ -56,37 +56,44 @@ n = len(df)
 # ── KPIs acumulados do ano ────────────────────────────────────────────────────
 _br = fmt_br_kpi
 
+# Cores dinâmicas conforme o tema
+_dark    = st.session_state.get("tema", "light") == "dark"
+_card    = "#1A2550" if _dark else "#f8f9fb"
+_txt     = "#E8EDF6" if _dark else "#1C2B5F"
+_txt2    = "#8FA0C0" if _dark else "#666666"
+_accent  = "#E63A5C" if _dark else "#C4153A"
+
 res_ytd    = df["resultado"].sum()
-res_color  = "#1a7f37" if res_ytd >= 0 else "#C4153A"
-res_bg     = "#eaffea" if res_ytd >= 0 else "#fff0f0"
+res_color  = ("#2ed64f" if _dark else "#1a7f37") if res_ytd >= 0 else _accent
+res_bg     = ("#0d2a1a" if _dark else "#eaffea") if res_ytd >= 0 else ("#2a0d14" if _dark else "#fff0f0")
 res_sinal  = "▲" if res_ytd >= 0 else "▼"
 media_res  = res_ytd / n
 
 st.markdown(f"""
 <div style="display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
-  <div style="flex:1; min-width:130px; background:#f8f9fb; border-left:4px solid #1C2B5F;
+  <div style="flex:1; min-width:130px; background:{_card}; border-left:4px solid {_txt};
               border-radius:6px; padding:12px 14px;">
-    <div style="font-size:0.75rem; color:#666; margin-bottom:3px;">📅 Meses importados</div>
-    <div style="font-size:1.3rem; font-weight:700; color:#1C2B5F;">{n}</div>
+    <div style="font-size:0.75rem; color:{_txt2}; margin-bottom:3px;">📅 Meses importados</div>
+    <div style="font-size:1.3rem; font-weight:700; color:{_txt};">{n}</div>
   </div>
-  <div style="flex:1.4; min-width:150px; background:#f8f9fb; border-left:4px solid #1C2B5F;
+  <div style="flex:1.4; min-width:150px; background:{_card}; border-left:4px solid {_txt};
               border-radius:6px; padding:12px 14px;">
-    <div style="font-size:0.75rem; color:#666; margin-bottom:3px;">📈 Receitas acumuladas</div>
-    <div style="font-size:1.3rem; font-weight:700; color:#1C2B5F;">{_br(df['receitas'].sum())}</div>
+    <div style="font-size:0.75rem; color:{_txt2}; margin-bottom:3px;">📈 Receitas acumuladas</div>
+    <div style="font-size:1.3rem; font-weight:700; color:{_txt};">{_br(df['receitas'].sum())}</div>
   </div>
-  <div style="flex:1.4; min-width:150px; background:#f8f9fb; border-left:4px solid #C4153A;
+  <div style="flex:1.4; min-width:150px; background:{_card}; border-left:4px solid {_accent};
               border-radius:6px; padding:12px 14px;">
-    <div style="font-size:0.75rem; color:#666; margin-bottom:3px;">📉 Saídas acumuladas</div>
-    <div style="font-size:1.3rem; font-weight:700; color:#C4153A;">{_br(df['saidas'].sum())}</div>
+    <div style="font-size:0.75rem; color:{_txt2}; margin-bottom:3px;">📉 Saídas acumuladas</div>
+    <div style="font-size:1.3rem; font-weight:700; color:{_accent};">{_br(df['saidas'].sum())}</div>
   </div>
   <div style="flex:1.4; min-width:150px; background:{res_bg}; border-left:4px solid {res_color};
               border-radius:6px; padding:12px 14px;">
-    <div style="font-size:0.75rem; color:#666; margin-bottom:3px;">💡 Resultado acumulado</div>
+    <div style="font-size:0.75rem; color:{_txt2}; margin-bottom:3px;">💡 Resultado acumulado</div>
     <div style="font-size:1.3rem; font-weight:700; color:{res_color};">{res_sinal} {_br(res_ytd)}</div>
   </div>
   <div style="flex:1.4; min-width:150px; background:{res_bg}; border-left:4px solid {res_color};
               border-radius:6px; padding:12px 14px;">
-    <div style="font-size:0.75rem; color:#666; margin-bottom:3px;">📊 Média mensal</div>
+    <div style="font-size:0.75rem; color:{_txt2}; margin-bottom:3px;">📊 Média mensal</div>
     <div style="font-size:1.3rem; font-weight:700; color:{res_color};">{res_sinal} {_br(media_res)}</div>
   </div>
 </div>

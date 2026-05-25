@@ -19,19 +19,19 @@ if "tema" not in st.session_state:
 tema_atual = st.session_state["tema"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Logo — usa versão sem subtítulo se disponível ─────────────────────────────
-_logo     = Path(__file__).parent / "logo.png"
-_logo_ass = Path(__file__).parent / "CDP_LOGO_ASS_A (1).png"
-_logo_use = _logo_ass if _logo_ass.exists() else _logo   # preferência: sem subtítulo
+# ── Logo sidebar: versão sem subtítulo ────────────────────────────────────────
+_logo     = Path(__file__).parent / "logo.png"               # banner (com subtítulo)
+_logo_ass = Path(__file__).parent / "CDP_LOGO_ASS_A (1).png" # sidebar (sem subtítulo)
+_logo_sid = _logo_ass if _logo_ass.exists() else _logo
 
-if _logo_use.exists():
+if _logo_sid.exists():
     try:
-        st.logo(PILImage.open(str(_logo_use)), size="medium")
+        st.logo(PILImage.open(str(_logo_sid)), size="medium")
     except Exception:
         pass
 
-# ── Logo base64 para o banner ─────────────────────────────────────────────────
-_logo_b64 = base64.b64encode(_logo_use.read_bytes()).decode() if _logo_use.exists() else ""
+# ── Logo base64 para o banner — usa logo.png original (com subtítulo) ─────────
+_logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""
 icone_tema = "☀️" if tema_atual == "dark" else "🌙"
 
 logo_html = (

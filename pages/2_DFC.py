@@ -196,11 +196,18 @@ fig = go.Figure(go.Waterfall(
     textposition="outside",
 ))
 
+_plot_bg  = "#0F1B35" if _dark else "white"
+_grid_clr = "#1E3060" if _dark else "#eee"
+_axis_clr = "#8FA0C0" if _dark else "#444"
+
 fig.update_layout(
     height=420,
     margin=dict(t=30, b=10, l=10, r=10),
-    plot_bgcolor="white",
-    yaxis=dict(tickprefix="R$ ", tickformat=",.0f"),
+    plot_bgcolor=_plot_bg,
+    paper_bgcolor=_plot_bg,
+    yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor=_grid_clr, color=_axis_clr),
+    xaxis=dict(color=_axis_clr),
+    font=dict(color=_axis_clr),
     showlegend=False,
 )
 

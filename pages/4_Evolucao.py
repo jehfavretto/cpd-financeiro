@@ -117,10 +117,17 @@ fig_bar.add_trace(go.Bar(
     text=df["saidas"].apply(lambda v: f"R${v/1000:.0f}k"),
     textposition="auto", textfont=dict(color="white", size=11),
 ))
+_plot_bg  = "#0F1B35" if _dark else "white"
+_grid_clr = "#1E3060" if _dark else "#eee"
+_axis_clr = "#8FA0C0" if _dark else "#444"
+
 fig_bar.update_layout(
     barmode="group", height=360,
-    yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor="#eee"),
-    plot_bgcolor="white",
+    yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor=_grid_clr, color=_axis_clr),
+    xaxis=dict(color=_axis_clr),
+    plot_bgcolor=_plot_bg,
+    paper_bgcolor=_plot_bg,
+    font=dict(color=_axis_clr),
     legend=dict(orientation="h", yanchor="bottom", y=1.02),
     margin=dict(t=10, b=10),
 )
@@ -131,7 +138,7 @@ st.divider()
 # ── Gráfico: Resultado Líquido por mês ───────────────────────────────────────
 st.subheader("Resultado Líquido por mês")
 
-colors = ["#1a7f37" if v >= 0 else "#C4153A" for v in df["resultado"]]
+colors = [("#2ed64f" if _dark else "#1a7f37") if v >= 0 else ("#E63A5C" if _dark else "#C4153A") for v in df["resultado"]]
 fig_res = go.Figure()
 fig_res.add_trace(go.Bar(
     x=df["label"], y=df["resultado"],
@@ -144,14 +151,17 @@ if n >= 2:
     fig_res.add_trace(go.Scatter(
         x=df["label"], y=df["resultado"].expanding().mean(),
         mode="lines+markers", name="Média acumulada",
-        line=dict(color="#1C2B5F", dash="dot", width=2),
+        line=dict(color="#5B8BDF" if _dark else "#1C2B5F", dash="dot", width=2),
         marker=dict(size=6),
     ))
-fig_res.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
+fig_res.add_hline(y=0, line_dash="dash", line_color="#8FA0C0" if _dark else "gray", line_width=1)
 fig_res.update_layout(
     height=340,
-    yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor="#eee"),
-    plot_bgcolor="white",
+    yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor=_grid_clr, color=_axis_clr),
+    xaxis=dict(color=_axis_clr),
+    plot_bgcolor=_plot_bg,
+    paper_bgcolor=_plot_bg,
+    font=dict(color=_axis_clr),
     legend=dict(orientation="h", yanchor="bottom", y=1.02),
     margin=dict(t=10, b=10),
 )

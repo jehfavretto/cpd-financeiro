@@ -41,30 +41,36 @@ aplicacao= float(ultimo["saldo_aplicacao"])
 caixa    = float(ultimo["saldo_caixa"])
 total    = float(ultimo["total"])
 
-tot_color = "#1a7f37" if total >= 0 else "#C4153A"
-tot_bg    = "#eaffea" if total >= 0 else "#fff0f0"
+# Cores dinâmicas conforme o tema
+_dark  = st.session_state.get("tema", "light") == "dark"
+_card  = "#1A2550" if _dark else "#f8f9fb"
+_txt   = "#E8EDF6" if _dark else "#1C2B5F"
+_txt2  = "#8FA0C0" if _dark else "#555"
+
+tot_color = ("#2ed64f" if _dark else "#1a7f37") if total >= 0 else ("#E63A5C" if _dark else "#C4153A")
+tot_bg    = ("#0d2a1a" if _dark else "#eaffea") if total >= 0 else ("#2a0d14" if _dark else "#fff0f0")
 
 st.subheader(f"Posição em {MESES_ABREV[int(ultimo['mes'])]}/{ano}")
 st.markdown(f"""
 <div style="display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
-  <div style="flex:1; min-width:150px; background:#f8f9fb; border-left:4px solid #1C2B5F;
+  <div style="flex:1; min-width:150px; background:{_card}; border-left:4px solid {_txt};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">🏦 Banco</div>
-    <div style="font-size:1.35rem; font-weight:700; color:#1C2B5F;">{fmt_br(banco)}</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">🏦 Banco</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{_txt};">{fmt_br(banco)}</div>
   </div>
-  <div style="flex:1; min-width:150px; background:#f8f9fb; border-left:4px solid #2A9D8F;
+  <div style="flex:1; min-width:150px; background:{_card}; border-left:4px solid #2A9D8F;
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">📈 Aplicação</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">📈 Aplicação</div>
     <div style="font-size:1.35rem; font-weight:700; color:#2A9D8F;">{fmt_br(aplicacao)}</div>
   </div>
-  <div style="flex:1; min-width:150px; background:#f8f9fb; border-left:4px solid #E9A020;
+  <div style="flex:1; min-width:150px; background:{_card}; border-left:4px solid #E9A020;
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">💵 Caixa</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💵 Caixa</div>
     <div style="font-size:1.35rem; font-weight:700; color:#E9A020;">{fmt_br(caixa)}</div>
   </div>
   <div style="flex:1; min-width:150px; background:{tot_bg}; border-left:4px solid {tot_color};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:#555; margin-bottom:4px;">✅ Total</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">✅ Total</div>
     <div style="font-size:1.35rem; font-weight:700; color:{tot_color};">{fmt_br(total)}</div>
   </div>
 </div>
@@ -133,10 +139,17 @@ fig.add_trace(go.Scatter(
     line=dict(color="#C4153A", width=2, dash="dot"),
     marker=dict(size=7),
 ))
+_plot_bg   = "#0F1B35" if _dark else "white"
+_grid_clr  = "#1E3060" if _dark else "#eee"
+_axis_clr  = "#8FA0C0" if _dark else "#444"
+
 fig.update_layout(
     height=380,
-    yaxis=dict(tickformat=",.0f", gridcolor="#eee"),
-    plot_bgcolor="white",
+    yaxis=dict(tickformat=",.0f", gridcolor=_grid_clr, color=_axis_clr),
+    xaxis=dict(color=_axis_clr),
+    plot_bgcolor=_plot_bg,
+    paper_bgcolor=_plot_bg,
+    font=dict(color=_axis_clr),
     legend=dict(orientation="h", yanchor="bottom", y=1.02),
     margin=dict(t=10, b=10),
     hovermode="x unified",

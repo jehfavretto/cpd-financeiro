@@ -115,20 +115,19 @@ small {{ color: {txt2} !important; }}
 [data-testid="stLogoSidebar"] {{
     background: #FFFFFF !important;
     border-radius: 0 0 10px 10px !important;
-    padding: 20px 16px !important;
+    padding: 14px 16px !important;
     margin: 0 0 10px 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    min-height: 106px !important;
 }}
 [data-testid="stSidebarHeader"] img,
 [data-testid="stLogo"] img,
 [data-testid="stLogoSidebar"] img {{
-    max-height: 90px !important;
-    max-width: 220px !important;
+    max-height: 62px !important;
+    max-width: 200px !important;
     width: auto !important;
     height: auto !important;
     background: transparent !important;

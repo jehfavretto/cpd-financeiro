@@ -248,7 +248,6 @@ def carregar_conciliacoes(mes: int, ano: int) -> list[dict]:
         .select("*")
         .eq("mes", mes)
         .eq("ano", ano)
-        .order("criado_em")
         .execute()
     )
     return res.data or []

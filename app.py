@@ -1,6 +1,7 @@
 import streamlit as st
 from pathlib import Path
 import base64
+from PIL import Image as PILImage
 from core.theme import css_completo
 
 _icon = Path(__file__).parent / "CDP_LOGO_CIRCULAR_A (1).png"
@@ -18,12 +19,18 @@ if "tema" not in st.session_state:
 tema_atual = st.session_state["tema"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Logo ───────────────────────────────────────────────────────────────────────
+# ── Logo no topo da sidebar (acima dos itens de navegação) ────────────────────
 _logo = Path(__file__).parent / "logo.png"
+if _logo.exists():
+    try:
+        st.logo(PILImage.open(str(_logo)))
+    except Exception:
+        pass
+
+# ── Logo base64 para o banner ─────────────────────────────────────────────────
 _logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""
 icone_tema = "☀️" if tema_atual == "dark" else "🌙"
 
-# ── Banner CPD com ondas ────────────────────────────────────────────────────────
 logo_html = (
     f'<div class="cpd-banner-logo-card">'
     f'<img src="data:image/png;base64,{_logo_b64}" class="cpd-banner-logo-img">'
@@ -32,24 +39,22 @@ logo_html = (
     else '<span class="cpd-banner-title">Colégio Primeiros Degraus</span>'
 )
 
+# ── Banner CPD com ondas ────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="cpd-banner">
-    <!-- Onda esquerda — canto INFERIOR esquerdo, linha fina elegante -->
     <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg">
         <circle cx="0" cy="220" r="185" fill="none" stroke="#C4153A" stroke-width="26"/>
     </svg>
-    <!-- Onda direita — canto SUPERIOR direito, linha fina elegante -->
     <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg">
         <circle cx="240" cy="0" r="185" fill="none" stroke="#C4153A" stroke-width="26"/>
     </svg>
-    <!-- Logo -->
     <div class="cpd-banner-inner">
         {logo_html}
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Toggle de tema — flutuante no topo direito ─────────────────────────────────
+# ── Toggle de tema ─────────────────────────────────────────────────────────────
 col_sp, col_btn = st.columns([30, 1])
 with col_btn:
     st.markdown('<div id="cpd-toggle-anchor">', unsafe_allow_html=True)

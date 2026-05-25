@@ -26,6 +26,7 @@ def css_completo(tema: str) -> str:
     card_neu  = "#1A2550"      if dark else "#f8f9fb"
     txt_pos   = "#2ed64f"      if dark else "#1a7f37"
     txt_neg   = "#E63A5C"      if dark else "#C4153A"
+    tab_active = "#2A3E7A"     if dark else "#1C2B5F"   # abas ativas: azul marinho (não vermelho)
 
     return f"""<style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
@@ -190,7 +191,7 @@ small {{ color: {txt2} !important; }}
     background-color: transparent !important;
 }}
 .stTabs [aria-selected="true"] {{
-    background-color: {accent} !important;
+    background-color: {tab_active} !important;
     color: #FFFFFF !important;
 }}
 .stTabs [data-baseweb="tab-panel"] {{
@@ -464,6 +465,11 @@ h1 {{
     border-left: 3px solid #C4153A !important;
 }}
 
+/* Listra vermelha CPD no topo da sidebar */
+[data-testid="stSidebar"] > div:first-child {{
+    border-top: 5px solid #C4153A !important;
+}}
+
 /* Containers / cards de seção */
 [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {{
     background-color: transparent !important;
@@ -485,9 +491,9 @@ h1 {{
     padding: 6px 16px !important;
 }}
 .stTabs [aria-selected="true"] {{
-    background-color: {accent} !important;
+    background-color: {tab_active} !important;
     color: #FFFFFF !important;
-    box-shadow: 0 2px 8px rgba(196,21,58,0.30) !important;
+    box-shadow: 0 2px 8px rgba(28,43,95,0.30) !important;
 }}
 
 /* Info / alertas mais sutis */
@@ -512,6 +518,21 @@ h1 {{
     color: {txt} !important;
     font-weight: 700 !important;
     font-size: 0.92rem !important;
+}}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ONDINHA DECORATIVA CPD — linha sinusoidal vermelha (como no site CPD)
+   Uso: st.markdown('<div class="cpd-ondinha"></div>', unsafe_allow_html=True)
+   ══════════════════════════════════════════════════════════════════════════ */
+.cpd-ondinha {{
+    height: 26px;
+    width: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='26' viewBox='0 0 1200 26'%3E%3Cpath d='M0,13 C75,2 150,24 225,13 C300,2 375,24 450,13 C525,2 600,24 675,13 C750,2 825,24 900,13 C975,2 1050,24 1125,13 C1175,4 1200,13 1200,13' stroke='%23C4153A' stroke-width='2.5' fill='none' stroke-opacity='0.55'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 600px 26px;
+    background-position: center;
+    margin: 10px 0;
+    opacity: 0.85;
 }}
 
 </style>

@@ -273,31 +273,87 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 /* ── Spinner ───────────────────────────────────────────────────────────── */
 [data-testid="stSpinner"] {{ color: {txt} !important; }}
 
-/* ── Header CPD (logo + toggle) ────────────────────────────────────────── */
-.cpd-header-divider {{
-    border: none !important;
-    border-top: 1px solid {border} !important;
-    margin: 4px 0 0 0 !important;
+/* ══════════════════════════════════════════════════════════════════════════
+   BANNER CPD — cabeçalho com identidade visual (azul marinho + ondas vermelhas)
+   ══════════════════════════════════════════════════════════════════════════ */
+.cpd-banner {{
+    background: #1C2B5F;
+    position: relative;
+    overflow: hidden;
+    border-radius: 14px;
+    height: 84px;
+    display: flex;
+    align-items: center;
+    padding: 0 36px;
+    margin-bottom: 6px;
+    box-shadow: 0 6px 28px rgba(28,43,95,0.30);
 }}
 
-/* Botão toggle de tema — só o símbolo, sem borda */
-.cpd-toggle-wrap .stButton > button {{
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+/* Ondas decorativas (SVGs nos cantos) */
+.cpd-onda {{
+    position: absolute;
+    pointer-events: none;
+}}
+.cpd-onda-esq {{
+    left: -14px;
+    top:  -28px;
+    width: 170px;
+    height: 140px;
+}}
+.cpd-onda-dir {{
+    right:  -14px;
+    bottom: -28px;
+    width: 170px;
+    height: 140px;
+}}
+
+/* Conteúdo do banner (logo + espaço) */
+.cpd-banner-inner {{
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}}
+
+/* Card branco ao redor do logo dentro do banner escuro */
+.cpd-banner-logo-card {{
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 7px 16px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+}}
+.cpd-banner-logo-img {{
+    height: 40px;
+    width: auto;
+}}
+.cpd-banner-title {{
+    color: #FFFFFF;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}}
+
+/* ── Toggle de tema — ícone compacto abaixo/direita do banner ─────────── */
+#cpd-toggle-anchor .stButton > button {{
+    background-color: {card} !important;
+    border: 1px solid {border} !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10) !important;
     color: {txt} !important;
     border-radius: 50% !important;
     width: 36px !important;
     height: 36px !important;
     padding: 0 !important;
-    font-size: 1.2rem !important;
+    font-size: 1.15rem !important;
     line-height: 1 !important;
-    margin-top: 2px !important;
+    margin-top: -40px !important;   /* sobe para ficar ao lado do banner */
 }}
-.cpd-toggle-wrap .stButton > button:hover {{
-    background-color: rgba(28,43,95,0.07) !important;
-    border: none !important;
-    box-shadow: none !important;
+#cpd-toggle-anchor .stButton > button:hover {{
+    background-color: {bg2} !important;
+    border-color: {accent} !important;
+    box-shadow: 0 4px 12px rgba(196,21,58,0.20) !important;
     transform: none !important;
 }}
 
@@ -342,14 +398,117 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     background-color: {accent} !important;
 }}
 
-/* ── Logo sidebar (st.logo) ────────────────────────────────────────────── */
-[data-testid="stSidebarHeader"] {{
-    background-color: {sidebar} !important;
-    padding: 12px 16px !important;
+/* ══════════════════════════════════════════════════════════════════════════
+   ESTILO PLATTANO HUB — cards KPI modernos, separadores, tabelas
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Títulos de página com linha de destaque */
+h1 {{
+    border-left: 5px solid {accent} !important;
+    padding-left: 14px !important;
+    margin-bottom: 4px !important;
 }}
-[data-testid="stSidebarHeader"] img {{
-    max-width: 100% !important;
-    height: auto !important;
+
+/* Métricas — card limpo com borda-esquerda colorida */
+[data-testid="stMetric"] {{
+    background-color: {card} !important;
+    border: 1px solid {border} !important;
+    border-left: 4px solid {accent} !important;
+    border-radius: 10px !important;
+    padding: 16px 18px !important;
+    box-shadow: {shadow} !important;
+    transition: box-shadow 0.15s ease !important;
+}}
+[data-testid="stMetric"]:hover {{
+    box-shadow: 0 4px 20px rgba(28,43,95,0.13) !important;
+}}
+[data-testid="stMetricLabel"] p  {{
+    color: {txt2} !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}}
+[data-testid="stMetricValue"] div {{
+    color: {txt} !important;
+    font-weight: 800 !important;
+    font-size: 1.6rem !important;
+}}
+
+/* Sidebar — itens de navegação mais polidos */
+[data-testid="stSidebarNav"] {{
+    padding: 8px 0 !important;
+}}
+[data-testid="stSidebarNav"] a {{
+    color: rgba(255,255,255,0.80) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    margin: 2px 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    transition: all 0.15s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}}
+[data-testid="stSidebarNav"] a:hover {{
+    background-color: rgba(196,21,58,0.20) !important;
+    color: #FFFFFF !important;
+}}
+[data-testid="stSidebarNav"] a[aria-current="page"] {{
+    background-color: rgba(196,21,58,0.32) !important;
+    color: #FFFFFF !important;
+    border-left: 3px solid #C4153A !important;
+}}
+
+/* Containers / cards de seção */
+[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {{
+    background-color: transparent !important;
+}}
+
+/* Tabs com estilo mais limpo */
+.stTabs [data-baseweb="tab-list"] {{
+    background-color: {bg2} !important;
+    border-radius: 10px !important;
+    border: 1px solid {border} !important;
+    padding: 4px !important;
+    gap: 4px !important;
+}}
+.stTabs [data-baseweb="tab"] {{
+    border-radius: 7px !important;
+    color: {txt2} !important;
+    font-weight: 700 !important;
+    font-size: 0.88rem !important;
+    padding: 6px 16px !important;
+}}
+.stTabs [aria-selected="true"] {{
+    background-color: {accent} !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(196,21,58,0.30) !important;
+}}
+
+/* Info / alertas mais sutis */
+[data-testid="stAlert"] {{
+    background-color: {card} !important;
+    border-radius: 10px !important;
+    border: 1px solid {border} !important;
+}}
+
+/* Expanders — linha de destaque removida (já tem a borda do card) */
+[data-testid="stExpander"] {{
+    background-color: {card} !important;
+    border: 1px solid {border} !important;
+    border-radius: 10px !important;
+    box-shadow: {shadow} !important;
+    margin-bottom: 4px !important;
+}}
+[data-testid="stExpander"] summary {{
+    padding: 10px 14px !important;
+}}
+[data-testid="stExpander"] summary p {{
+    color: {txt} !important;
+    font-weight: 700 !important;
+    font-size: 0.92rem !important;
 }}
 
 </style>

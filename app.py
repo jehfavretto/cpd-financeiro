@@ -11,40 +11,54 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Tema (claro / escuro) ──────────────────────────────────────────────────────
+# ── Tema ──────────────────────────────────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state["tema"] = "light"
 
 tema_atual = st.session_state["tema"]
-
-# Injeta CSS do tema escolhido
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Header do conteúdo principal: logo esquerda + toggle direita ───────────────
+# ── Logo ───────────────────────────────────────────────────────────────────────
 _logo = Path(__file__).parent / "logo.png"
 _logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""
 icone_tema = "☀️" if tema_atual == "dark" else "🌙"
 
-col_logo, _gap, col_toggle = st.columns([3, 9, 1])
+# ── Banner CPD com ondas ────────────────────────────────────────────────────────
+logo_html = (
+    f'<div class="cpd-banner-logo-card">'
+    f'<img src="data:image/png;base64,{_logo_b64}" class="cpd-banner-logo-img">'
+    f'</div>'
+    if _logo_b64
+    else '<span class="cpd-banner-title">Colégio Primeiros Degraus</span>'
+)
 
-with col_logo:
-    if _logo_b64:
-        st.markdown(
-            f'<div style="padding:2px 0;">'
-            f'<img src="data:image/png;base64,{_logo_b64}"'
-            f' style="height:40px; width:auto;">'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+st.markdown(f"""
+<div class="cpd-banner">
+    <!-- Onda esquerda (dois arcos concêntricos) -->
+    <svg class="cpd-onda cpd-onda-esq" viewBox="0 0 170 140" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="105" fill="none" stroke="#C4153A" stroke-width="20"/>
+        <circle cx="14" cy="14" r="80"  fill="none" stroke="#C4153A" stroke-width="10" opacity="0.45"/>
+    </svg>
+    <!-- Onda direita (dois arcos concêntricos) -->
+    <svg class="cpd-onda cpd-onda-dir" viewBox="0 0 170 140" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="156" cy="126" r="105" fill="none" stroke="#C4153A" stroke-width="20"/>
+        <circle cx="156" cy="126" r="80"  fill="none" stroke="#C4153A" stroke-width="10" opacity="0.45"/>
+    </svg>
+    <!-- Logo -->
+    <div class="cpd-banner-inner">
+        {logo_html}
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-with col_toggle:
-    st.markdown('<div class="cpd-toggle-wrap">', unsafe_allow_html=True)
+# ── Toggle de tema — flutuante no topo direito ─────────────────────────────────
+col_sp, col_btn = st.columns([30, 1])
+with col_btn:
+    st.markdown('<div id="cpd-toggle-anchor">', unsafe_allow_html=True)
     if st.button(icone_tema, key="btn_tema", help="Alternar tema claro/escuro"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown('<hr class="cpd-header-divider"/>', unsafe_allow_html=True)
 
 # ── Navegação ──────────────────────────────────────────────────────────────────
 pages = {

@@ -109,24 +109,24 @@ small {{ color: {txt2} !important; }}
     background-color: {sidebar} !important;
     border-right: 4px solid #C4153A !important;
 }}
-/* Logo sidebar — banner branco no topo (padrão comum em dashboards) */
+/* Logo sidebar — banner branco no topo, logo maior e centralizado */
 [data-testid="stSidebarHeader"],
 [data-testid="stLogo"],
 [data-testid="stLogoSidebar"] {{
     background: #FFFFFF !important;
     border-radius: 0 0 10px 10px !important;
-    padding: 12px 20px !important;
+    padding: 16px 20px !important;
     margin: 0 0 10px 0 !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    justify-content: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
 }}
 [data-testid="stSidebarHeader"] img,
 [data-testid="stLogo"] img,
 [data-testid="stLogoSidebar"] img {{
-    max-height: 42px !important;
+    max-height: 80px !important;
     width: auto !important;
     background: transparent !important;
     padding: 0 !important;
@@ -394,7 +394,7 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     box-shadow: 0 2px 10px rgba(0,0,0,0.18);
 }}
 .cpd-banner-logo-img {{
-    height: 40px;
+    height: 56px;
     width: auto;
 }}
 .cpd-banner-title {{

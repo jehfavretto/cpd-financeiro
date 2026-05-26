@@ -85,14 +85,21 @@ if conciliacoes:
 else:
     conc_df = pd.DataFrame(columns=["id", "tipo", "sponte_chave", "banco_chave", "justificativa"])
 
-chaves_sp_usadas = set(conc_df["sponte_chave"].dropna())
-chaves_bk_usadas = set(conc_df["banco_chave"].dropna())
+# Registros "desvincular" não entram em usadas — itens voltam para pendentes
+_desv = conc_df[conc_df["tipo"] == "desvincular"] if not conc_df.empty else pd.DataFrame()
+chaves_sp_desvincular = set(_desv["sponte_chave"].dropna())
+chaves_bk_desvincular = set(_desv["banco_chave"].dropna())
+
+_conc_sem_desv = conc_df[conc_df["tipo"] != "desvincular"] if not conc_df.empty else conc_df
+chaves_sp_usadas = set(_conc_sem_desv["sponte_chave"].dropna())
+chaves_bk_usadas = set(_conc_sem_desv["banco_chave"].dropna())
 
 # ── Auto-match: chave idêntica nos dois sistemas, ainda não processada ─────────
 chaves_auto = (
     (set(banco_df["chave"]) & set(sponte_df["chave"]))
     - chaves_sp_usadas
     - chaves_bk_usadas
+    - chaves_sp_desvincular   # bloqueados pelo usuário — voltam para pendentes
 )
 
 # ── Separa pendentes ───────────────────────────────────────────────────────────
@@ -142,6 +149,21 @@ with aba_pend:
             "ou apenas **um lado** para ignorar com justificativa."
         )
 
+        # ── Filtro E/S ────────────────────────────────────────────────────────
+        filtro_es = st.radio(
+            "Filtrar por tipo:", ["Todos", "Entradas (E)", "Saídas (S)"],
+            horizontal=True, key=f"filtro_es_{mes}_{ano}",
+        )
+
+        sp_filtrado = sponte_pendente.copy()
+        bk_filtrado = banco_pendente.copy()
+        if filtro_es == "Entradas (E)":
+            sp_filtrado = sp_filtrado[sp_filtrado["es"] == "E"]
+            bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "C"]
+        elif filtro_es == "Saídas (S)":
+            sp_filtrado = sp_filtrado[sp_filtrado["es"] == "S"]
+            bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "D"]
+
         # Contador de ações — incrementar após cada ação reseta as seleções
         if "conc_cnt" not in st.session_state:
             st.session_state["conc_cnt"] = 0
@@ -152,17 +174,17 @@ with aba_pend:
         col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
         sp_show = pd.DataFrame({
-            "Data":      pd.to_datetime(sponte_pendente["data"]).dt.strftime("%d/%m"),
-            "Categoria": sponte_pendente["categoria"].str[:22],
-            "E/S":       sponte_pendente["es"],
-            "Valor":     sponte_pendente["valor"].map(lambda v: fmt_br(abs(v))),
+            "Data":      pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
+            "Categoria": sp_filtrado["categoria"].str[:22],
+            "E/S":       sp_filtrado["es"],
+            "Valor":     sp_filtrado["valor"].map(lambda v: fmt_br(abs(v))),
         })
 
         bk_show = pd.DataFrame({
-            "Data":      banco_pendente["data_fmt"].str[:5],
-            "Histórico": banco_pendente["historico"].str[:22],
-            "E/S":       banco_pendente["deb_cred"].map({"C": "E", "D": "S"}),
-            "Valor":     banco_pendente["valor"].map(lambda v: fmt_br(abs(float(v)))),
+            "Data":      bk_filtrado["data_fmt"].str[:5],
+            "Histórico": bk_filtrado["historico"].str[:22],
+            "E/S":       bk_filtrado["deb_cred"].map({"C": "E", "D": "S"}),
+            "Valor":     bk_filtrado["valor"].map(lambda v: fmt_br(abs(float(v)))),
         })
 
         with col_sp:
@@ -199,8 +221,8 @@ with aba_pend:
             st.markdown("---")
 
             if sp_idx is not None and bk_idx is not None:
-                sp_r = sponte_pendente.iloc[sp_idx]
-                bk_r = banco_pendente.iloc[bk_idx]
+                sp_r = sp_filtrado.iloc[sp_idx]
+                bk_r = bk_filtrado.iloc[bk_idx]
                 st.success(
                     f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n"
                     f"{fmt_br(abs(sp_r['valor']))}"
@@ -217,7 +239,7 @@ with aba_pend:
                     st.rerun()
 
             elif sp_idx is not None:
-                sp_r = sponte_pendente.iloc[sp_idx]
+                sp_r = sp_filtrado.iloc[sp_idx]
                 st.info(f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n{fmt_br(abs(sp_r['valor']))}")
                 with st.form(key=f"form_isp_{cnt}"):
                     just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
@@ -229,7 +251,7 @@ with aba_pend:
                         st.rerun()
 
             elif bk_idx is not None:
-                bk_r = banco_pendente.iloc[bk_idx]
+                bk_r = bk_filtrado.iloc[bk_idx]
                 st.info(f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n{fmt_br(abs(float(bk_r['valor'])))}")
                 with st.form(key=f"form_ibk_{cnt}"):
                     just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")
@@ -255,17 +277,40 @@ with aba_conc:
 
     # ── Automáticos ───────────────────────────────────────────────────────────
     if n_auto > 0:
-        st.caption(f"🤖 **{n_auto} conciliados automaticamente** (mesma data, tipo e valor)")
+        st.caption(f"🤖 **{n_auto} conciliados automaticamente** — selecione linhas e clique em Desvincular para corrigir")
         auto_rows = []
+        auto_chaves = []
         for chave in sorted(chaves_auto):
             sp_r = sponte_df[sponte_df["chave"] == chave].iloc[0]
             bk_r = banco_df[banco_df["chave"] == chave].iloc[0]
             auto_rows.append({
-                "Sponte": f"{pd.to_datetime(sp_r['data']).strftime('%d/%m')} | {str(sp_r['categoria'])[:30]} | {fmt_br(abs(sp_r['valor']))}",
-                "Banco":  f"{bk_r['data_fmt'][:5]} | {str(bk_r['historico'])[:30]} | {fmt_br(abs(float(bk_r['valor'])))}",
+                "E/S": sp_r["es"],
+                "Sponte": f"{pd.to_datetime(sp_r['data']).strftime('%d/%m')} | {str(sp_r['categoria'])[:28]} | {fmt_br(abs(sp_r['valor']))}",
+                "Banco":  f"{bk_r['data_fmt'][:5]} | {str(bk_r['historico'])[:28]} | {fmt_br(abs(float(bk_r['valor'])))}",
             })
-        st.dataframe(pd.DataFrame(auto_rows), use_container_width=True,
-                     hide_index=True, height=min(300, 38 + 35 * n_auto))
+            auto_chaves.append(chave)
+
+        sel_auto = st.dataframe(
+            pd.DataFrame(auto_rows),
+            use_container_width=True,
+            hide_index=True,
+            height=min(400, 38 + 35 * n_auto),
+            selection_mode="multi-row",
+            on_select="rerun",
+            key=f"sel_auto_{mes}_{ano}",
+        )
+        sel_auto_rows = sel_auto.selection.rows if hasattr(sel_auto, "selection") else []
+        if sel_auto_rows:
+            st.warning(f"**{len(sel_auto_rows)} item(s) selecionado(s)** — confirme para desvincular e mover para Pendentes.")
+            if st.button("🔓 Desvincular selecionados", type="primary"):
+                for idx in sel_auto_rows:
+                    chave = auto_chaves[idx]
+                    sp_r  = sponte_df[sponte_df["chave"] == chave].iloc[0]
+                    bk_r  = banco_df[banco_df["chave"] == chave].iloc[0]
+                    db.salvar_conciliacao(mes, ano, "desvincular",
+                                         sponte_chave=sp_r["chave"],
+                                         banco_chave=bk_r["chave"])
+                st.rerun()
 
     # ── Manuais ───────────────────────────────────────────────────────────────
     if n_manual > 0:

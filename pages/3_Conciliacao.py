@@ -304,3 +304,23 @@ with aba_conc:
             if cb.button("✖", key=f"del_i_{c['id']}", help="Remover"):
                 db.deletar_conciliacao(int(c["id"]))
                 st.rerun()
+
+# ── Zona de perigo — limpar toda a conciliação do mês ────────────────────────
+st.divider()
+total_conc = n_auto + n_manual + n_ign
+with st.expander("🗑️ Limpar conciliação do mês", expanded=False):
+    if total_conc == 0:
+        st.info("Nenhuma conciliação registrada para este mês.")
+    else:
+        st.warning(
+            f"Isso vai apagar **todos os {total_conc} registros** de conciliação "
+            f"de **{MESES_ABREV[mes]}/{ano}** ({n_auto} automáticos · "
+            f"{n_manual} manuais · {n_ign} ignorados). "
+            f"Use antes de reimportar o mês."
+        )
+        confirmar = st.checkbox("Sim, quero apagar todas as conciliações deste mês")
+        if confirmar:
+            if st.button("🗑️ Limpar tudo", type="primary", use_container_width=True):
+                db.limpar_conciliacoes_mes(mes, ano)
+                st.success("Conciliações apagadas! Agora você pode reimportar o mês com segurança.")
+                st.rerun()

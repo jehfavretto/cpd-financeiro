@@ -576,7 +576,11 @@ h1 {{
     font-size: 0.88rem !important;
     padding: 6px 16px !important;
 }}
-.stTabs [aria-selected="true"] {{
+.stTabs [aria-selected="true"],
+.stTabs [aria-selected="true"] p,
+.stTabs [aria-selected="true"] span,
+.stTabs [aria-selected="true"] div,
+.stTabs button[aria-selected="true"] {{
     background-color: {tab_active} !important;
     color: #FFFFFF !important;
     box-shadow: 0 2px 8px rgba(28,43,95,0.30) !important;

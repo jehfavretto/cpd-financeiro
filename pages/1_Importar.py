@@ -14,21 +14,6 @@ from core.parser import (
 import db.client as db
 from core.utils import fmt_br
 
-# ── Helper (definido antes de ser usado) ──────────────────────────────────────
-_CONTAS_SEM_MATCH = {
-    "2ª Via de Histórico Escolar",
-    "Devolução",
-    "Assinaturas e Certificados Digitais",
-    "Festa da Família",
-}
-
-def _check_unmatched(df: pd.DataFrame) -> list[tuple]:
-    """Retorna contas do Sponte sem equivalente no Book (com valor > 0)."""
-    return [
-        (r["codigo"], r["descricao"])
-        for _, r in df.iterrows()
-        if r["descricao"] in _CONTAS_SEM_MATCH and r["valor"] > 0
-    ]
 
 st.title("📥 Importar Mês")
 st.markdown("Faça o upload dos arquivos exportados do Sponte e da CEF para processar o mês.")
@@ -110,14 +95,6 @@ with st.expander("🏦 Preview — Extrato CEF", expanded=False):
 with st.expander("📑 Preview — PlanoDeContas", expanded=False):
     plano_view = plano_df[plano_df["valor"] > 0].copy()
     st.dataframe(plano_view, use_container_width=True, height=300)
-
-    unmatched = _check_unmatched(plano_df)  # noqa: F821 — definido no topo
-    if unmatched:
-        st.warning(
-            f"**{len(unmatched)} conta(s) para revisar manualmente** "
-            f"(sem equivalente direto no Book):\n\n"
-            + "\n".join(f"- `{c}` {d}" for c, d in unmatched)
-        )
 
 st.divider()
 

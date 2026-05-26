@@ -114,17 +114,24 @@ st.divider()
 # ── Gráfico de linha — evolução dos saldos ────────────────────────────────────
 st.subheader("Evolução dos saldos")
 
+_plot_bg   = "#0F1B35" if _dark else "white"
+_grid_clr  = "#1E3060" if _dark else "#eee"
+_axis_clr  = "#8FA0C0" if _dark else "#444"
+# Cores das séries — versões mais claras no escuro para ficarem visíveis
+_c_banco   = "#5B8BDF" if _dark else "#1C2B5F"
+_c_aplic   = "#3DC5B7" if _dark else "#2A9D8F"
+
 fig = go.Figure()
 fig.add_trace(go.Scatter(
     name="Banco", x=saldos_df["mes_nome"], y=saldos_df["saldo_banco"],
     mode="lines+markers",
-    line=dict(color="#1C2B5F", width=2),
+    line=dict(color=_c_banco, width=2),
     marker=dict(size=7),
 ))
 fig.add_trace(go.Scatter(
     name="Aplicação", x=saldos_df["mes_nome"], y=saldos_df["saldo_aplicacao"],
     mode="lines+markers",
-    line=dict(color="#2A9D8F", width=2),
+    line=dict(color=_c_aplic, width=2),
     marker=dict(size=7),
 ))
 fig.add_trace(go.Scatter(
@@ -139,9 +146,6 @@ fig.add_trace(go.Scatter(
     line=dict(color="#C4153A", width=2, dash="dot"),
     marker=dict(size=7),
 ))
-_plot_bg   = "#0F1B35" if _dark else "white"
-_grid_clr  = "#1E3060" if _dark else "#eee"
-_axis_clr  = "#8FA0C0" if _dark else "#444"
 
 fig.update_layout(
     height=380,
@@ -150,7 +154,8 @@ fig.update_layout(
     plot_bgcolor=_plot_bg,
     paper_bgcolor=_plot_bg,
     font=dict(color=_axis_clr),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                font=dict(color=_axis_clr)),
     margin=dict(t=10, b=10),
     hovermode="x unified",
 )

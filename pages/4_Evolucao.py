@@ -104,10 +104,16 @@ st.divider()
 # ── Gráfico: Receitas × Saídas por mês ───────────────────────────────────────
 st.subheader("Receitas × Saídas por mês")
 
+_plot_bg  = "#0F1B35" if _dark else "white"
+_grid_clr = "#1E3060" if _dark else "#eee"
+_axis_clr = "#8FA0C0" if _dark else "#444"
+# Cor das barras de receita — mais clara no escuro para ser visível na legenda
+_c_receita = "#5B8BDF" if _dark else "#1C2B5F"
+
 fig_bar = go.Figure()
 fig_bar.add_trace(go.Bar(
     name="Receitas", x=df["label"], y=df["receitas"],
-    marker_color="#1C2B5F",
+    marker_color=_c_receita,
     text=df["receitas"].apply(lambda v: f"R${v/1000:.0f}k"),
     textposition="auto", textfont=dict(color="white", size=11),
 ))
@@ -117,10 +123,6 @@ fig_bar.add_trace(go.Bar(
     text=df["saidas"].apply(lambda v: f"R${v/1000:.0f}k"),
     textposition="auto", textfont=dict(color="white", size=11),
 ))
-_plot_bg  = "#0F1B35" if _dark else "white"
-_grid_clr = "#1E3060" if _dark else "#eee"
-_axis_clr = "#8FA0C0" if _dark else "#444"
-
 fig_bar.update_layout(
     barmode="group", height=360,
     yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor=_grid_clr, color=_axis_clr),
@@ -128,7 +130,8 @@ fig_bar.update_layout(
     plot_bgcolor=_plot_bg,
     paper_bgcolor=_plot_bg,
     font=dict(color=_axis_clr),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                font=dict(color=_axis_clr)),
     margin=dict(t=10, b=10),
 )
 st.plotly_chart(fig_bar, use_container_width=True)
@@ -162,7 +165,8 @@ fig_res.update_layout(
     plot_bgcolor=_plot_bg,
     paper_bgcolor=_plot_bg,
     font=dict(color=_axis_clr),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                font=dict(color=_axis_clr)),
     margin=dict(t=10, b=10),
 )
 st.plotly_chart(fig_res, use_container_width=True)

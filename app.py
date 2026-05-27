@@ -35,15 +35,47 @@ if sidebar_oculta:
     }
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
-    /* Logo centralizado — flex no anchor garante centralização */
+
+    /* ─── Logo centralizada: remove padding lateral e força 68 px ──────── */
+    /* Cobre todos os possíveis testids do container da logo */
+    [data-testid="stSidebarHeader"],
+    [data-testid="stLogo"],
+    [data-testid="stLogoSidebar"],
+    [data-testid="stSidebarHeader"] > div,
+    [data-testid="stSidebarHeader"] > div > div {
+        padding: 6px 0 !important;
+        margin: 0 !important;
+        width: 68px !important;
+        max-width: 68px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+        background: #FFFFFF !important;
+    }
+    /* Anchor que envolve a imagem da logo */
     [data-testid="stSidebar"] a:has(img) {
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        width: 100% !important;
+        width: 68px !important;
+        max-width: 68px !important;
         padding: 0 !important;
+        margin: 0 auto !important;
         box-sizing: border-box !important;
     }
+    /* A imagem da logo: quadrado de 40 px */
+    [data-testid="stSidebar"] a:has(img) img {
+        width: 40px !important;
+        height: 40px !important;
+        max-width: 40px !important;
+        max-height: 40px !important;
+        object-fit: contain !important;
+        display: block !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+    }
+
     /* Links de navegação: só ícone, centralizado */
     [data-testid="stSidebarNavLink"] {
         padding: 10px 0 !important;

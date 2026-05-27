@@ -81,13 +81,13 @@ else:
     conc_df = pd.DataFrame(columns=["id", "tipo", "sponte_chave", "banco_chave", "justificativa"])
 
 # Registros "desvincular" não entram em usadas — itens voltam para pendentes
-_desv = conc_df[conc_df["tipo"] == "desvincular"] if not conc_df.empty else pd.DataFrame()
-chaves_sp_desvincular = set(_desv["sponte_chave"].dropna())
-chaves_bk_desvincular = set(_desv["banco_chave"].dropna())
+_desv          = conc_df[conc_df["tipo"] == "desvincular"]
+_conc_sem_desv = conc_df[conc_df["tipo"] != "desvincular"]
 
-_conc_sem_desv = conc_df[conc_df["tipo"] != "desvincular"] if not conc_df.empty else conc_df
-chaves_sp_usadas = set(_conc_sem_desv["sponte_chave"].dropna())
-chaves_bk_usadas = set(_conc_sem_desv["banco_chave"].dropna())
+chaves_sp_desvincular = set(_desv["sponte_chave"].dropna()) if not _desv.empty else set()
+chaves_bk_desvincular = set(_desv["banco_chave"].dropna())  if not _desv.empty else set()
+chaves_sp_usadas      = set(_conc_sem_desv["sponte_chave"].dropna()) if not _conc_sem_desv.empty else set()
+chaves_bk_usadas      = set(_conc_sem_desv["banco_chave"].dropna())  if not _conc_sem_desv.empty else set()
 
 # ── Auto-match: chave idêntica nos dois sistemas, ainda não processada ─────────
 chaves_auto = (

@@ -192,8 +192,10 @@ with aba_pend:
 
         col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
-        _val_cfg = st.column_config.NumberColumn("Valor", format="R$ %,.2f")
-        _es_cfg  = st.column_config.TextColumn("E/S", width="small")
+        _val_cfg  = st.column_config.NumberColumn("Valor", format="R$ %,.2f")
+        _es_cfg   = st.column_config.TextColumn("E/S", width="small")
+        _cat_cfg  = st.column_config.TextColumn("Categoria", width="medium")
+        _orig_cfg = st.column_config.TextColumn("Origem/Destino", width="medium")
 
         sp_show = pd.DataFrame({
             "Data":           pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
@@ -217,7 +219,12 @@ with aba_pend:
                 use_container_width=True,
                 height=460,
                 hide_index=True,
-                column_config={"Valor": _val_cfg, "E/S": _es_cfg},
+                column_config={
+                    "Valor": _val_cfg,
+                    "E/S": _es_cfg,
+                    "Categoria": _cat_cfg,
+                    "Origem/Destino": _orig_cfg,
+                },
                 selection_mode="multi-row",
                 on_select="rerun",
                 key=sp_key,

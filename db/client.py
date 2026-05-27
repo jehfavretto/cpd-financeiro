@@ -6,6 +6,7 @@ import streamlit as st
 from supabase import create_client, Client
 import pandas as pd
 from datetime import date
+from core.parser import _normalizar_data_banco
 
 
 # ── Conexão ──────────────────────────────────────────────────────────────────
@@ -155,6 +156,7 @@ def carregar_transacoes_banco(mes: int, ano: int) -> pd.DataFrame:
         return pd.DataFrame()
     df = pd.DataFrame(res.data)
     # Normaliza para compat. com dados importados antes da padronização
+    df["data_mov"] = df["data_mov"].apply(_normalizar_data_banco)  # → DD/MM/YYYY
     df["deb_cred"] = df["deb_cred"].str.strip().replace({"C": "E", "D": "S"})
     df["valor"] = df["valor"].abs()
     return df

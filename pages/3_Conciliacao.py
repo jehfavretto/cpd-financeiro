@@ -57,6 +57,11 @@ def _md_val(v) -> str:
     return fmt_br(abs(float(v))).replace("$", r"\$")
 
 
+def _html_val(v) -> str:
+    """Formata valor em BR e escapa o $ para contexto HTML."""
+    return fmt_br(abs(float(v))).replace("$", "&#36;")
+
+
 def make_key_sponte(row) -> str:
     d = row["data"]
     dia_mes = f"{d.day:02d}/{d.month:02d}"   # DD/MM sem ano
@@ -248,7 +253,11 @@ with aba_pend:
                 for r in sp_selecionados:
                     st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
                 if len(sp_selecionados) > 1:
-                    st.markdown(f"**Total {_md_val(soma_sp)}**")
+                    st.markdown(
+                        f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                        f"Total {_html_val(soma_sp)}</span>",
+                        unsafe_allow_html=True,
+                    )
                 st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(valor_bk)}**")
 
                 if diff > 0.02:
@@ -271,7 +280,11 @@ with aba_pend:
                 for r in sp_selecionados:
                     st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
                 if len(sp_selecionados) > 1:
-                    st.markdown(f"**Total {_md_val(soma_sp)}**")
+                    st.markdown(
+                        f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                        f"Total {_html_val(soma_sp)}</span>",
+                        unsafe_allow_html=True,
+                    )
 
                 if len(sp_sel_rows) == 1:
                     sp_r = sp_filtrado.iloc[sp_sel_rows[0]]

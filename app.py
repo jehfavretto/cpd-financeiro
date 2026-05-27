@@ -100,11 +100,11 @@ with st.sidebar:
         st.rerun()
 
     if sidebar_oculta:
-        if st.button("▶ Expandir", key="btn_expandir"):
+        if st.button("▶", key="btn_expandir"):
             st.session_state["sidebar_oculta"] = False
             st.rerun()
     else:
-        if st.button("◀ Recolher barra", key="btn_recolher"):
+        if st.button("◀", key="btn_recolher"):
             st.session_state["sidebar_oculta"] = True
             st.rerun()
 

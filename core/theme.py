@@ -407,17 +407,18 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     letter-spacing: -0.3px;
 }}
 
-/* ── Toggle de tema — identificado pelo emoji no aria-label ─────────── */
-/* :has() é CSS4, suportado Chrome 105+, Firefox 121+, Safari 15.4+      */
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label="🌙"]),
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label*="☀"]) {{
+/* ── Toggle de tema — 1º element-container em stSidebarContent ────────
+ * Streamlit envolve cada widget em [data-testid="element-container"].
+ * O 1º deles (dentro de stSidebarContent) é sempre o botão de tema.
+ * Os demais (nth-child ≥ 2) são recolher / expandir.
+ */
+[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(1) [data-testid="stButton"] {{
     height: 0 !important;
     overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
 }}
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label="🌙"]) button,
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label*="☀"]) button {{
+[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(1) [data-testid="stButton"] button {{
     position: fixed !important;
     top: 62px !important;
     right: 22px !important;
@@ -435,23 +436,21 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     transform: none !important;
 }}
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label="🌙"]) button:hover,
-[data-testid="stSidebar"] [data-testid="stButton"]:has(button[aria-label*="☀"]) button:hover {{
+[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(1) [data-testid="stButton"] button:hover {{
     background-color: {bg2} !important;
     border-color: {accent} !important;
     box-shadow: 0 4px 12px rgba(196,21,58,0.22) !important;
 }}
 
-/* ── Recolher / Expandir — botões estáticos e discretos na sidebar ───── */
-/* Todos os stButton na sidebar que NÃO sejam o toggle de tema           */
-[data-testid="stSidebar"] [data-testid="stButton"]:not(:has(button[aria-label="🌙"])):not(:has(button[aria-label*="☀"])) {{
+/* ── Recolher / Expandir — 2º element-container em diante ──────────── */
+[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(n+2) [data-testid="stButton"] {{
     height: auto !important;
     overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
     text-align: center !important;
 }}
-[data-testid="stSidebar"] [data-testid="stButton"]:not(:has(button[aria-label="🌙"])):not(:has(button[aria-label*="☀"])) button {{
+[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(n+2) [data-testid="stButton"] button {{
     position: static !important;
     top: auto !important;
     right: auto !important;
@@ -463,16 +462,15 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     width: auto !important;
     height: auto !important;
     min-height: 0 !important;
-    padding: 4px 10px !important;
-    font-size: 0.82rem !important;
+    padding: 6px 14px !important;
+    font-size: 1.1rem !important;
     line-height: normal !important;
-    letter-spacing: 0.03em !important;
     box-shadow: none !important;
     transform: none !important;
     display: block !important;
     margin: 48px auto 0 auto !important;
 }}
-[data-testid="stSidebar"] [data-testid="stButton"]:not(:has(button[aria-label="🌙"])):not(:has(button[aria-label*="☀"])) button:hover {{
+[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(n+2) [data-testid="stButton"] button:hover {{
     background-color: rgba(255,255,255,0.1) !important;
     color: rgba(255,255,255,0.9) !important;
     box-shadow: none !important;

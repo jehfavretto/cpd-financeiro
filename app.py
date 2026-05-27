@@ -22,18 +22,33 @@ tema_atual     = st.session_state["tema"]
 sidebar_oculta = st.session_state["sidebar_oculta"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Ocultar sidebar + botão ▶ fixo na borda esquerda (st.button real) ─────────
+# ── Mini sidebar: estreitar + mostrar só ícones (nunca display:none) ──────────
 if sidebar_oculta:
     st.markdown("""
     <style>
-    section[data-testid='stSidebar'] { display: none !important; }
+    /* Estreitar sidebar para ~68 px */
+    section[data-testid="stSidebar"] {
+        min-width: 68px !important;
+        max-width: 68px !important;
+        width:     68px !important;
+        overflow: hidden !important;
+    }
+    /* Esconder logo */
+    [data-testid="stSidebar"] [data-testid="stLogo"]          { display: none !important; }
+    [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
+    /* Links de navegação: só ícone, centralizado */
+    [data-testid="stSidebarNavLink"] {
+        padding: 10px 0 !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        min-height: 44px !important;
+    }
+    [data-testid="stSidebarNavLink"] > *:not(:first-child) { display: none !important; }
+    [data-testid="stSidebarNavLink"] > *:first-child       { font-size: 1.3rem !important; margin: 0 !important; }
+    /* Conteúdo extra da sidebar (botões) */
+    [data-testid="stSidebarContent"] { padding: 4px 0 !important; }
     </style>
     """, unsafe_allow_html=True)
-    # st.button real → rerun suave, sem recarregar a página
-    # CSS em theme.py posiciona via aria-label="▶"
-    if st.button("▶", key="btn_expandir", help="Expandir barra lateral"):
-        st.session_state["sidebar_oculta"] = False
-        st.rerun()
 
 # ── Logo sidebar: versão sem subtítulo ────────────────────────────────────────
 _logo     = Path(__file__).parent / "logo.png"               # banner
@@ -76,16 +91,22 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Sidebar: tema (1º botão) + recolher (2º botão) ────────────────────────────
-# CSS em theme.py: 1º stButton → position:fixed (tema)
-#                  2º stButton via seletor ~ → static, estilo discreto (recolher)
+# ── Sidebar ────────────────────────────────────────────────────────────────────
+# 1º botão: toggle tema — CSS em theme.py o posiciona fixed top-right (por aria-label emoji)
+# 2º botão: recolher OU expandir — CSS em theme.py o deixa estático e discreto
 with st.sidebar:
     if st.button(icone_tema, key="btn_tema"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
         st.rerun()
-    if st.button("◀ Recolher barra", key="btn_recolher"):
-        st.session_state["sidebar_oculta"] = True
-        st.rerun()
+
+    if sidebar_oculta:
+        if st.button("▶ Expandir", key="btn_expandir"):
+            st.session_state["sidebar_oculta"] = False
+            st.rerun()
+    else:
+        if st.button("◀ Recolher barra", key="btn_recolher"):
+            st.session_state["sidebar_oculta"] = True
+            st.rerun()
 
 # ── Navegação ──────────────────────────────────────────────────────────────────
 pages = {

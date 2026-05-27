@@ -408,18 +408,10 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 }}
 
 /* ── Toggle de tema — âncora #cpd-tema-anchor antes do botão ───────────
- * O elemento que CONTÉM a âncora fica com height:0.
+ * A âncora é um <div> vazio (height:0 natural — não precisa de CSS para sumir).
  * O PRÓXIMO IRMÃO (+ *) que tiver stButton recebe position:fixed.
  * Funciona independente do testid interno do Streamlit.
  */
-[data-testid="stSidebar"] *:has(#cpd-tema-anchor) {{
-    height: 0 !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 0 !important;
-    font-size: 0 !important;
-}}
 [data-testid="stSidebar"] *:has(#cpd-tema-anchor) + * [data-testid="stButton"] {{
     height: 0 !important;
     overflow: visible !important;
@@ -451,14 +443,6 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
 }}
 
 /* ── Recolher / Expandir — âncora #cpd-recolher-anchor ─────────────── */
-[data-testid="stSidebar"] *:has(#cpd-recolher-anchor) {{
-    height: 0 !important;
-    overflow: hidden !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 0 !important;
-    font-size: 0 !important;
-}}
 [data-testid="stSidebar"] *:has(#cpd-recolher-anchor) + * [data-testid="stButton"] {{
     height: auto !important;
     overflow: visible !important;

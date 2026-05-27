@@ -47,24 +47,30 @@ if sponte_df.empty or banco_df.empty:
 # ── Funções auxiliares ─────────────────────────────────────────────────────────
 
 def _data_banco_fmt(data_mov: str) -> str:
-    """Converte YYYYMMDD → DD/MM/YYYY para exibição."""
-    try:
-        d = datetime.strptime(str(data_mov), "%Y%m%d")
-        return f"{d.day:02d}/{d.month:02d}/{d.year}"
-    except Exception:
-        return str(data_mov)
+    """Normaliza data do banco para DD/MM/YYYY.
+    Tenta vários formatos que a CEF pode exportar."""
+    s = str(data_mov).strip()
+    for fmt in ("%Y%m%d", "%d%m%Y", "%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d"):
+        try:
+            d = datetime.strptime(s, fmt)
+            return f"{d.day:02d}/{d.month:02d}/{d.year}"
+        except ValueError:
+            continue
+    return s  # fallback: retorna como veio
 
 
 def make_key_sponte(row) -> str:
     d = row["data"]
-    data_str = f"{d.day:02d}/{d.month:02d}/{d.year}"
-    return f"{data_str}|{row['es']}|{row['valor']:.2f}".replace(".", ",")
+    dia_mes = f"{d.day:02d}/{d.month:02d}"          # só DD/MM — sem ano
+    es = str(row["es"]).strip()                      # .strip() por segurança
+    return f"{dia_mes}|{es}|{float(row['valor']):.2f}".replace(".", ",")
 
 
 def make_key_banco(row) -> str:
-    data_str = _data_banco_fmt(row["data_mov"])
-    es = "E" if row["deb_cred"] == "C" else "S"
-    return f"{data_str}|{es}|{abs(float(row['valor'])):.2f}".replace(".", ",")
+    # Usa apenas DD/MM — sem ano — para evitar diferenças de formato entre os sistemas
+    dia_mes = _data_banco_fmt(row["data_mov"])[:5]   # "DD/MM/YYYY" → "DD/MM"
+    es = "E" if str(row["deb_cred"]).strip() == "C" else "S"
+    return f"{dia_mes}|{es}|{abs(float(row['valor'])):.2f}".replace(".", ",")
 
 
 # ── Prepara DataFrames ─────────────────────────────────────────────────────────
@@ -107,6 +113,40 @@ mask_sp_ok = sponte_df["chave"].isin(chaves_auto) | sponte_df["chave"].isin(chav
 mask_bk_ok = banco_df["chave"].isin(chaves_auto)  | banco_df["chave"].isin(chaves_bk_usadas)
 sponte_pendente = sponte_df[~mask_sp_ok].reset_index(drop=True)
 banco_pendente  = banco_df[~mask_bk_ok].reset_index(drop=True)
+
+# ── Diagnóstico (colapsado) ────────────────────────────────────────────────────
+with st.expander("🔍 Diagnóstico de chaves", expanded=True):
+    st.caption("Confirma se o formato das chaves está igual nos dois lados.")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Sponte (primeiras 8 chaves)**")
+        st.dataframe(
+            sponte_df[["data", "es", "valor", "chave"]].head(8),
+            use_container_width=True, hide_index=True,
+        )
+    with c2:
+        st.markdown("**Banco (primeiras 8 chaves)**")
+        st.dataframe(
+            banco_df[["data_mov", "deb_cred", "valor", "chave"]].head(8),
+            use_container_width=True, hide_index=True,
+        )
+    # Candidatos: mesmos valor+tipo nos dois lados pendentes, mas chave diferente
+    _sp_vals = set(zip(
+        sponte_pendente["valor"].apply(lambda v: str(round(abs(float(v)), 2))),
+        sponte_pendente["es"],
+    ))
+    _bk_vals = set(zip(
+        banco_pendente["valor"].apply(lambda v: str(round(abs(float(v)), 2))),
+        banco_pendente["deb_cred"].map({"C": "E", "D": "S"}).fillna("S"),
+    ))
+    candidatos = _sp_vals & _bk_vals
+    if candidatos:
+        st.warning(
+            f"⚠️ **{len(candidatos)} par(es)** têm mesmo valor+tipo nos dois lados mas a **chave não casa** "
+            "(provavelmente diferença de data ou formato de data). Veja as chaves acima para comparar."
+        )
+    else:
+        st.success("✅ Nenhum candidato óbvio — os itens pendentes parecem genuinamente sem par.")
 
 # ── Barra de progresso ─────────────────────────────────────────────────────────
 total_sp   = len(sponte_df)

@@ -407,11 +407,7 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     letter-spacing: -0.3px;
 }}
 
-/* ── Toggle de tema — único stButton na sidebar → position:fixed ──────── */
-/*
- * O toggle é o único [data-testid="stButton"] dentro da sidebar
- * (links de navegação são <a>, não <button>). Seletor direto e confiável.
- */
+/* ── Toggle de tema — PRIMEIRO stButton na sidebar → position:fixed ──── */
 [data-testid="stSidebar"] [data-testid="stButton"] {{
     height: 0 !important;
     overflow: visible !important;
@@ -440,6 +436,77 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     background-color: {bg2} !important;
     border-color: {accent} !important;
     box-shadow: 0 4px 12px rgba(196,21,58,0.22) !important;
+}}
+
+/* ── Recolher — SEGUNDO stButton na sidebar: reset do fixed acima ───────
+ * O seletor ~ (sibling) captura qualquer stButton após o primeiro,
+ * desfazendo o position:fixed para que fique estático e discreto.
+ */
+[data-testid="stSidebar"] [data-testid="stButton"] ~ [data-testid="stButton"] {{
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}}
+[data-testid="stSidebar"] [data-testid="stButton"] ~ [data-testid="stButton"] button {{
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 4px !important;
+    color: rgba(255,255,255,0.55) !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 4px 10px !important;
+    font-size: 0.78rem !important;
+    line-height: normal !important;
+    letter-spacing: 0.03em !important;
+    box-shadow: none !important;
+    transform: none !important;
+    display: block !important;
+    margin: 48px auto 0 auto !important;
+    text-align: center !important;
+}}
+[data-testid="stSidebar"] [data-testid="stButton"] ~ [data-testid="stButton"] button:hover {{
+    background-color: rgba(255,255,255,0.08) !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(255,255,255,0.85) !important;
+}}
+
+/* ── Botão expandir (▶) fixo na borda esquerda fora da sidebar ──────── */
+/* aria-label="▶" é injetado pelo Streamlit com base no label do botão   */
+[data-testid="stButton"]:has(button[aria-label="▶"]) {{
+    height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}}
+button[aria-label="▶"] {{
+    position: fixed !important;
+    top: 50% !important;
+    left: 0 !important;
+    transform: translateY(-50%) !important;
+    background: #1C2B5F !important;
+    color: white !important;
+    padding: 18px 8px !important;
+    border-radius: 0 8px 8px 0 !important;
+    z-index: 9999 !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.25) !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: none !important;
+    line-height: normal !important;
+}}
+button[aria-label="▶"]:hover {{
+    background: #2a3f8f !important;
+    box-shadow: 2px 2px 12px rgba(0,0,0,0.35) !important;
 }}
 
 /* ── File uploader ─────────────────────────────────────────────────────── */

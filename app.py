@@ -35,15 +35,14 @@ if sidebar_oculta:
     }
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
-    /* Logo centralizado — via estrutura real: anchor que contém img */
+    /* Logo centralizado — flex no anchor garante centralização */
     [data-testid="stSidebar"] a:has(img) {
-        display: block !important;
-        text-align: center !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
         width: 100% !important;
-    }
-    [data-testid="stSidebar"] a:has(img) img {
-        display: block !important;
-        margin: 0 auto !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
     }
     /* Links de navegação: só ícone, centralizado */
     [data-testid="stSidebarNavLink"] {
@@ -64,10 +63,13 @@ _logo     = Path(__file__).parent / "logo.png"               # banner
 _logo_ass = Path(__file__).parent / "CDP_LOGO_ASS_A (1).png" # sidebar completa
 _logo_sid = _logo_ass if _logo_ass.exists() else _logo
 
+_logo_mini = Path(__file__).parent / "logo_mini.png"
+
 try:
     if sidebar_oculta:
-        # Mini sidebar: só o símbolo circular
-        _icon_img = PILImage.open(str(_icon))
+        # Mini sidebar: logo_mini.png se existir, senão símbolo circular
+        _mini_path = _logo_mini if _logo_mini.exists() else _icon
+        _icon_img = PILImage.open(str(_mini_path))
         st.logo(_icon_img, size="small")
     elif _logo_sid.exists():
         # Sidebar completa: logo com nome, sem subtítulo

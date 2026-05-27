@@ -82,8 +82,8 @@ with st.expander("📋 Preview — FluxoCaixa Sponte", expanded=False):
     )
 
 with st.expander("🏦 Preview — Extrato CEF", expanded=False):
-    entradas_b = banco_df[banco_df["deb_cred"] == "C"]["valor_num"].sum()
-    saidas_b   = banco_df[banco_df["deb_cred"] == "D"]["valor_num"].sum()
+    entradas_b = banco_df[banco_df["deb_cred"] == "E"]["valor_num"].sum()
+    saidas_b   = banco_df[banco_df["deb_cred"] == "S"]["valor_num"].sum()
     c1, c2 = st.columns(2)
     c1.metric("Créditos (C)", fmt_br(entradas_b))
     c2.metric("Débitos (D)",  fmt_br(saidas_b))

@@ -47,30 +47,19 @@ if sponte_df.empty or banco_df.empty:
 # ── Funções auxiliares ─────────────────────────────────────────────────────────
 
 def _data_banco_fmt(data_mov: str) -> str:
-    """Normaliza data do banco para DD/MM/YYYY.
-    Tenta vários formatos que a CEF pode exportar."""
-    s = str(data_mov).strip()
-    for fmt in ("%Y%m%d", "%d%m%Y", "%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d"):
-        try:
-            d = datetime.strptime(s, fmt)
-            return f"{d.day:02d}/{d.month:02d}/{d.year}"
-        except ValueError:
-            continue
-    return s  # fallback: retorna como veio
+    """Data já vem normalizada como DD/MM/YYYY do parser/load."""
+    return str(data_mov).strip()
 
 
 def make_key_sponte(row) -> str:
     d = row["data"]
-    dia_mes = f"{d.day:02d}/{d.month:02d}"          # só DD/MM — sem ano
-    es = str(row["es"]).strip()                      # .strip() por segurança
-    return f"{dia_mes}|{es}|{abs(float(row['valor'])):.2f}".replace(".", ",")
+    dia_mes = f"{d.day:02d}/{d.month:02d}"   # DD/MM sem ano
+    return f"{dia_mes}|{row['es']}|{float(row['valor']):.2f}".replace(".", ",")
 
 
 def make_key_banco(row) -> str:
-    # Usa apenas DD/MM — sem ano — para evitar diferenças de formato entre os sistemas
-    dia_mes = _data_banco_fmt(row["data_mov"])[:5]   # "DD/MM/YYYY" → "DD/MM"
-    es = "E" if str(row["deb_cred"]).strip() == "C" else "S"
-    return f"{dia_mes}|{es}|{abs(float(row['valor'])):.2f}".replace(".", ",")
+    dia_mes = str(row["data_mov"])[:5]        # "DD/MM/YYYY" → "DD/MM"
+    return f"{dia_mes}|{row['deb_cred']}|{float(row['valor']):.2f}".replace(".", ",")
 
 
 # ── Prepara DataFrames ─────────────────────────────────────────────────────────
@@ -137,7 +126,7 @@ with st.expander("🔍 Diagnóstico de chaves", expanded=True):
     ))
     _bk_vals = set(zip(
         banco_pendente["valor"].apply(lambda v: str(round(abs(float(v)), 2))),
-        banco_pendente["deb_cred"].map({"C": "E", "D": "S"}).fillna("S"),
+        banco_pendente["deb_cred"],
     ))
     candidatos = _sp_vals & _bk_vals
     if candidatos:
@@ -199,10 +188,10 @@ with aba_pend:
         bk_filtrado = banco_pendente.copy()
         if filtro_es == "Entradas (E)":
             sp_filtrado = sp_filtrado[sp_filtrado["es"] == "E"]
-            bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "C"]
+            bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "E"]
         elif filtro_es == "Saídas (S)":
             sp_filtrado = sp_filtrado[sp_filtrado["es"] == "S"]
-            bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "D"]
+            bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "S"]
 
         # Contador de ações — incrementar após cada ação reseta as seleções
         if "conc_cnt" not in st.session_state:
@@ -223,7 +212,7 @@ with aba_pend:
         bk_show = pd.DataFrame({
             "Data":      bk_filtrado["data_fmt"].str[:5],
             "Histórico": bk_filtrado["historico"].str[:22],
-            "E/S":       bk_filtrado["deb_cred"].map({"C": "E", "D": "S"}),
+            "E/S":       bk_filtrado["deb_cred"],
             "Valor":     bk_filtrado["valor"].map(lambda v: fmt_br(abs(float(v)))),
         })
 

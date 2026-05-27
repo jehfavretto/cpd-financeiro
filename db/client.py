@@ -117,6 +117,8 @@ def carregar_lancamentos_sponte(mes: int, ano: int) -> pd.DataFrame:
         return pd.DataFrame()
     df = pd.DataFrame(res.data)
     df["data"] = pd.to_datetime(df["data"]).dt.date
+    df["valor"] = df["valor"].abs()          # garante positivo (compat. dados antigos)
+    df["es"] = df["es"].str.strip()          # remove espaços
     return df
 
 
@@ -151,7 +153,11 @@ def carregar_transacoes_banco(mes: int, ano: int) -> pd.DataFrame:
     )
     if not res.data:
         return pd.DataFrame()
-    return pd.DataFrame(res.data)
+    df = pd.DataFrame(res.data)
+    # Normaliza para compat. com dados importados antes da padronização
+    df["deb_cred"] = df["deb_cred"].str.strip().replace({"C": "E", "D": "S"})
+    df["valor"] = df["valor"].abs()
+    return df
 
 
 # ── Saldos ────────────────────────────────────────────────────────────────────

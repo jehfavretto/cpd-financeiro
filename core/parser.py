@@ -26,10 +26,23 @@ def _parse_valor_br(v):
         return 0.0
 
 
+def _normalizar_data_banco(s: str) -> str:
+    """Normaliza data do banco para DD/MM/YYYY, tentando vários formatos."""
+    s = str(s).strip()
+    for fmt in ("%Y%m%d", "%d%m%Y", "%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d"):
+        try:
+            d = datetime.strptime(s, fmt)
+            return f"{d.day:02d}/{d.month:02d}/{d.year}"
+        except ValueError:
+            continue
+    return s  # fallback
+
+
 def parse_sponte_fluxo(file_bytes_or_path) -> pd.DataFrame:
     """
     Lê o FluxoCaixa exportado do Sponte (.xls).
     Retorna DataFrame: data, data_rep, categoria, es, origem_destino, valor.
+    Valor sempre positivo (o campo es indica a direção).
     """
     raw = pd.read_excel(file_bytes_or_path, header=None, skiprows=8, dtype=str)
     mask = raw[0].apply(
@@ -41,9 +54,9 @@ def parse_sponte_fluxo(file_bytes_or_path) -> pd.DataFrame:
         "data":           data[0],
         "data_rep":       data[4],
         "categoria":      data[6].fillna(""),
-        "es":             data[7],
+        "es":             data[7].str.strip(),
         "origem_destino": data[8].fillna(""),
-        "valor":          data[11].apply(_parse_valor_br),
+        "valor":          data[11].apply(_parse_valor_br).abs(),  # sempre positivo
     })
 
     # Converte datas string → date
@@ -56,7 +69,7 @@ def parse_sponte_fluxo(file_bytes_or_path) -> pd.DataFrame:
 def parse_banco_txt(file_bytes_or_path) -> pd.DataFrame:
     """
     Lê o extrato da CEF (.txt, separador ';').
-    Retorna DataFrame: data_mov, nr_doc, historico, valor, deb_cred.
+    Retorna DataFrame normalizado: data_mov em DD/MM/YYYY, es em E/S, valor positivo.
     """
     df = pd.read_csv(
         file_bytes_or_path, sep=";", encoding="latin-1",
@@ -64,7 +77,16 @@ def parse_banco_txt(file_bytes_or_path) -> pd.DataFrame:
     )
     df.columns = ["conta", "data_mov", "nr_doc", "historico", "valor", "deb_cred"]
     df = df.dropna(subset=["data_mov"]).reset_index(drop=True)
-    df["valor_num"] = df["valor"].str.replace(",", ".").astype(float)
+
+    # Normaliza valor: sempre positivo
+    df["valor_num"] = df["valor"].str.replace(",", ".").astype(float).abs()
+
+    # Normaliza data para DD/MM/YYYY
+    df["data_mov"] = df["data_mov"].apply(_normalizar_data_banco)
+
+    # Normaliza C/D → E/S
+    df["deb_cred"] = df["deb_cred"].str.strip().map({"C": "E", "D": "S"}).fillna("S")
+
     return df
 
 

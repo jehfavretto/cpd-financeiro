@@ -63,7 +63,7 @@ def make_key_sponte(row) -> str:
     d = row["data"]
     dia_mes = f"{d.day:02d}/{d.month:02d}"          # só DD/MM — sem ano
     es = str(row["es"]).strip()                      # .strip() por segurança
-    return f"{dia_mes}|{es}|{float(row['valor']):.2f}".replace(".", ",")
+    return f"{dia_mes}|{es}|{abs(float(row['valor'])):.2f}".replace(".", ",")
 
 
 def make_key_banco(row) -> str:

@@ -19,27 +19,6 @@ from core.parser import MESES_ABREV
 from core.utils import fmt_br
 
 st.title("🔍 Conciliação")
-
-# ── Toggle da barra lateral ───────────────────────────────────────────────────
-if "sidebar_oculta" not in st.session_state:
-    st.session_state.sidebar_oculta = False
-
-_lbl = "▶ Expandir barra" if st.session_state.sidebar_oculta else "◀ Recolher barra"
-if st.button(_lbl, help="Recolha a barra lateral para ganhar mais espaço na tela"):
-    st.session_state.sidebar_oculta = not st.session_state.sidebar_oculta
-    st.rerun()
-
-if st.session_state.sidebar_oculta:
-    st.markdown(
-        """
-        <style>
-        section[data-testid="stSidebar"]       { display: none !important; }
-        button[data-testid="collapsedControl"]  { display: none !important; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
 st.markdown("Vincule os lançamentos do Sponte com o extrato bancário.")
 
 # ── Seleção de mês ─────────────────────────────────────────────────────────────

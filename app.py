@@ -12,12 +12,22 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Tema ──────────────────────────────────────────────────────────────────────
+# ── Estado global ─────────────────────────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state["tema"] = "light"
+if "sidebar_oculta" not in st.session_state:
+    st.session_state["sidebar_oculta"] = False
 
-tema_atual = st.session_state["tema"]
+tema_atual      = st.session_state["tema"]
+sidebar_oculta  = st.session_state["sidebar_oculta"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
+
+# ── Ocultar barra lateral via CSS quando recolhida ────────────────────────────
+if sidebar_oculta:
+    st.markdown(
+        "<style>section[data-testid='stSidebar']{display:none!important;}</style>",
+        unsafe_allow_html=True,
+    )
 
 # ── Logo sidebar: versão sem subtítulo ────────────────────────────────────────
 _logo     = Path(__file__).parent / "logo.png"               # banner
@@ -33,6 +43,12 @@ if _logo_sid.exists():
         st.logo(_img_crop, size="medium")
     except Exception:
         pass
+
+# ── Botão expandir (visível apenas quando sidebar está oculta) ────────────────
+if sidebar_oculta:
+    if st.button("▶ Expandir barra", key="btn_expandir"):
+        st.session_state["sidebar_oculta"] = False
+        st.rerun()
 
 # ── Logo base64 para o banner — usa logo.png original (com subtítulo) ─────────
 _logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""
@@ -61,10 +77,13 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Toggle de tema — único botão na sidebar, fixado no canto via CSS ───────────
+# ── Botões na sidebar ─────────────────────────────────────────────────────────
 with st.sidebar:
     if st.button(icone_tema, key="btn_tema"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
+        st.rerun()
+    if st.button("◀ Recolher barra", key="btn_recolher", use_container_width=True):
+        st.session_state["sidebar_oculta"] = True
         st.rerun()
 
 # ── Navegação ──────────────────────────────────────────────────────────────────

@@ -35,13 +35,16 @@ if sidebar_oculta:
     }
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
-    /* Logo centralizado — sem tocar no wrapper da sidebar */
-    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] { text-align: center !important; }
-    [data-testid="stSidebar"] [data-testid="stLogoLink"],
-    [data-testid="stSidebar"] [data-testid="stLogo"]          { display: block !important; text-align: center !important; }
-    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] img,
-    [data-testid="stSidebar"] [data-testid="stLogoLink"] img,
-    [data-testid="stSidebar"] [data-testid="stLogo"] img      { display: block !important; margin: 0 auto !important; }
+    /* Logo centralizado — via estrutura real: anchor que contém img */
+    [data-testid="stSidebar"] a:has(img) {
+        display: block !important;
+        text-align: center !important;
+        width: 100% !important;
+    }
+    [data-testid="stSidebar"] a:has(img) img {
+        display: block !important;
+        margin: 0 auto !important;
+    }
     /* Links de navegação: só ícone, centralizado */
     [data-testid="stSidebarNavLink"] {
         padding: 10px 0 !important;

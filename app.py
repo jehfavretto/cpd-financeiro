@@ -12,9 +12,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Expandir via query param (link flutuante) ─────────────────────────────────
+# ── Toggle sidebar via query params (evita conflito com CSS do btn_tema) ──────
 if st.query_params.get("expand") == "1":
     st.session_state["sidebar_oculta"] = False
+    st.query_params.clear()
+    st.rerun()
+if st.query_params.get("recolher") == "1":
+    st.session_state["sidebar_oculta"] = True
     st.query_params.clear()
     st.rerun()
 
@@ -94,14 +98,21 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Botões na sidebar ─────────────────────────────────────────────────────────
+# ── Sidebar: tema (botão real) + recolher (link HTML, não quebra CSS do tema) ──
 with st.sidebar:
     if st.button(icone_tema, key="btn_tema"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
         st.rerun()
-    if st.button("◀ Recolher barra", key="btn_recolher", use_container_width=True):
-        st.session_state["sidebar_oculta"] = True
-        st.rerun()
+    # Link HTML em vez de st.button — evita que o CSS position:fixed do tema
+    # seja aplicado a dois botões ao mesmo tempo
+    st.markdown(
+        '<a href="?recolher=1" style="'
+        'display:block;text-align:center;margin-top:48px;'
+        'color:rgba(255,255,255,0.55)!important;text-decoration:none;'
+        'font-size:0.78rem;letter-spacing:0.03em;'
+        '">◀ Recolher barra</a>',
+        unsafe_allow_html=True,
+    )
 
 # ── Navegação ──────────────────────────────────────────────────────────────────
 pages = {

@@ -229,7 +229,7 @@ with aba_pend:
         bk_idx      = bk_sel_rows[0] if bk_sel_rows else None
 
         with col_mid:
-            st.markdown("**Ações**")
+            st.markdown("<b style='font-size:0.85rem'>Ações</b>", unsafe_allow_html=True)
             st.markdown("---")
 
             if sp_sel_rows and bk_idx is not None:
@@ -240,18 +240,19 @@ with aba_pend:
                 valor_bk = abs(float(bk_r["valor"]))
                 diff = abs(soma_sp - valor_bk)
 
-                # Mostra Sponte selecionados
-                for r in sp_selecionados:
-                    st.success(f"🔵 {str(r['categoria'])[:20]}  \n{fmt_br(abs(r['valor']))}", icon=None)
+                linhas = "".join(
+                    f"🔵 {str(r['categoria'])[:22]} · <b>{fmt_br(abs(r['valor']))}</b><br>"
+                    for r in sp_selecionados
+                )
                 if len(sp_selecionados) > 1:
-                    st.markdown(f"**Σ Sponte: {fmt_br(soma_sp)}**")
-                st.info(f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n{fmt_br(valor_bk)}")
+                    linhas += f"<b>Σ {fmt_br(soma_sp)}</b><br>"
+                linhas += f"<br>🏦 {str(bk_r['historico'])[:22]} · <b>{fmt_br(valor_bk)}</b>"
+                st.markdown(f"<small>{linhas}</small>", unsafe_allow_html=True)
 
-                # Avisa se os valores não batem
                 if diff > 0.02:
-                    st.warning(f"⚠️ Diferença: {fmt_br(diff)}")
+                    st.warning(f"⚠️ Dif: {fmt_br(diff)}")
 
-                lbl = f"🔗 Vincular {len(sp_selecionados)} lançamento(s)" if len(sp_selecionados) > 1 else "🔗 Vincular"
+                lbl = f"🔗 Vincular {len(sp_selecionados)}" if len(sp_selecionados) > 1 else "🔗 Vincular"
                 if st.button(lbl, type="primary", use_container_width=True):
                     for r in sp_selecionados:
                         db.salvar_conciliacao(mes, ano, "manual",
@@ -261,10 +262,20 @@ with aba_pend:
                     st.rerun()
 
             elif sp_sel_rows and bk_idx is None:
-                # ── Só Sponte selecionado → ignorar ───────────────────────────
+                # ── Só Sponte selecionado ─────────────────────────────────────
+                sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
+                soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
+                linhas = "".join(
+                    f"🔵 {str(r['categoria'])[:22]} · <b>{fmt_br(abs(r['valor']))}</b><br>"
+                    for r in sp_selecionados
+                )
+                if len(sp_selecionados) > 1:
+                    linhas += f"<b>Σ {fmt_br(soma_sp)}</b>"
+                st.markdown(f"<small>{linhas}</small>", unsafe_allow_html=True)
+
                 if len(sp_sel_rows) == 1:
                     sp_r = sp_filtrado.iloc[sp_sel_rows[0]]
-                    st.info(f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n{fmt_br(abs(sp_r['valor']))}")
+                    st.markdown("<small><i>Selecione 1 Banco para vincular, ou ignore:</i></small>", unsafe_allow_html=True)
                     with st.form(key=f"form_isp_{cnt}"):
                         just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
                         if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
@@ -274,13 +285,16 @@ with aba_pend:
                             st.session_state["conc_cnt"] += 1
                             st.rerun()
                 else:
-                    st.info(f"{len(sp_sel_rows)} linhas do Sponte selecionadas.")
-                    st.markdown("Selecione também **1 linha do Banco** para vincular.")
+                    st.markdown("<small><i>Selecione 1 linha do Banco para vincular.</i></small>", unsafe_allow_html=True)
 
             elif bk_idx is not None:
                 # ── Só Banco selecionado → ignorar ────────────────────────────
                 bk_r = bk_filtrado.iloc[bk_idx]
-                st.info(f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n{fmt_br(abs(float(bk_r['valor'])))}")
+                st.markdown(
+                    f"<small>🏦 {str(bk_r['historico'])[:22]}<br>"
+                    f"<b>{fmt_br(abs(float(bk_r['valor'])))}</b></small>",
+                    unsafe_allow_html=True,
+                )
                 with st.form(key=f"form_ibk_{cnt}"):
                     just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")
                     if st.form_submit_button("🙈 Ignorar Banco", use_container_width=True):
@@ -292,9 +306,10 @@ with aba_pend:
 
             else:
                 st.markdown(
-                    "👈 Selecione linhas do **Sponte** (pode ser mais de uma) "
-                    "e **1 linha do Banco** para vincular.  \n\n"
-                    "Ou selecione apenas um lado para ignorar."
+                    "<small>👈 Selecione linhas do <b>Sponte</b> (pode ser mais de uma) "
+                    "e <b>1 linha do Banco</b> para vincular.<br><br>"
+                    "Ou selecione apenas um lado para ignorar.</small>",
+                    unsafe_allow_html=True,
                 )
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -35,30 +35,13 @@ if sidebar_oculta:
     }
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
-    /* Logo centralizado — tenta múltiplos seletores para cobrir versões do Streamlit */
-    [data-testid="stSidebar"] [data-testid="stSidebarHeader"],
-    section[data-testid="stSidebar"] > div:first-child {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        padding: 6px 0 !important;
-        width: 100% !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] a,
+    /* Logo centralizado — sem tocar no wrapper da sidebar */
+    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] { text-align: center !important; }
     [data-testid="stSidebar"] [data-testid="stLogoLink"],
-    section[data-testid="stSidebar"] > div:first-child a {
-        display: flex !important;
-        justify-content: center !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
+    [data-testid="stSidebar"] [data-testid="stLogo"]          { display: block !important; text-align: center !important; }
     [data-testid="stSidebar"] [data-testid="stSidebarHeader"] img,
-    [data-testid="stSidebar"] [data-testid="stLogo"] img,
-    section[data-testid="stSidebar"] > div:first-child img {
-        display: block !important;
-        margin: 0 auto !important;
-    }
+    [data-testid="stSidebar"] [data-testid="stLogoLink"] img,
+    [data-testid="stSidebar"] [data-testid="stLogo"] img      { display: block !important; margin: 0 auto !important; }
     /* Links de navegação: só ícone, centralizado */
     [data-testid="stSidebarNavLink"] {
         padding: 10px 0 !important;

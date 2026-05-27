@@ -248,7 +248,7 @@ with aba_pend:
                 for r in sp_selecionados:
                     st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
                 if len(sp_selecionados) > 1:
-                    st.caption(f"**Σ {_md_val(soma_sp)}**")
+                    st.caption(f"**Total {_md_val(soma_sp)}**")
                 st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(valor_bk)}**")
 
                 if diff > 0.02:
@@ -271,7 +271,7 @@ with aba_pend:
                 for r in sp_selecionados:
                     st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
                 if len(sp_selecionados) > 1:
-                    st.caption(f"**Σ {_md_val(soma_sp)}**")
+                    st.caption(f"**Total {_md_val(soma_sp)}**")
 
                 if len(sp_sel_rows) == 1:
                     sp_r = sp_filtrado.iloc[sp_sel_rows[0]]

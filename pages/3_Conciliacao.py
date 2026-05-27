@@ -169,20 +169,37 @@ with aba_pend:
 
         col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
-        _val_cfg = st.column_config.NumberColumn("Valor", format="R$ %.2f")
+        # ── Ordenação ─────────────────────────────────────────────────────────
+        ord_col1, ord_col2 = st.columns(2)
+        with ord_col1:
+            ord_sp = st.radio("Ordenar Sponte:", ["Data ↑", "Valor ↑", "Valor ↓"],
+                              horizontal=True, key=f"ord_sp_{mes}_{ano}_{cnt}")
+        with ord_col2:
+            ord_bk = st.radio("Ordenar Banco:", ["Data ↑", "Valor ↑", "Valor ↓"],
+                              horizontal=True, key=f"ord_bk_{mes}_{ano}_{cnt}")
+
+        if ord_sp == "Valor ↑":
+            sp_filtrado = sp_filtrado.sort_values("valor").reset_index(drop=True)
+        elif ord_sp == "Valor ↓":
+            sp_filtrado = sp_filtrado.sort_values("valor", ascending=False).reset_index(drop=True)
+
+        if ord_bk == "Valor ↑":
+            bk_filtrado = bk_filtrado.sort_values("valor").reset_index(drop=True)
+        elif ord_bk == "Valor ↓":
+            bk_filtrado = bk_filtrado.sort_values("valor", ascending=False).reset_index(drop=True)
 
         sp_show = pd.DataFrame({
             "Data":      pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
             "Categoria": sp_filtrado["categoria"].str[:22],
             "E/S":       sp_filtrado["es"],
-            "Valor":     sp_filtrado["valor"].abs(),   # numérico → ordenação funciona
+            "Valor":     sp_filtrado["valor"].map(lambda v: fmt_br(abs(v))),
         })
 
         bk_show = pd.DataFrame({
             "Data":      bk_filtrado["data_fmt"].str[:5],
             "Histórico": bk_filtrado["historico"].str[:22],
             "E/S":       bk_filtrado["deb_cred"],
-            "Valor":     bk_filtrado["valor"].abs(),   # numérico
+            "Valor":     bk_filtrado["valor"].map(lambda v: fmt_br(abs(float(v)))),
         })
 
         with col_sp:
@@ -190,9 +207,8 @@ with aba_pend:
             sel_sp = st.dataframe(
                 sp_show,
                 use_container_width=True,
-                height=460,
+                height=420,
                 hide_index=True,
-                column_config={"Valor": _val_cfg},
                 selection_mode="multi-row",
                 on_select="rerun",
                 key=sp_key,
@@ -203,9 +219,8 @@ with aba_pend:
             sel_bk = st.dataframe(
                 bk_show,
                 use_container_width=True,
-                height=460,
+                height=420,
                 hide_index=True,
-                column_config={"Valor": _val_cfg},
                 selection_mode="single-row",
                 on_select="rerun",
                 key=bk_key,

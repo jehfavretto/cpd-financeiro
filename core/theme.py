@@ -407,18 +407,26 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     letter-spacing: -0.3px;
 }}
 
-/* ── Toggle de tema — 1º element-container em stSidebarContent ────────
- * Streamlit envolve cada widget em [data-testid="element-container"].
- * O 1º deles (dentro de stSidebarContent) é sempre o botão de tema.
- * Os demais (nth-child ≥ 2) são recolher / expandir.
+/* ── Toggle de tema — âncora #cpd-tema-anchor antes do botão ───────────
+ * O elemento que CONTÉM a âncora fica com height:0.
+ * O PRÓXIMO IRMÃO (+ *) que tiver stButton recebe position:fixed.
+ * Funciona independente do testid interno do Streamlit.
  */
-[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(1) [data-testid="stButton"] {{
+[data-testid="stSidebar"] *:has(#cpd-tema-anchor) {{
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 0 !important;
+    font-size: 0 !important;
+}}
+[data-testid="stSidebar"] *:has(#cpd-tema-anchor) + * [data-testid="stButton"] {{
     height: 0 !important;
     overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
 }}
-[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(1) [data-testid="stButton"] button {{
+[data-testid="stSidebar"] *:has(#cpd-tema-anchor) + * [data-testid="stButton"] button {{
     position: fixed !important;
     top: 62px !important;
     right: 22px !important;
@@ -436,21 +444,29 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     transform: none !important;
 }}
-[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(1) [data-testid="stButton"] button:hover {{
+[data-testid="stSidebar"] *:has(#cpd-tema-anchor) + * [data-testid="stButton"] button:hover {{
     background-color: {bg2} !important;
     border-color: {accent} !important;
     box-shadow: 0 4px 12px rgba(196,21,58,0.22) !important;
 }}
 
-/* ── Recolher / Expandir — 2º element-container em diante ──────────── */
-[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(n+2) [data-testid="stButton"] {{
+/* ── Recolher / Expandir — âncora #cpd-recolher-anchor ─────────────── */
+[data-testid="stSidebar"] *:has(#cpd-recolher-anchor) {{
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 0 !important;
+    font-size: 0 !important;
+}}
+[data-testid="stSidebar"] *:has(#cpd-recolher-anchor) + * [data-testid="stButton"] {{
     height: auto !important;
     overflow: visible !important;
     padding: 0 !important;
     margin: 0 !important;
     text-align: center !important;
 }}
-[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(n+2) [data-testid="stButton"] button {{
+[data-testid="stSidebar"] *:has(#cpd-recolher-anchor) + * [data-testid="stButton"] button {{
     position: static !important;
     top: auto !important;
     right: auto !important;
@@ -470,7 +486,7 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     display: block !important;
     margin: 48px auto 0 auto !important;
 }}
-[data-testid="stSidebarContent"] [data-testid="element-container"]:nth-child(n+2) [data-testid="stButton"] button:hover {{
+[data-testid="stSidebar"] *:has(#cpd-recolher-anchor) + * [data-testid="stButton"] button:hover {{
     background-color: rgba(255,255,255,0.1) !important;
     color: rgba(255,255,255,0.9) !important;
     box-shadow: none !important;

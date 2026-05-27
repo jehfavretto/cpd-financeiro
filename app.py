@@ -92,13 +92,15 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
-# 1º botão: toggle tema — CSS em theme.py o posiciona fixed top-right (por aria-label emoji)
-# 2º botão: recolher OU expandir — CSS em theme.py o deixa estático e discreto
+# Âncoras invisíveis antes de cada botão permitem identificá-los no CSS
+# via seletor de sibling adjacente (+), independente do testid interno do Streamlit.
 with st.sidebar:
+    st.markdown('<div id="cpd-tema-anchor"></div>', unsafe_allow_html=True)
     if st.button(icone_tema, key="btn_tema"):
         st.session_state["tema"] = "light" if tema_atual == "dark" else "dark"
         st.rerun()
 
+    st.markdown('<div id="cpd-recolher-anchor"></div>', unsafe_allow_html=True)
     if sidebar_oculta:
         if st.button("▶", key="btn_expandir"):
             st.session_state["sidebar_oculta"] = False

@@ -103,39 +103,6 @@ mask_bk_ok = banco_df["chave"].isin(chaves_auto)  | banco_df["chave"].isin(chave
 sponte_pendente = sponte_df[~mask_sp_ok].reset_index(drop=True)
 banco_pendente  = banco_df[~mask_bk_ok].reset_index(drop=True)
 
-# ── Diagnóstico (colapsado) ────────────────────────────────────────────────────
-with st.expander("🔍 Diagnóstico de chaves", expanded=True):
-    st.caption("Confirma se o formato das chaves está igual nos dois lados.")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("**Sponte (primeiras 8 chaves)**")
-        st.dataframe(
-            sponte_df[["data", "es", "valor", "chave"]].head(8),
-            use_container_width=True, hide_index=True,
-        )
-    with c2:
-        st.markdown("**Banco (primeiras 8 chaves)**")
-        st.dataframe(
-            banco_df[["data_mov", "deb_cred", "valor", "chave"]].head(8),
-            use_container_width=True, hide_index=True,
-        )
-    # Candidatos: mesmos valor+tipo nos dois lados pendentes, mas chave diferente
-    _sp_vals = set(zip(
-        sponte_pendente["valor"].apply(lambda v: str(round(abs(float(v)), 2))),
-        sponte_pendente["es"],
-    ))
-    _bk_vals = set(zip(
-        banco_pendente["valor"].apply(lambda v: str(round(abs(float(v)), 2))),
-        banco_pendente["deb_cred"],
-    ))
-    candidatos = _sp_vals & _bk_vals
-    if candidatos:
-        st.warning(
-            f"⚠️ **{len(candidatos)} par(es)** têm mesmo valor+tipo nos dois lados mas a **chave não casa** "
-            "(provavelmente diferença de data ou formato de data). Veja as chaves acima para comparar."
-        )
-    else:
-        st.success("✅ Nenhum candidato óbvio — os itens pendentes parecem genuinamente sem par.")
 
 # ── Barra de progresso ─────────────────────────────────────────────────────────
 total_sp   = len(sponte_df)

@@ -12,22 +12,46 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ── Expandir via query param (link flutuante) ─────────────────────────────────
+if st.query_params.get("expand") == "1":
+    st.session_state["sidebar_oculta"] = False
+    st.query_params.clear()
+    st.rerun()
+
 # ── Estado global ─────────────────────────────────────────────────────────────
 if "tema" not in st.session_state:
     st.session_state["tema"] = "light"
 if "sidebar_oculta" not in st.session_state:
     st.session_state["sidebar_oculta"] = False
 
-tema_atual      = st.session_state["tema"]
-sidebar_oculta  = st.session_state["sidebar_oculta"]
+tema_atual     = st.session_state["tema"]
+sidebar_oculta = st.session_state["sidebar_oculta"]
 st.markdown(css_completo(tema_atual), unsafe_allow_html=True)
 
-# ── Ocultar barra lateral via CSS quando recolhida ────────────────────────────
+# ── Ocultar sidebar + mostrar botão flutuante ▶ fixo na borda esquerda ────────
 if sidebar_oculta:
-    st.markdown(
-        "<style>section[data-testid='stSidebar']{display:none!important;}</style>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <style>
+    section[data-testid='stSidebar'] { display: none !important; }
+    </style>
+    <a href="?expand=1"
+       title="Expandir barra lateral"
+       style="
+         position: fixed;
+         top: 50%;
+         left: 0;
+         transform: translateY(-50%);
+         background: #1C2B5F;
+         color: white !important;
+         padding: 18px 8px;
+         border-radius: 0 8px 8px 0;
+         z-index: 9999;
+         font-size: 20px;
+         text-decoration: none;
+         font-weight: bold;
+         box-shadow: 2px 2px 8px rgba(0,0,0,0.25);
+       ">▶</a>
+    """, unsafe_allow_html=True)
 
 # ── Logo sidebar: versão sem subtítulo ────────────────────────────────────────
 _logo     = Path(__file__).parent / "logo.png"               # banner
@@ -37,18 +61,11 @@ _logo_sid = _logo_ass if _logo_ass.exists() else _logo
 if _logo_sid.exists():
     try:
         _img = PILImage.open(str(_logo_sid))
-        # Corta os ~15% inferiores para remover "Evoluindo a cada passo."
         w, h = _img.size
         _img_crop = _img.crop((0, 0, w, int(h * 0.85)))
         st.logo(_img_crop, size="medium")
     except Exception:
         pass
-
-# ── Botão expandir (visível apenas quando sidebar está oculta) ────────────────
-if sidebar_oculta:
-    if st.button("▶ Expandir barra", key="btn_expandir"):
-        st.session_state["sidebar_oculta"] = False
-        st.rerun()
 
 # ── Logo base64 para o banner — usa logo.png original (com subtítulo) ─────────
 _logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""

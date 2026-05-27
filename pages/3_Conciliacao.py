@@ -13,6 +13,7 @@ Fluxo:
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from collections import Counter
 import db.client as db
 from core.parser import MESES_ABREV
 from core.utils import fmt_br
@@ -90,16 +91,28 @@ chaves_sp_usadas      = set(_conc_sem_desv["sponte_chave"].dropna()) if not _con
 chaves_bk_usadas      = set(_conc_sem_desv["banco_chave"].dropna())  if not _conc_sem_desv.empty else set()
 
 # ── Auto-match: chave idêntica nos dois sistemas, ainda não processada ─────────
-chaves_auto = (
-    (set(banco_df["chave"]) & set(sponte_df["chave"]))
+_cnt_sp   = Counter(sponte_df["chave"])
+_cnt_bk   = Counter(banco_df["chave"])
+_raw_auto = (
+    (set(_cnt_sp.keys()) & set(_cnt_bk.keys()))
     - chaves_sp_usadas
     - chaves_bk_usadas
     - chaves_sp_desvincular   # bloqueados pelo usuário — voltam para pendentes
 )
+# Concilia apenas min(qtd_sponte, qtd_banco) pares por chave
+# Evita que 2 Sponte idênticos "sumam" quando há só 1 banco com a mesma chave
+chaves_auto_counts = {c: min(_cnt_sp[c], _cnt_bk[c]) for c in _raw_auto}
+
+# Índices exatos do DataFrame que entram no auto-match
+_sp_idx_auto: set = set()
+_bk_idx_auto: set = set()
+for _chave, _n in chaves_auto_counts.items():
+    _sp_idx_auto.update(sponte_df[sponte_df["chave"] == _chave].index[:_n].tolist())
+    _bk_idx_auto.update(banco_df[banco_df["chave"] == _chave].index[:_n].tolist())
 
 # ── Separa pendentes ───────────────────────────────────────────────────────────
-mask_sp_ok = sponte_df["chave"].isin(chaves_auto) | sponte_df["chave"].isin(chaves_sp_usadas)
-mask_bk_ok = banco_df["chave"].isin(chaves_auto)  | banco_df["chave"].isin(chaves_bk_usadas)
+mask_sp_ok = sponte_df.index.isin(_sp_idx_auto) | sponte_df["chave"].isin(chaves_sp_usadas)
+mask_bk_ok = banco_df.index.isin(_bk_idx_auto)  | banco_df["chave"].isin(chaves_bk_usadas)
 sponte_pendente = sponte_df[~mask_sp_ok].reset_index(drop=True)
 banco_pendente  = banco_df[~mask_bk_ok].reset_index(drop=True)
 
@@ -123,7 +136,7 @@ st.progress(
 st.divider()
 
 # ── Seção: Conciliados ─────────────────────────────────────────────────────────
-n_auto   = len(chaves_auto)
+n_auto   = sum(chaves_auto_counts.values()) if chaves_auto_counts else 0
 n_manual = int((conc_df["tipo"] == "manual").sum()) if not conc_df.empty else 0
 n_ign    = int(conc_df["tipo"].str.startswith("ignorado", na=False).sum()) if not conc_df.empty else 0
 
@@ -295,16 +308,19 @@ with aba_conc:
     if n_auto > 0:
         st.caption(f"🤖 **{n_auto} conciliados automaticamente** — selecione linhas e clique em Desvincular para corrigir")
         auto_rows = []
-        auto_chaves = []
-        for chave in sorted(chaves_auto):
-            sp_r = sponte_df[sponte_df["chave"] == chave].iloc[0]
-            bk_r = banco_df[banco_df["chave"] == chave].iloc[0]
-            auto_rows.append({
-                "E/S": sp_r["es"],
-                "Sponte": f"{pd.to_datetime(sp_r['data']).strftime('%d/%m')} | {str(sp_r['categoria'])[:28]} | {fmt_br(abs(sp_r['valor']))}",
-                "Banco":  f"{bk_r['data_fmt'][:5]} | {str(bk_r['historico'])[:28]} | {fmt_br(abs(float(bk_r['valor'])))}",
-            })
-            auto_chaves.append(chave)
+        auto_pairs = []   # (sp_df_index, bk_df_index) para cada linha da tabela
+        for chave, n in sorted(chaves_auto_counts.items()):
+            sp_matches = sponte_df[sponte_df["chave"] == chave].iloc[:n]
+            bk_matches = banco_df[banco_df["chave"] == chave].iloc[:n]
+            for i in range(n):
+                sp_r = sp_matches.iloc[i]
+                bk_r = bk_matches.iloc[i]
+                auto_rows.append({
+                    "E/S": sp_r["es"],
+                    "Sponte": f"{pd.to_datetime(sp_r['data']).strftime('%d/%m')} | {str(sp_r['categoria'])[:28]} | {fmt_br(abs(sp_r['valor']))}",
+                    "Banco":  f"{bk_r['data_fmt'][:5]} | {str(bk_r['historico'])[:28]} | {fmt_br(abs(float(bk_r['valor'])))}",
+                })
+                auto_pairs.append((sp_r.name, bk_r.name))
 
         sel_auto = st.dataframe(
             pd.DataFrame(auto_rows),
@@ -320,9 +336,9 @@ with aba_conc:
             st.warning(f"**{len(sel_auto_rows)} item(s) selecionado(s)** — confirme para desvincular e mover para Pendentes.")
             if st.button("🔓 Desvincular selecionados", type="primary"):
                 for idx in sel_auto_rows:
-                    chave = auto_chaves[idx]
-                    sp_r  = sponte_df[sponte_df["chave"] == chave].iloc[0]
-                    bk_r  = banco_df[banco_df["chave"] == chave].iloc[0]
+                    sp_dfidx, bk_dfidx = auto_pairs[idx]
+                    sp_r = sponte_df.loc[sp_dfidx]
+                    bk_r = banco_df.loc[bk_dfidx]
                     db.salvar_conciliacao(mes, ano, "desvincular",
                                          sponte_chave=sp_r["chave"],
                                          banco_chave=bk_r["chave"])

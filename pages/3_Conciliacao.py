@@ -238,66 +238,92 @@ with aba_pend:
                 height=460,
                 hide_index=True,
                 column_config={"Valor": _val_cfg, "E/S": _es_cfg},
-                selection_mode="single-row",
+                selection_mode="multi-row",
                 on_select="rerun",
                 key=bk_key,
             )
 
         sp_sel_rows = sel_sp.selection.rows if hasattr(sel_sp, "selection") else []
         bk_sel_rows = sel_bk.selection.rows if hasattr(sel_bk, "selection") else []
-        bk_idx      = bk_sel_rows[0] if bk_sel_rows else None
+        n_sp = len(sp_sel_rows)
+        n_bk = len(bk_sel_rows)
 
         with col_mid:
             st.caption("**Ações**")
             st.markdown("---")
 
-            if sp_sel_rows and bk_idx is not None:
-                # ── N Sponte → 1 Banco ────────────────────────────────────────
+            if n_sp > 0 and n_bk > 0:
+                # ── N Sponte → 1 Banco  ou  1 Sponte → N Banco ────────────────
                 sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
-                bk_r = bk_filtrado.iloc[bk_idx]
+                bk_selecionados = [bk_filtrado.iloc[i] for i in bk_sel_rows]
                 soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
-                valor_bk = abs(float(bk_r["valor"]))
-                diff = abs(soma_sp - valor_bk)
+                soma_bk = sum(abs(float(r["valor"])) for r in bk_selecionados)
+                diff = abs(soma_sp - soma_bk)
 
-                for r in sp_selecionados:
-                    st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
-                if len(sp_selecionados) > 1:
-                    st.markdown(
-                        f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
-                        f"Total {_html_val(soma_sp)}</span>",
-                        unsafe_allow_html=True,
-                    )
-                st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(valor_bk)}**")
-
-                if diff > 0.02:
-                    st.warning(f"⚠️ Dif: {_md_val(diff)}")
-
-                lbl = f"🔗 Vincular {len(sp_selecionados)}" if len(sp_selecionados) > 1 else "🔗 Vincular"
-                if st.button(lbl, type="primary", use_container_width=True):
+                if n_sp > 1 and n_bk > 1:
+                    st.warning("Selecione **1 Banco** para vários Sponte, ou **1 Sponte** para vários Banco.")
+                else:
                     for r in sp_selecionados:
-                        db.salvar_conciliacao(mes, ano, "manual",
-                                              sponte_chave=r["chave"],
-                                              banco_chave=bk_r["chave"])
-                    st.session_state["conc_cnt"] += 1
-                    st.rerun()
+                        st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
+                    if n_sp > 1:
+                        st.markdown(
+                            f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                            f"Total {_html_val(soma_sp)}</span>",
+                            unsafe_allow_html=True,
+                        )
+                    for r in bk_selecionados:
+                        st.caption(f"🏦 {str(r['historico'])[:22]}  \n**{_md_val(float(r['valor']))}**")
+                    if n_bk > 1:
+                        st.markdown(
+                            f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                            f"Total {_html_val(soma_bk)}</span>",
+                            unsafe_allow_html=True,
+                        )
 
-            elif sp_sel_rows and bk_idx is None:
+                    if diff > 0.02:
+                        st.warning(f"⚠️ Dif: {_md_val(diff)}")
+
+                    if n_sp > 1:
+                        lbl = f"🔗 Vincular {n_sp}→1"
+                    elif n_bk > 1:
+                        lbl = f"🔗 Vincular 1→{n_bk}"
+                    else:
+                        lbl = "🔗 Vincular"
+                    if st.button(lbl, type="primary", use_container_width=True):
+                        if n_bk == 1:
+                            # N:1 — vários Sponte → 1 Banco
+                            bk_r = bk_selecionados[0]
+                            for r in sp_selecionados:
+                                db.salvar_conciliacao(mes, ano, "manual",
+                                                      sponte_chave=r["chave"],
+                                                      banco_chave=bk_r["chave"])
+                        else:
+                            # 1:N — 1 Sponte → vários Banco
+                            sp_r = sp_selecionados[0]
+                            for r in bk_selecionados:
+                                db.salvar_conciliacao(mes, ano, "manual",
+                                                      sponte_chave=sp_r["chave"],
+                                                      banco_chave=r["chave"])
+                        st.session_state["conc_cnt"] += 1
+                        st.rerun()
+
+            elif n_sp > 0:
                 # ── Só Sponte selecionado ─────────────────────────────────────
                 sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
                 soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
 
                 for r in sp_selecionados:
                     st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
-                if len(sp_selecionados) > 1:
+                if n_sp > 1:
                     st.markdown(
                         f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
                         f"Total {_html_val(soma_sp)}</span>",
                         unsafe_allow_html=True,
                     )
 
-                if len(sp_sel_rows) == 1:
+                if n_sp == 1:
                     sp_r = sp_filtrado.iloc[sp_sel_rows[0]]
-                    st.caption("*Selecione 1 Banco para vincular, ou ignore:*")
+                    st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
                     with st.form(key=f"form_isp_{cnt}"):
                         just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
                         if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
@@ -309,23 +335,25 @@ with aba_pend:
                 else:
                     st.caption("*Selecione 1 linha do Banco para vincular.*")
 
-            elif bk_idx is not None:
-                # ── Só Banco selecionado → ignorar ────────────────────────────
-                bk_r = bk_filtrado.iloc[bk_idx]
-                st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(float(bk_r['valor']))}**")
-                with st.form(key=f"form_ibk_{cnt}"):
-                    just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")
-                    if st.form_submit_button("🙈 Ignorar Banco", use_container_width=True):
-                        db.salvar_conciliacao(mes, ano, "ignorado_banco",
-                                              banco_chave=bk_r["chave"],
-                                              justificativa=just or None)
-                        st.session_state["conc_cnt"] += 1
-                        st.rerun()
+            elif n_bk > 0:
+                # ── Só Banco selecionado ──────────────────────────────────────
+                if n_bk == 1:
+                    bk_r = bk_filtrado.iloc[bk_sel_rows[0]]
+                    st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(float(bk_r['valor']))}**")
+                    with st.form(key=f"form_ibk_{cnt}"):
+                        just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")
+                        if st.form_submit_button("🙈 Ignorar Banco", use_container_width=True):
+                            db.salvar_conciliacao(mes, ano, "ignorado_banco",
+                                                  banco_chave=bk_r["chave"],
+                                                  justificativa=just or None)
+                            st.session_state["conc_cnt"] += 1
+                            st.rerun()
+                else:
+                    st.caption("*Selecione também 1 Sponte para vincular.*")
 
             else:
                 st.caption(
-                    "👈 Selecione linhas do **Sponte** (pode ser mais de uma) "
-                    "e **1 linha do Banco** para vincular.\n\n"
+                    "👈 Selecione linhas do **Sponte** e do **Banco** para vincular.\n\n"
                     "Ou selecione apenas um lado para ignorar."
                 )
 
@@ -379,26 +407,61 @@ with aba_conc:
     # ── Manuais ───────────────────────────────────────────────────────────────
     if n_manual > 0:
         st.caption(f"🔗 **{n_manual} vinculados manualmente**")
-        manual_df = conc_df[conc_df["tipo"] == "manual"]
+        manual_df = conc_df[conc_df["tipo"] == "manual"].copy()
+        shown_ids: set = set()
 
-        # Agrupa por banco_chave para exibir N:1 corretamente
-        for bk_chave, grupo in manual_df.groupby("banco_chave"):
-            bk_rows = banco_df[banco_df["chave"] == bk_chave]
-            bk_text = (f"{bk_rows.iloc[0]['data_fmt'][:5]} | {str(bk_rows.iloc[0]['historico'])[:25]} | {fmt_br(abs(float(bk_rows.iloc[0]['valor'])))}"
-                       if not bk_rows.empty else str(bk_chave))
+        def _sp_txt(chave):
+            r = sponte_df[sponte_df["chave"] == chave]
+            return (f"{pd.to_datetime(r.iloc[0]['data']).strftime('%d/%m')} | "
+                    f"{str(r.iloc[0]['categoria'])[:25]} | {fmt_br(abs(r.iloc[0]['valor']))}"
+                    if not r.empty else str(chave))
 
+        def _bk_txt(chave):
+            r = banco_df[banco_df["chave"] == chave]
+            return (f"{r.iloc[0]['data_fmt'][:5]} | "
+                    f"{str(r.iloc[0]['historico'])[:25]} | {fmt_br(abs(float(r.iloc[0]['valor'])))}"
+                    if not r.empty else str(chave))
+
+        # ── N:1 — vários Sponte → 1 Banco ────────────────────────────────────
+        bk_counts = manual_df["banco_chave"].value_counts()
+        for bk_chave in bk_counts[bk_counts > 1].index:
+            grupo = manual_df[manual_df["banco_chave"] == bk_chave]
             ids_grupo = grupo["id"].tolist()
+            shown_ids.update(ids_grupo)
             ca, cb, cc = st.columns([5, 5, 1])
             with ca:
                 for _, c in grupo.iterrows():
-                    sp_rows = sponte_df[sponte_df["chave"] == c["sponte_chave"]]
-                    sp_text = (f"{pd.to_datetime(sp_rows.iloc[0]['data']).strftime('%d/%m')} | {str(sp_rows.iloc[0]['categoria'])[:25]} | {fmt_br(abs(sp_rows.iloc[0]['valor']))}"
-                               if not sp_rows.empty else str(c["sponte_chave"]))
-                    st.write(f"🔵 {sp_text}")
-            cb.write(f"🏦 {bk_text}")
-            if cc.button("✖", key=f"del_mg_{ids_grupo[0]}", help="Desvincular grupo"):
+                    st.write(f"🔵 {_sp_txt(c['sponte_chave'])}")
+            cb.write(f"🏦 {_bk_txt(bk_chave)}")
+            if cc.button("✖", key=f"del_n1_{ids_grupo[0]}", help="Desvincular grupo"):
                 for id_c in ids_grupo:
                     db.deletar_conciliacao(int(id_c))
+                st.rerun()
+
+        # ── 1:N — 1 Sponte → vários Banco ────────────────────────────────────
+        restante = manual_df[~manual_df["id"].isin(shown_ids)]
+        sp_counts = restante["sponte_chave"].value_counts()
+        for sp_chave in sp_counts[sp_counts > 1].index:
+            grupo = restante[restante["sponte_chave"] == sp_chave]
+            ids_grupo = grupo["id"].tolist()
+            shown_ids.update(ids_grupo)
+            ca, cb, cc = st.columns([5, 5, 1])
+            ca.write(f"🔵 {_sp_txt(sp_chave)}")
+            with cb:
+                for _, c in grupo.iterrows():
+                    st.write(f"🏦 {_bk_txt(c['banco_chave'])}")
+            if cc.button("✖", key=f"del_1n_{ids_grupo[0]}", help="Desvincular grupo"):
+                for id_c in ids_grupo:
+                    db.deletar_conciliacao(int(id_c))
+                st.rerun()
+
+        # ── 1:1 ───────────────────────────────────────────────────────────────
+        for _, c in manual_df[~manual_df["id"].isin(shown_ids)].iterrows():
+            ca, cb, cc = st.columns([5, 5, 1])
+            ca.write(f"🔵 {_sp_txt(c['sponte_chave'])}")
+            cb.write(f"🏦 {_bk_txt(c['banco_chave'])}")
+            if cc.button("✖", key=f"del_11_{c['id']}", help="Desvincular"):
+                db.deletar_conciliacao(int(c["id"]))
                 st.rerun()
 
     # ── Ignorados ─────────────────────────────────────────────────────────────

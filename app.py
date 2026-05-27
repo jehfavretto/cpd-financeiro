@@ -35,19 +35,30 @@ if sidebar_oculta:
     }
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
-    /* Logo centralizado */
-    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
+    /* Logo centralizado — tenta múltiplos seletores para cobrir versões do Streamlit */
+    [data-testid="stSidebar"] [data-testid="stSidebarHeader"],
+    section[data-testid="stSidebar"] > div:first-child {{
         display: flex !important;
         justify-content: center !important;
-        padding: 8px 0 !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stLogo"],
-    [data-testid="stSidebar"] [data-testid="stLogoLink"] {
+        align-items: center !important;
+        padding: 6px 0 !important;
+        width: 100% !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] a,
+    [data-testid="stSidebar"] [data-testid="stLogoLink"],
+    section[data-testid="stSidebar"] > div:first-child a {{
         display: flex !important;
         justify-content: center !important;
         width: 100% !important;
         padding: 0 !important;
-    }
+        margin: 0 !important;
+    }}
+    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] img,
+    [data-testid="stSidebar"] [data-testid="stLogo"] img,
+    section[data-testid="stSidebar"] > div:first-child img {{
+        display: block !important;
+        margin: 0 auto !important;
+    }}
     /* Links de navegação: só ícone, centralizado */
     [data-testid="stSidebarNavLink"] {
         padding: 10px 0 !important;

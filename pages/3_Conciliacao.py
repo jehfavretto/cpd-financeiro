@@ -141,7 +141,7 @@ with aba_pend:
         st.success("🎉 **Conciliação completa!** Todos os lançamentos foram conciliados.")
     else:
         st.caption(
-            "Selecione **uma linha** do Sponte e **uma linha** do Banco para vincular, "
+            "Selecione **uma ou mais linhas** do Sponte e **uma linha** do Banco para vincular, "
             "ou apenas **um lado** para ignorar com justificativa."
         )
 
@@ -190,7 +190,7 @@ with aba_pend:
                 use_container_width=True,
                 height=460,
                 hide_index=True,
-                selection_mode="single-row",
+                selection_mode="multi-row",   # permite selecionar vários do Sponte
                 on_select="rerun",
                 key=sp_key,
             )
@@ -209,44 +209,59 @@ with aba_pend:
 
         sp_sel_rows = sel_sp.selection.rows if hasattr(sel_sp, "selection") else []
         bk_sel_rows = sel_bk.selection.rows if hasattr(sel_bk, "selection") else []
-        sp_idx = sp_sel_rows[0] if sp_sel_rows else None
-        bk_idx = bk_sel_rows[0] if bk_sel_rows else None
+        bk_idx      = bk_sel_rows[0] if bk_sel_rows else None
 
         with col_mid:
             st.markdown("**Ações**")
             st.markdown("---")
 
-            if sp_idx is not None and bk_idx is not None:
-                sp_r = sp_filtrado.iloc[sp_idx]
+            if sp_sel_rows and bk_idx is not None:
+                # ── N Sponte → 1 Banco ────────────────────────────────────────
+                sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
                 bk_r = bk_filtrado.iloc[bk_idx]
-                st.success(
-                    f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n"
-                    f"{fmt_br(abs(sp_r['valor']))}"
-                )
-                st.info(
-                    f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n"
-                    f"{fmt_br(abs(float(bk_r['valor'])))}"
-                )
-                if st.button("🔗 Vincular", type="primary", use_container_width=True):
-                    db.salvar_conciliacao(mes, ano, "manual",
-                                          sponte_chave=sp_r["chave"],
-                                          banco_chave=bk_r["chave"])
+                soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
+                valor_bk = abs(float(bk_r["valor"]))
+                diff = abs(soma_sp - valor_bk)
+
+                # Mostra Sponte selecionados
+                for r in sp_selecionados:
+                    st.success(f"🔵 {str(r['categoria'])[:20]}  \n{fmt_br(abs(r['valor']))}", icon=None)
+                if len(sp_selecionados) > 1:
+                    st.markdown(f"**Σ Sponte: {fmt_br(soma_sp)}**")
+                st.info(f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n{fmt_br(valor_bk)}")
+
+                # Avisa se os valores não batem
+                if diff > 0.02:
+                    st.warning(f"⚠️ Diferença: {fmt_br(diff)}")
+
+                lbl = f"🔗 Vincular {len(sp_selecionados)} lançamento(s)" if len(sp_selecionados) > 1 else "🔗 Vincular"
+                if st.button(lbl, type="primary", use_container_width=True):
+                    for r in sp_selecionados:
+                        db.salvar_conciliacao(mes, ano, "manual",
+                                              sponte_chave=r["chave"],
+                                              banco_chave=bk_r["chave"])
                     st.session_state["conc_cnt"] += 1
                     st.rerun()
 
-            elif sp_idx is not None:
-                sp_r = sp_filtrado.iloc[sp_idx]
-                st.info(f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n{fmt_br(abs(sp_r['valor']))}")
-                with st.form(key=f"form_isp_{cnt}"):
-                    just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
-                    if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
-                        db.salvar_conciliacao(mes, ano, "ignorado_sponte",
-                                              sponte_chave=sp_r["chave"],
-                                              justificativa=just or None)
-                        st.session_state["conc_cnt"] += 1
-                        st.rerun()
+            elif sp_sel_rows and bk_idx is None:
+                # ── Só Sponte selecionado → ignorar ───────────────────────────
+                if len(sp_sel_rows) == 1:
+                    sp_r = sp_filtrado.iloc[sp_sel_rows[0]]
+                    st.info(f"**Sponte**  \n{str(sp_r['categoria'])[:22]}  \n{fmt_br(abs(sp_r['valor']))}")
+                    with st.form(key=f"form_isp_{cnt}"):
+                        just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
+                        if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
+                            db.salvar_conciliacao(mes, ano, "ignorado_sponte",
+                                                  sponte_chave=sp_r["chave"],
+                                                  justificativa=just or None)
+                            st.session_state["conc_cnt"] += 1
+                            st.rerun()
+                else:
+                    st.info(f"{len(sp_sel_rows)} linhas do Sponte selecionadas.")
+                    st.markdown("Selecione também **1 linha do Banco** para vincular.")
 
             elif bk_idx is not None:
+                # ── Só Banco selecionado → ignorar ────────────────────────────
                 bk_r = bk_filtrado.iloc[bk_idx]
                 st.info(f"**Banco**  \n{str(bk_r['historico'])[:22]}  \n{fmt_br(abs(float(bk_r['valor'])))}")
                 with st.form(key=f"form_ibk_{cnt}"):
@@ -260,7 +275,8 @@ with aba_pend:
 
             else:
                 st.markdown(
-                    "👈 Selecione uma linha do **Sponte** e uma do **Banco** para vincular.  \n\n"
+                    "👈 Selecione linhas do **Sponte** (pode ser mais de uma) "
+                    "e **1 linha do Banco** para vincular.  \n\n"
                     "Ou selecione apenas um lado para ignorar."
                 )
 
@@ -312,18 +328,25 @@ with aba_conc:
     if n_manual > 0:
         st.caption(f"🔗 **{n_manual} vinculados manualmente**")
         manual_df = conc_df[conc_df["tipo"] == "manual"]
-        for _, c in manual_df.iterrows():
-            sp_rows = sponte_df[sponte_df["chave"] == c["sponte_chave"]]
-            bk_rows = banco_df[banco_df["chave"] == c["banco_chave"]]
-            sp_text = (f"{pd.to_datetime(sp_rows.iloc[0]['data']).strftime('%d/%m')} | {str(sp_rows.iloc[0]['categoria'])[:25]} | {fmt_br(abs(sp_rows.iloc[0]['valor']))}"
-                       if not sp_rows.empty else c["sponte_chave"])
+
+        # Agrupa por banco_chave para exibir N:1 corretamente
+        for bk_chave, grupo in manual_df.groupby("banco_chave"):
+            bk_rows = banco_df[banco_df["chave"] == bk_chave]
             bk_text = (f"{bk_rows.iloc[0]['data_fmt'][:5]} | {str(bk_rows.iloc[0]['historico'])[:25]} | {fmt_br(abs(float(bk_rows.iloc[0]['valor'])))}"
-                       if not bk_rows.empty else c["banco_chave"])
+                       if not bk_rows.empty else str(bk_chave))
+
+            ids_grupo = grupo["id"].tolist()
             ca, cb, cc = st.columns([5, 5, 1])
-            ca.write(f"🔵 {sp_text}")
+            with ca:
+                for _, c in grupo.iterrows():
+                    sp_rows = sponte_df[sponte_df["chave"] == c["sponte_chave"]]
+                    sp_text = (f"{pd.to_datetime(sp_rows.iloc[0]['data']).strftime('%d/%m')} | {str(sp_rows.iloc[0]['categoria'])[:25]} | {fmt_br(abs(sp_rows.iloc[0]['valor']))}"
+                               if not sp_rows.empty else str(c["sponte_chave"]))
+                    st.write(f"🔵 {sp_text}")
             cb.write(f"🏦 {bk_text}")
-            if cc.button("✖", key=f"del_m_{c['id']}", help="Desvincular"):
-                db.deletar_conciliacao(int(c["id"]))
+            if cc.button("✖", key=f"del_mg_{ids_grupo[0]}", help="Desvincular grupo"):
+                for id_c in ids_grupo:
+                    db.deletar_conciliacao(int(id_c))
                 st.rerun()
 
     # ── Ignorados ─────────────────────────────────────────────────────────────

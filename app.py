@@ -36,36 +36,34 @@ if sidebar_oculta:
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
 
-    /* ─── Logo centralizada: position:fixed com coordenadas exatas ────── */
-    /* Sidebar começa em x=0, tem 68px de largura.
-       Imagem tem 40px → margem = (68-40)/2 = 14px da esquerda. */
-    [data-testid="stSidebar"] a:has(img) {
-        position: fixed !important;
-        left: 14px !important;
-        top: 10px !important;
-        width: 40px !important;
-        height: 40px !important;
-        padding: 0 !important;
+    /* ─── Logo centralizada: block + margin auto ───────────────────────── */
+    /* Remove flex/padding dos containers da logo e centraliza via margin */
+    [data-testid="stSidebarHeader"],
+    [data-testid="stLogo"],
+    [data-testid="stLogoSidebar"] {
+        display: block !important;
+        width: 68px !important;
+        padding: 6px 0 !important;
         margin: 0 !important;
-        z-index: 9998 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        text-align: center !important;
+        background: #FFFFFF !important;
+        box-sizing: border-box !important;
     }
+    /* Anchor: block com largura fixa, margem automática = centro */
+    [data-testid="stSidebar"] a:has(img) {
+        display: block !important;
+        width: 40px !important;
+        margin: 4px auto !important;
+        padding: 0 !important;
+        position: static !important;
+    }
+    /* A imagem */
     [data-testid="stSidebar"] a:has(img) img {
+        display: block !important;
         width: 40px !important;
         height: 40px !important;
         object-fit: contain !important;
-        display: block !important;
         border-radius: 50% !important;
-    }
-    /* Reserva espaço no header para a logo não sobrepor o nav */
-    [data-testid="stSidebarHeader"],
-    [data-testid="stLogo"],
-    [data-testid="stLogoSidebar"],
-    section[data-testid="stSidebar"] > div > div:first-child {
-        min-height: 64px !important;
-        padding: 0 !important;
     }
 
     /* Links de navegação: só ícone, centralizado */
@@ -87,12 +85,15 @@ _logo     = Path(__file__).parent / "logo.png"               # banner
 _logo_ass = Path(__file__).parent / "CDP_LOGO_ASS_A (1).png" # sidebar completa
 _logo_sid = _logo_ass if _logo_ass.exists() else _logo
 
-_logo_mini = Path(__file__).parent / "logo_mini.png"
+_logo_mini = next(
+    (Path(__file__).parent / f for f in ["logo_mini.jpg", "logo_mini.png"] if (Path(__file__).parent / f).exists()),
+    None
+)
 
 try:
     if sidebar_oculta:
-        # Mini sidebar: logo_mini.png se existir, senão símbolo circular
-        _mini_path = _logo_mini if _logo_mini.exists() else _icon
+        # Mini sidebar: logo_mini (jpg ou png) se existir, senão símbolo circular
+        _mini_path = _logo_mini if _logo_mini else _icon
         _icon_img = PILImage.open(str(_mini_path))
         st.logo(_icon_img, size="small")
     elif _logo_sid.exists():

@@ -36,50 +36,35 @@ if sidebar_oculta:
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
 
-    /* ─── Logo centralizada: remove padding lateral e força 68 px ──────── */
-    /* Testids conhecidos do container */
-    [data-testid="stSidebarHeader"],
-    [data-testid="stLogo"],
-    [data-testid="stLogoSidebar"] {
-        padding: 6px 0 !important;
-        margin: 0 !important;
-        width: 68px !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        box-sizing: border-box !important;
-        background: #FFFFFF !important;
-    }
-    /* Qualquer div PAI (direto ou indireto) do anchor da logo */
-    [data-testid="stSidebar"] div:has(> a:has(img)),
-    [data-testid="stSidebar"] div:has(a:has(img)) {
-        padding: 4px 0 !important;
-        margin: 0 !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 68px !important;
-        box-sizing: border-box !important;
-    }
-    /* O anchor em si */
+    /* ─── Logo centralizada: position:fixed com coordenadas exatas ────── */
+    /* Sidebar começa em x=0, tem 68px de largura.
+       Imagem tem 40px → margem = (68-40)/2 = 14px da esquerda. */
     [data-testid="stSidebar"] a:has(img) {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 68px !important;
+        position: fixed !important;
+        left: 14px !important;
+        top: 10px !important;
+        width: 40px !important;
+        height: 40px !important;
         padding: 0 !important;
         margin: 0 !important;
-        box-sizing: border-box !important;
+        z-index: 9998 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    /* A imagem: 40×40 px, centrada */
     [data-testid="stSidebar"] a:has(img) img {
         width: 40px !important;
         height: 40px !important;
-        max-width: 40px !important;
-        max-height: 40px !important;
         object-fit: contain !important;
         display: block !important;
-        margin: 0 auto !important;
+        border-radius: 50% !important;
+    }
+    /* Reserva espaço no header para a logo não sobrepor o nav */
+    [data-testid="stSidebarHeader"],
+    [data-testid="stLogo"],
+    [data-testid="stLogoSidebar"],
+    section[data-testid="stSidebar"] > div > div:first-child {
+        min-height: 64px !important;
         padding: 0 !important;
     }
 

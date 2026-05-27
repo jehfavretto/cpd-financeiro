@@ -33,8 +33,7 @@ if sidebar_oculta:
         width:     68px !important;
         overflow: hidden !important;
     }
-    /* Esconder logo */
-    [data-testid="stSidebar"] [data-testid="stLogo"]          { display: none !important; }
+    /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
     /* Links de navegação: só ícone, centralizado */
     [data-testid="stSidebarNavLink"] {
@@ -52,17 +51,22 @@ if sidebar_oculta:
 
 # ── Logo sidebar: versão sem subtítulo ────────────────────────────────────────
 _logo     = Path(__file__).parent / "logo.png"               # banner
-_logo_ass = Path(__file__).parent / "CDP_LOGO_ASS_A (1).png" # sidebar
+_logo_ass = Path(__file__).parent / "CDP_LOGO_ASS_A (1).png" # sidebar completa
 _logo_sid = _logo_ass if _logo_ass.exists() else _logo
 
-if _logo_sid.exists():
-    try:
+try:
+    if sidebar_oculta:
+        # Mini sidebar: só o símbolo circular
+        _icon_img = PILImage.open(str(_icon))
+        st.logo(_icon_img, size="small")
+    elif _logo_sid.exists():
+        # Sidebar completa: logo com nome, sem subtítulo
         _img = PILImage.open(str(_logo_sid))
         w, h = _img.size
         _img_crop = _img.crop((0, 0, w, int(h * 0.85)))
         st.logo(_img_crop, size="medium")
-    except Exception:
-        pass
+except Exception:
+    pass
 
 # ── Logo base64 para o banner — usa logo.png original (com subtítulo) ─────────
 _logo_b64 = base64.b64encode(_logo.read_bytes()).decode() if _logo.exists() else ""

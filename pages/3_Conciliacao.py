@@ -169,18 +169,20 @@ with aba_pend:
 
         col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
+        _val_cfg = st.column_config.NumberColumn("Valor", format="R$ %.2f")
+
         sp_show = pd.DataFrame({
             "Data":      pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
             "Categoria": sp_filtrado["categoria"].str[:22],
             "E/S":       sp_filtrado["es"],
-            "Valor":     sp_filtrado["valor"].map(lambda v: fmt_br(abs(v))),
+            "Valor":     sp_filtrado["valor"].abs(),   # numérico → ordenação funciona
         })
 
         bk_show = pd.DataFrame({
             "Data":      bk_filtrado["data_fmt"].str[:5],
             "Histórico": bk_filtrado["historico"].str[:22],
             "E/S":       bk_filtrado["deb_cred"],
-            "Valor":     bk_filtrado["valor"].map(lambda v: fmt_br(abs(float(v)))),
+            "Valor":     bk_filtrado["valor"].abs(),   # numérico
         })
 
         with col_sp:
@@ -190,7 +192,8 @@ with aba_pend:
                 use_container_width=True,
                 height=460,
                 hide_index=True,
-                selection_mode="multi-row",   # permite selecionar vários do Sponte
+                column_config={"Valor": _val_cfg},
+                selection_mode="multi-row",
                 on_select="rerun",
                 key=sp_key,
             )
@@ -202,6 +205,7 @@ with aba_pend:
                 use_container_width=True,
                 height=460,
                 hide_index=True,
+                column_config={"Valor": _val_cfg},
                 selection_mode="single-row",
                 on_select="rerun",
                 key=bk_key,

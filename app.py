@@ -77,8 +77,8 @@ if sidebar_oculta:
     /* Imagem da logo */
     [data-testid="stSidebar"] [data-testid="stSidebarLogo"],
     [data-testid="stSidebar"] a:has(img) img {
-        width: 44px !important;
-        height: 44px !important;
+        width: 36px !important;
+        height: 36px !important;
         object-fit: contain !important;
         display: block !important;
         border-radius: 50% !important;

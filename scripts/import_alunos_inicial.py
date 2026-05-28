@@ -46,12 +46,18 @@ def main():
         print("ERRO: .streamlit/secrets.toml não encontrado")
         sys.exit(1)
 
-    import tomllib
-    with open(secrets_path, "rb") as f:
-        secrets = tomllib.load(f)
-
-    url = secrets["supabase"]["url"]
-    key = secrets["supabase"]["key"]
+    # Lê url e key direto do arquivo (compatível com Python 3.9+)
+    url, key = None, None
+    with open(secrets_path) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("url"):
+                url = line.split("=", 1)[1].strip().strip('"')
+            elif line.startswith("key"):
+                key = line.split("=", 1)[1].strip().strip('"')
+    if not url or not key:
+        print("ERRO: não foi possível ler url/key do secrets.toml")
+        sys.exit(1)
     client = create_client(url, key)
 
     # Ler Excel

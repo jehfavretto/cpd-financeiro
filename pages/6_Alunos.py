@@ -110,8 +110,8 @@ if not df_raw.empty:
     st.divider()
 
 # ── Abas ──────────────────────────────────────────────────────────────────────
-aba_tabela, aba_add, aba_import, aba_tools = st.tabs(
-    ["📋 Tabela", "➕ Novo aluno", "📥 Importar Excel", "🔧 Ferramentas"]
+aba_tabela, aba_add, aba_import = st.tabs(
+    ["📋 Tabela", "➕ Novo aluno", "📥 Importar Excel"]
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -140,7 +140,7 @@ with aba_tabela:
             df_filt = df_filt[df_filt["turma"].isin(turma_sel)]
 
         df_grp = _agrupar(df_filt)
-        st.caption(f"{len(df_grp)} aluno(s) exibido(s)")
+        st.caption(f"{len(df_grp)} aluno(s) exibido(s) · Clique em uma linha para editar ou excluir")
 
         resp_cols = [f"Responsável {i+1}" for i in range(MAX_RESP)]
         col_config = {
@@ -163,20 +163,19 @@ with aba_tabela:
 
         sel_rows = sel.selection.rows if hasattr(sel, "selection") else []
 
-        # ── Painel de edição (1 aluno selecionado) ────────────────────────────
-        if len(sel_rows) == 1:
+        # ── Painel de edição / exclusão ───────────────────────────────────────
+        if sel_rows:
             row = df_grp.iloc[sel_rows[0]]
-            ids_aluno = row["_ids"]   # lista de IDs no banco para este aluno
+            ids_aluno = row["_ids"]
             resp_lista = df_raw[df_raw["id"].isin(ids_aluno)]["nome_responsavel"].tolist()
 
             st.divider()
-            st.markdown(f"**✏️ Editando: {row['nome_aluno']}**")
+            st.markdown(f"**✏️ Editando:** {row['nome_aluno']}")
 
             with st.form("form_editar"):
                 c1, c2 = st.columns(2)
                 turma_e = c1.selectbox(
-                    "Turma",
-                    ORDEM_TURMAS,
+                    "Turma", ORDEM_TURMAS,
                     index=_sort_turma(row["turma"]) if row["turma"] in ORDEM_TURMAS else 0,
                 )
                 aluno_e = c2.text_input("Nome do aluno", value=row["nome_aluno"])
@@ -185,39 +184,35 @@ with aba_tabela:
                 resp_txt = st.text_area(
                     "Responsáveis",
                     value="\n".join(resp_lista),
-                    height=120,
+                    height=max(80, 35 * len(resp_lista)),
                     label_visibility="collapsed",
-                    help="Coloque cada responsável em uma linha separada.",
+                    help="Um responsável por linha. Para remover, apague a linha.",
                 )
 
-                if st.form_submit_button("💾 Salvar", type="primary"):
+                fb1, fb2 = st.columns([1, 5])
+                salvar = fb1.form_submit_button("💾 Salvar", type="primary")
+                excluir = fb2.form_submit_button("🗑️ Excluir aluno")
+
+                if salvar:
                     novos_resp = [r.strip() for r in resp_txt.splitlines() if r.strip()]
                     if not novos_resp:
                         st.error("Informe pelo menos um responsável.")
                     else:
-                        # Apaga os registros antigos deste aluno
                         for rid in ids_aluno:
                             db.deletar_aluno(int(rid))
-                        # Insere os novos
                         db.salvar_alunos_lote([
                             {"ano": int(ano_sel), "turma": turma_e,
-                             "nome_aluno": aluno_e.strip(),
-                             "nome_responsavel": r}
+                             "nome_aluno": aluno_e.strip(), "nome_responsavel": r}
                             for r in novos_resp
                         ])
                         st.success("✅ Salvo!")
                         st.rerun()
 
-        # ── Excluir ───────────────────────────────────────────────────────────
-        if sel_rows:
-            row = df_grp.iloc[sel_rows[0]]
-            st.divider()
-            if st.button(f"🗑️ Excluir **{row['nome_aluno']}** e todos os responsáveis",
-                         key="btn_del"):
-                for rid in row["_ids"]:
-                    db.deletar_aluno(int(rid))
-                st.success("Aluno excluído.")
-                st.rerun()
+                if excluir:
+                    for rid in ids_aluno:
+                        db.deletar_aluno(int(rid))
+                    st.success(f"'{row['nome_aluno']}' excluído.")
+                    st.rerun()
 
         # Resumo por turma
         st.divider()
@@ -310,43 +305,3 @@ with aba_import:
             st.error(f"Erro ao processar arquivo: {e}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ABA 4 — Ferramentas
-# ══════════════════════════════════════════════════════════════════════════════
-with aba_tools:
-    st.markdown("### 🔤 Padronizar nomes dos responsáveis")
-    st.caption(
-        "Aplica Title Case brasileiro (ex: SCHEILA STUART → Scheila Stuart). "
-        "Artigos e preposições ficam minúsculos: 'de', 'da', 'do', etc."
-    )
-
-    if not df_raw.empty:
-        # Preview
-        df_prev = df_raw[["nome_responsavel"]].drop_duplicates().copy()
-        df_prev["padronizado"] = df_prev["nome_responsavel"].apply(_title_br)
-        mudancas = df_prev[df_prev["nome_responsavel"] != df_prev["padronizado"]]
-
-        if mudancas.empty:
-            st.success("✅ Todos os nomes já estão padronizados!")
-        else:
-            st.info(f"**{len(mudancas)} nomes** serão alterados. Veja o preview:")
-            st.dataframe(mudancas.rename(columns={
-                "nome_responsavel": "Atual",
-                "padronizado": "Novo"
-            }), use_container_width=True, hide_index=True)
-
-            if st.button("✅ Aplicar padronização", type="primary", key="btn_padronizar"):
-                for _, row in df_raw.iterrows():
-                    novo = _title_br(row["nome_responsavel"])
-                    if novo != row["nome_responsavel"]:
-                        db.upsert_aluno(
-                            ano=int(row["ano"]),
-                            turma=row["turma"],
-                            nome_aluno=row["nome_aluno"],
-                            nome_responsavel=novo,
-                            id=int(row["id"]),
-                        )
-                st.success("✅ Nomes padronizados com sucesso!")
-                st.rerun()
-    else:
-        st.info("Sem dados para padronizar.")

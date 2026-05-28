@@ -182,36 +182,47 @@ with aba_tabela:
 
                 resp_list = st.session_state["_edit_resp_list"]
 
-                # CSS do painel de edição
+                # Banner escuro com nome do aluno
+                st.markdown(f"""
+                <div style="
+                    background: #1C2B5F;
+                    color: white;
+                    padding: 10px 18px;
+                    border-radius: 8px 8px 0 0;
+                    font-size: 0.82rem;
+                    letter-spacing: 0.06em;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: -2px;
+                ">
+                    ✏️ &nbsp;EDITANDO
+                    <span style="font-weight:400; font-size:0.95rem; letter-spacing:0;">
+                        {row['nome_aluno']}
+                    </span>
+                    <span style="opacity:0.55; font-size:0.78rem; font-weight:400;">
+                        · {row['turma']}
+                    </span>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # CSS: borda lateral + fonte menor dentro do container
                 st.markdown("""
                 <style>
                 [data-testid="stVerticalBlockBorderWrapper"] {
-                    border-left: 5px solid #1C2B5F !important;
-                    border-top: 1px solid #8fa8d8 !important;
-                    border-right: 1px solid #8fa8d8 !important;
-                    border-bottom: 1px solid #8fa8d8 !important;
-                    border-radius: 8px !important;
-                    box-shadow: 0 3px 10px rgba(28,43,95,0.15) !important;
+                    border-left: 4px solid #1C2B5F !important;
+                    border-top: none !important;
+                    border-radius: 0 0 8px 8px !important;
+                    box-shadow: 0 3px 8px rgba(28,43,95,0.12) !important;
                 }
-                [data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {
-                    background-color: #c4d4ef !important;
-                    border-radius: 6px !important;
-                }
-                [data-testid="stVerticalBlockBorderWrapper"] label,
-                [data-testid="stVerticalBlockBorderWrapper"] p {
-                    font-size: 0.85rem !important;
+                [data-testid="stVerticalBlockBorderWrapper"] label {
+                    font-size: 0.82rem !important;
                 }
                 </style>
                 """, unsafe_allow_html=True)
 
                 with st.container(border=True):
-                    st.markdown(
-                        f"<div style='font-size:0.85rem;color:#1C2B5F;font-weight:700;"
-                        f"letter-spacing:0.02em;margin-bottom:6px;'>✏️ EDITANDO</div>"
-                        f"<div style='font-size:1.05rem;font-weight:600;margin-bottom:10px;'>"
-                        f"{row['nome_aluno']}</div>",
-                        unsafe_allow_html=True,
-                    )
                     ec1, ec2 = st.columns(2)
                     turma_e = ec1.selectbox(
                         "Turma", ORDEM_TURMAS,

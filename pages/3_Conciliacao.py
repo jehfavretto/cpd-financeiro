@@ -96,33 +96,70 @@ _desv          = conc_df[conc_df["tipo"] == "desvincular"]
 _conc_sem_desv = conc_df[conc_df["tipo"] != "desvincular"]
 
 chaves_sp_desvincular = set(_desv["sponte_chave"].dropna()) if not _desv.empty else set()
-chaves_bk_desvincular = set(_desv["banco_chave"].dropna())  if not _desv.empty else set()
-chaves_sp_usadas      = set(_conc_sem_desv["sponte_chave"].dropna()) if not _conc_sem_desv.empty else set()
-chaves_bk_usadas      = set(_conc_sem_desv["banco_chave"].dropna())  if not _conc_sem_desv.empty else set()
 
-# ── Auto-match: chave idêntica nos dois sistemas, ainda não processada ─────────
-_cnt_sp   = Counter(sponte_df["chave"])
-_cnt_bk   = Counter(banco_df["chave"])
-_raw_auto = (
-    (set(_cnt_sp.keys()) & set(_cnt_bk.keys()))
-    - chaves_sp_usadas
-    - chaves_bk_usadas
-    - chaves_sp_desvincular   # bloqueados pelo usuário — voltam para pendentes
-)
-# Concilia apenas min(qtd_sponte, qtd_banco) pares por chave
-# Evita que 2 Sponte idênticos "sumam" quando há só 1 banco com a mesma chave
-chaves_auto_counts = {c: min(_cnt_sp[c], _cnt_bk[c]) for c in _raw_auto}
+# ── Monta contadores de uso manual ────────────────────────────────────────────
+# banco_chave pode conter múltiplas chaves separadas por §§ (formato 1→N)
+# sp_manual_cnt[X] = nº de operações de linkage que consumiram o Sponte X (1 por vinculação)
+_cnt_sp = Counter(sponte_df["chave"])
+_cnt_bk = Counter(banco_df["chave"])
 
-# Índices exatos do DataFrame que entram no auto-match
+sp_manual_cnt: Counter = Counter()
+bk_manual_cnt: Counter = Counter()   # conta cada banco_chave individual
+
+for _, _row in _conc_sem_desv.iterrows():
+    _sp_ch = _row.get("sponte_chave")
+    _bk_ch = _row.get("banco_chave")
+    if pd.notna(_sp_ch):
+        sp_manual_cnt[_sp_ch] += 1
+    if pd.notna(_bk_ch):
+        for _ch in str(_bk_ch).split("§§"):
+            _ch = _ch.strip()
+            if _ch:
+                bk_manual_cnt[_ch] += 1
+
+chaves_bk_usadas = set(bk_manual_cnt.keys())
+
+# ── Auto-match: disponível = total_no_df − uso_manual ─────────────────────────
+# Evita que um 1→N bloqueie o auto-match de outros Sponte com a mesma chave
+_sp_available = {
+    ch: max(0, _cnt_sp[ch] - sp_manual_cnt.get(ch, 0)) for ch in _cnt_sp
+}
+_bk_available = {
+    ch: max(0, _cnt_bk[ch] - bk_manual_cnt.get(ch, 0)) for ch in _cnt_bk
+}
+
+_raw_auto = {
+    ch for ch in set(_sp_available) & set(_bk_available)
+    if _sp_available[ch] > 0 and _bk_available[ch] > 0
+    and ch not in chaves_sp_desvincular
+}
+chaves_auto_counts = {ch: min(_sp_available[ch], _bk_available[ch]) for ch in _raw_auto}
+
+# Índices já consumidos pelo linkage manual
+sp_manually_used_idx: set = set()
+for _ch, _cnt in sp_manual_cnt.items():
+    sp_manually_used_idx.update(sponte_df[sponte_df["chave"] == _ch].index[:_cnt].tolist())
+
+bk_manually_used_idx: set = set()
+for _ch, _cnt in bk_manual_cnt.items():
+    bk_manually_used_idx.update(banco_df[banco_df["chave"] == _ch].index[:_cnt].tolist())
+
+# Índices do auto-match (excluindo os já usados manualmente)
 _sp_idx_auto: set = set()
 _bk_idx_auto: set = set()
 for _chave, _n in chaves_auto_counts.items():
-    _sp_idx_auto.update(sponte_df[sponte_df["chave"] == _chave].index[:_n].tolist())
-    _bk_idx_auto.update(banco_df[banco_df["chave"] == _chave].index[:_n].tolist())
+    _sp_cands = sponte_df[
+        (sponte_df["chave"] == _chave) & (~sponte_df.index.isin(sp_manually_used_idx))
+    ]
+    _bk_cands = banco_df[
+        (banco_df["chave"] == _chave) & (~banco_df.index.isin(bk_manually_used_idx))
+    ]
+    _sp_idx_auto.update(_sp_cands.index[:_n].tolist())
+    _bk_idx_auto.update(_bk_cands.index[:_n].tolist())
 
 # ── Separa pendentes ───────────────────────────────────────────────────────────
-mask_sp_ok = sponte_df.index.isin(_sp_idx_auto) | sponte_df["chave"].isin(chaves_sp_usadas)
-mask_bk_ok = banco_df.index.isin(_bk_idx_auto)  | banco_df["chave"].isin(chaves_bk_usadas)
+mask_sp_ok = sponte_df.index.isin(_sp_idx_auto) | sponte_df.index.isin(sp_manually_used_idx)
+mask_bk_ok = banco_df.index.isin(_bk_idx_auto)  | banco_df.index.isin(bk_manually_used_idx)
 sponte_pendente = sponte_df[~mask_sp_ok].reset_index(drop=True)
 banco_pendente  = banco_df[~mask_bk_ok].reset_index(drop=True)
 
@@ -299,11 +336,13 @@ with aba_pend:
                                                       banco_chave=bk_r["chave"])
                         else:
                             # 1:N — 1 Sponte → vários Banco
+                            # Salva UM ÚNICO registro com banco_chaves separadas por §§
+                            # para não duplicar o sponte_chave e não quebrar o auto-match
                             sp_r = sp_selecionados[0]
-                            for r in bk_selecionados:
-                                db.salvar_conciliacao(mes, ano, "manual",
-                                                      sponte_chave=sp_r["chave"],
-                                                      banco_chave=r["chave"])
+                            bk_chaves_unidas = "§§".join(r["chave"] for r in bk_selecionados)
+                            db.salvar_conciliacao(mes, ano, "manual",
+                                                  sponte_chave=sp_r["chave"],
+                                                  banco_chave=bk_chaves_unidas)
                         st.session_state["conc_cnt"] += 1
                         st.rerun()
 
@@ -438,7 +477,24 @@ with aba_conc:
                     db.deletar_conciliacao(int(id_c))
                 st.rerun()
 
-        # ── 1:N — 1 Sponte → vários Banco ────────────────────────────────────
+        # ── 1:N — novo formato: 1 registro com banco_chaves separadas por §§ ──
+        restante = manual_df[~manual_df["id"].isin(shown_ids)]
+        for _, c in restante.iterrows():
+            bk_raw = str(c.get("banco_chave", ""))
+            if "§§" not in bk_raw:
+                continue
+            shown_ids.add(c["id"])
+            bk_lista = [ch.strip() for ch in bk_raw.split("§§") if ch.strip()]
+            ca, cb, cc = st.columns([5, 5, 1])
+            ca.write(f"🔵 {_sp_txt(c['sponte_chave'])}")
+            with cb:
+                for bk_ch in bk_lista:
+                    st.write(f"🏦 {_bk_txt(bk_ch)}")
+            if cc.button("✖", key=f"del_1n_new_{c['id']}", help="Desvincular"):
+                db.deletar_conciliacao(int(c["id"]))
+                st.rerun()
+
+        # ── 1:N — formato antigo: vários registros com mesmo sponte_chave ────
         restante = manual_df[~manual_df["id"].isin(shown_ids)]
         sp_counts = restante["sponte_chave"].value_counts()
         for sp_chave in sp_counts[sp_counts > 1].index:

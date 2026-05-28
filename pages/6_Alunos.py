@@ -121,7 +121,10 @@ with aba_tabela:
     if df_raw.empty:
         st.info("Nenhum aluno cadastrado. Use a aba **Importar Excel** para começar.")
     else:
-        # Filtros
+        # ── Container de edição (aparece ACIMA da tabela) ─────────────────────
+        edit_container = st.container()
+
+        # ── Filtros ───────────────────────────────────────────────────────────
         fc1, fc2 = st.columns([4, 3])
         busca = fc1.text_input("🔍 Pesquisar", placeholder="aluno, responsável…",
                                key=f"busca_{ano_sel}")
@@ -140,12 +143,12 @@ with aba_tabela:
             df_filt = df_filt[df_filt["turma"].isin(turma_sel)]
 
         df_grp = _agrupar(df_filt)
-        st.caption(f"{len(df_grp)} aluno(s) exibido(s) · Clique em uma linha para editar ou excluir")
+        st.caption(f"{len(df_grp)} aluno(s) · Clique em uma linha para editar ou excluir")
 
         resp_cols = [f"Responsável {i+1}" for i in range(MAX_RESP)]
         col_config = {
-            "turma":      st.column_config.TextColumn("Turma",        width="small"),
-            "nome_aluno": st.column_config.TextColumn("Aluno",        width="medium"),
+            "turma":      st.column_config.TextColumn("Turma",   width="small"),
+            "nome_aluno": st.column_config.TextColumn("Aluno",   width="medium"),
         }
         for c in resp_cols:
             col_config[c] = st.column_config.TextColumn(c, width="medium")
@@ -163,56 +166,98 @@ with aba_tabela:
 
         sel_rows = sel.selection.rows if hasattr(sel, "selection") else []
 
-        # ── Painel de edição / exclusão ───────────────────────────────────────
-        if sel_rows:
-            row = df_grp.iloc[sel_rows[0]]
-            ids_aluno = row["_ids"]
-            resp_lista = df_raw[df_raw["id"].isin(ids_aluno)]["nome_responsavel"].tolist()
+        # ── Preenche o painel de edição (acima da tabela) ─────────────────────
+        with edit_container:
+            if sel_rows:
+                row      = df_grp.iloc[sel_rows[0]]
+                ids_aluno = row["_ids"]
+                row_key  = "_".join(str(i) for i in sorted(ids_aluno))
 
-            st.divider()
-            st.markdown(f"**✏️ Editando:** {row['nome_aluno']}")
+                # Inicializa / reseta estado ao trocar de linha
+                if st.session_state.get("_edit_row_key") != row_key:
+                    st.session_state["_edit_row_key"]   = row_key
+                    st.session_state["_edit_resp_list"] = (
+                        df_raw[df_raw["id"].isin(ids_aluno)]["nome_responsavel"].tolist()
+                    )
 
-            with st.form("form_editar"):
-                c1, c2 = st.columns(2)
-                turma_e = c1.selectbox(
+                resp_list = st.session_state["_edit_resp_list"]
+
+                st.markdown(f"**✏️ Editando: {row['nome_aluno']}**")
+                ec1, ec2 = st.columns(2)
+                turma_e = ec1.selectbox(
                     "Turma", ORDEM_TURMAS,
                     index=_sort_turma(row["turma"]) if row["turma"] in ORDEM_TURMAS else 0,
+                    key=f"_edit_turma_{row_key}",
                 )
-                aluno_e = c2.text_input("Nome do aluno", value=row["nome_aluno"])
+                aluno_e = ec2.text_input("Nome do aluno", value=row["nome_aluno"],
+                                         key=f"_edit_aluno_{row_key}")
 
-                st.markdown("**Responsáveis** _(um por linha)_")
-                resp_txt = st.text_area(
-                    "Responsáveis",
-                    value="\n".join(resp_lista),
-                    height=max(80, 35 * len(resp_lista)),
-                    label_visibility="collapsed",
-                    help="Um responsável por linha. Para remover, apague a linha.",
-                )
+                # Campos individuais por responsável
+                st.markdown("**Responsáveis**")
+                for i, resp in enumerate(resp_list):
+                    r1, r2 = st.columns([12, 1])
+                    r1.text_input(
+                        f"Responsável {i+1}", value=resp,
+                        key=f"_resp_e_{i}_{row_key}",
+                        label_visibility="collapsed",
+                    )
+                    if r2.button("✕", key=f"_del_r_{i}_{row_key}", help="Remover"):
+                        cur = [
+                            st.session_state.get(f"_resp_e_{j}_{row_key}", resp_list[j])
+                            for j in range(len(resp_list))
+                        ]
+                        cur.pop(i)
+                        # Atualiza session_state para evitar valores deslocados
+                        for j in range(len(resp_list)):
+                            st.session_state.pop(f"_resp_e_{j}_{row_key}", None)
+                        for j, v in enumerate(cur):
+                            st.session_state[f"_resp_e_{j}_{row_key}"] = v
+                        st.session_state["_edit_resp_list"] = cur
+                        st.rerun()
 
-                fb1, fb2 = st.columns([1, 5])
-                salvar = fb1.form_submit_button("💾 Salvar", type="primary")
-                excluir = fb2.form_submit_button("🗑️ Excluir aluno")
+                # Botões de ação
+                bc1, bc2, bc3, _ = st.columns([3, 2, 2, 3])
+                if bc1.button("➕ Adicionar responsável", key=f"_btn_add_{row_key}"):
+                    cur = [
+                        st.session_state.get(f"_resp_e_{j}_{row_key}", resp_list[j])
+                        for j in range(len(resp_list))
+                    ]
+                    cur.append("")
+                    for j in range(len(resp_list)):
+                        st.session_state.pop(f"_resp_e_{j}_{row_key}", None)
+                    for j, v in enumerate(cur):
+                        st.session_state[f"_resp_e_{j}_{row_key}"] = v
+                    st.session_state["_edit_resp_list"] = cur
+                    st.rerun()
 
-                if salvar:
-                    novos_resp = [r.strip() for r in resp_txt.splitlines() if r.strip()]
-                    if not novos_resp:
+                if bc2.button("💾 Salvar", type="primary", key=f"_btn_save_{row_key}"):
+                    novos = [
+                        st.session_state.get(f"_resp_e_{j}_{row_key}", resp_list[j]).strip()
+                        for j in range(len(resp_list))
+                    ]
+                    novos = [v for v in novos if v]
+                    if not novos:
                         st.error("Informe pelo menos um responsável.")
                     else:
                         for rid in ids_aluno:
                             db.deletar_aluno(int(rid))
                         db.salvar_alunos_lote([
-                            {"ano": int(ano_sel), "turma": turma_e,
-                             "nome_aluno": aluno_e.strip(), "nome_responsavel": r}
-                            for r in novos_resp
+                            {"ano": int(ano_sel),
+                             "turma": st.session_state.get(f"_edit_turma_{row_key}", row["turma"]),
+                             "nome_aluno": st.session_state.get(f"_edit_aluno_{row_key}", row["nome_aluno"]).strip(),
+                             "nome_responsavel": r}
+                            for r in novos
                         ])
-                        st.success("✅ Salvo!")
+                        st.session_state.pop("_edit_row_key", None)
                         st.rerun()
 
-                if excluir:
+                if bc3.button("🗑️ Excluir aluno", key=f"_btn_del_{row_key}"):
                     for rid in ids_aluno:
                         db.deletar_aluno(int(rid))
-                    st.success(f"'{row['nome_aluno']}' excluído.")
+                    st.session_state.pop("_edit_row_key", None)
                     st.rerun()
+
+                st.divider()
 
         # Resumo por turma
         st.divider()

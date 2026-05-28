@@ -200,12 +200,17 @@ with aba_pend:
     # Traduz "Select all" do multiselect para português
     st.markdown("""
     <style>
-    [data-testid="stMultiSelectPopover"] span:first-child {
+    /* "Select all" aparece como checkbox dentro do popover */
+    [data-testid="stMultiSelectPopover"] [data-testid="stCheckbox"] span,
+    [data-testid="stMultiSelectPopover"] label span:last-child,
+    [data-testid="stMultiSelectPopover"] > div:first-child span {
         font-size: 0 !important;
     }
-    [data-testid="stMultiSelectPopover"] span:first-child::before {
+    [data-testid="stMultiSelectPopover"] [data-testid="stCheckbox"] span::before,
+    [data-testid="stMultiSelectPopover"] label span:last-child::before,
+    [data-testid="stMultiSelectPopover"] > div:first-child span::before {
         content: "Selecionar tudo";
-        font-size: 0.9rem;
+        font-size: 0.875rem;
     }
     </style>
     """, unsafe_allow_html=True)

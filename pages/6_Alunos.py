@@ -258,11 +258,21 @@ with aba_tabela:
                         if rc1.button("✅ Sim, remover", key=f"_resp_del_yes_{row_key}"):
                             cur = [st.session_state.get(f"_resp_e_{j}_{row_key}", resp_list[j]) for j in range(len(resp_list))]
                             cur.pop(_pending_resp)
-                            for j in range(len(resp_list)):
-                                st.session_state.pop(f"_resp_e_{j}_{row_key}", None)
-                            for j, v in enumerate(cur):
-                                st.session_state[f"_resp_e_{j}_{row_key}"] = v
-                            st.session_state["_edit_resp_list"] = cur
+                            cur = [v for v in cur if v.strip()]
+                            # Salva imediatamente no banco
+                            for rid in ids_aluno:
+                                db.deletar_aluno(int(rid))
+                            if cur:
+                                db.salvar_alunos_lote([
+                                    {"ano": int(ano_sel),
+                                     "turma": st.session_state.get(f"_edit_turma_{row_key}", row["turma"]),
+                                     "nome_aluno": st.session_state.get(f"_edit_aluno_{row_key}", row["nome_aluno"]).strip(),
+                                     "nome_responsavel": r}
+                                    for r in cur
+                                ])
+                            # Limpa estado de edição e seleção
+                            st.session_state.pop("_edit_row_key", None)
+                            st.session_state.pop(f"df_alunos_{ano_sel}", None)
                             st.session_state.pop(f"_del_resp_pending_{row_key}", None)
                             st.rerun()
                         if rc2.button("❌ Cancelar", key=f"_resp_del_no_{row_key}"):
@@ -303,6 +313,7 @@ with aba_tabela:
                                 for r in novos
                             ])
                             st.session_state.pop("_edit_row_key", None)
+                            st.session_state.pop(f"df_alunos_{ano_sel}", None)
                             st.rerun()
 
                     if bc3.button("🗑️ Excluir aluno", key=f"_btn_del_{row_key}"):
@@ -316,6 +327,7 @@ with aba_tabela:
                             for rid in ids_aluno:
                                 db.deletar_aluno(int(rid))
                             st.session_state.pop("_edit_row_key", None)
+                            st.session_state.pop(f"df_alunos_{ano_sel}", None)
                             st.rerun()
                         if cd2.button("❌ Cancelar", key=f"_del_aluno_no_{row_key}"):
                             st.session_state.pop(f"_confirm_del_aluno_{row_key}", None)

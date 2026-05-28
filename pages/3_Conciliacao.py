@@ -456,6 +456,28 @@ def _bk_label(chave: str) -> str:
             f"{str(row['historico'])} · **{_md_val(float(row['valor']))}**")
 
 with aba_conc:
+    st.markdown("""
+    <style>
+    [data-testid="stVerticalBlockBorderWrapper"] > div {
+        padding: 2px 10px !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+        gap: 0 !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] p {
+        font-size: 0.78rem !important;
+        margin: 0 !important;
+        line-height: 1.3 !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] button {
+        font-size: 0.75rem !important;
+        padding: 0 6px !important;
+        height: 24px !important;
+        min-height: 24px !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     if n_auto == 0 and n_manual == 0 and n_ign == 0:
         st.info("Nenhum item conciliado ainda.")
 

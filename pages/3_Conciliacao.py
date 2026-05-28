@@ -197,23 +197,6 @@ aba_pend, aba_conc = st.tabs([
 # ABA: PENDENTES
 # ══════════════════════════════════════════════════════════════════════════════
 with aba_pend:
-    # Traduz "Select all" do multiselect para português
-    st.markdown("""
-    <style>
-    /* "Select all" aparece como checkbox dentro do popover */
-    [data-testid="stMultiSelectPopover"] [data-testid="stCheckbox"] span,
-    [data-testid="stMultiSelectPopover"] label span:last-child,
-    [data-testid="stMultiSelectPopover"] > div:first-child span {
-        font-size: 0 !important;
-    }
-    [data-testid="stMultiSelectPopover"] [data-testid="stCheckbox"] span::before,
-    [data-testid="stMultiSelectPopover"] label span:last-child::before,
-    [data-testid="stMultiSelectPopover"] > div:first-child span::before {
-        content: "Selecionar tudo";
-        font-size: 0.875rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
     if sponte_pendente.empty and banco_pendente.empty:
         st.success("🎉 **Conciliação completa!** Todos os lançamentos foram conciliados.")
@@ -254,10 +237,14 @@ with aba_pend:
                 help="0 = sem limite",
             )
             cats = sorted(sponte_pendente["categoria"].dropna().unique().tolist())
-            cat_sel = mf3.multiselect(
-                "Categoria (Sponte)", cats, key=f"cat_{mes}_{ano}_{_fc}",
-                placeholder="Selecione categorias…",
-            )
+            with mf3:
+                st.markdown("**Categoria (Sponte)**")
+                sel_todas = st.checkbox("Selecionar todas", key=f"cat_todas_{mes}_{ano}_{_fc}")
+                cat_sel = []
+                for cat in cats:
+                    checked = sel_todas or st.checkbox(cat, key=f"cat_{cat}_{mes}_{ano}_{_fc}")
+                    if checked:
+                        cat_sel.append(cat)
 
         # ── Aplica filtros ────────────────────────────────────────────────────
         sp_filtrado = sponte_pendente.copy()

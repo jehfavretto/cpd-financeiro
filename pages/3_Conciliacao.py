@@ -237,14 +237,10 @@ with aba_pend:
                 help="0 = sem limite",
             )
             cats = sorted(sponte_pendente["categoria"].dropna().unique().tolist())
-            with mf3:
-                st.markdown("**Categoria (Sponte)**")
-                sel_todas = st.checkbox("Selecionar todas", key=f"cat_todas_{mes}_{ano}_{_fc}")
-                cat_sel = []
-                for cat in cats:
-                    checked = sel_todas or st.checkbox(cat, key=f"cat_{cat}_{mes}_{ano}_{_fc}")
-                    if checked:
-                        cat_sel.append(cat)
+            cat_sel = mf3.multiselect(
+                "Categoria (Sponte)", cats, key=f"cat_{mes}_{ano}_{_fc}",
+                placeholder="Selecione categorias…",
+            )
 
         # ── Aplica filtros ────────────────────────────────────────────────────
         sp_filtrado = sponte_pendente.copy()

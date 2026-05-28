@@ -118,6 +118,22 @@ aba_tabela, aba_add, aba_import = st.tabs(
 # ABA 1 — Tabela agrupada
 # ══════════════════════════════════════════════════════════════════════════════
 with aba_tabela:
+    # CSS global do painel de edição — injetado no topo da aba
+    st.markdown("""
+    <style>
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-left: 4px solid #1C2B5F !important;
+        border-top: none !important;
+        border-radius: 0 0 8px 8px !important;
+        box-shadow: 0 3px 8px rgba(28,43,95,0.12) !important;
+        filter: brightness(0.87) !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] label {
+        font-size: 0.82rem !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     if df_raw.empty:
         st.info("Nenhum aluno cadastrado. Use a aba **Importar Excel** para começar.")
     else:
@@ -205,22 +221,6 @@ with aba_tabela:
                         · {row['turma']}
                     </span>
                 </div>
-                """, unsafe_allow_html=True)
-
-                # CSS: borda lateral + fonte menor dentro do container
-                st.markdown("""
-                <style>
-                [data-testid="stVerticalBlockBorderWrapper"] {
-                    border-left: 4px solid #1C2B5F !important;
-                    border-top: none !important;
-                    border-radius: 0 0 8px 8px !important;
-                    box-shadow: 0 3px 8px rgba(28,43,95,0.12) !important;
-                    filter: brightness(0.91) !important;
-                }
-                [data-testid="stVerticalBlockBorderWrapper"] label {
-                    font-size: 0.82rem !important;
-                }
-                </style>
                 """, unsafe_allow_html=True)
 
                 with st.container(border=True):

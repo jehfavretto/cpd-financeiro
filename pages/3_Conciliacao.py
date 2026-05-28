@@ -458,31 +458,36 @@ def _bk_label(chave: str) -> str:
 with aba_conc:
     st.markdown("""
     <style>
-    /* Padding interno dos cards */
-    [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding: 1px 8px !important;
+    /* === Compactar cards de conciliação === */
+
+    /* 1. Reduz gap ENTRE os cards — alvo: o stVerticalBlock que os contém */
+    [data-testid="stVerticalBlock"]:has([data-testid="stVerticalBlockBorderWrapper"]) {
+        gap: 4px !important;
     }
-    /* Gap zero entre elementos dentro do card */
-    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
-    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
+
+    /* 2. Padding interno mínimo */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {
+        padding: 2px 10px !important;
+    }
+
+    /* 3. Gap zero entre colunas dentro do card */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
         gap: 0 !important;
     }
-    /* Fonte menor e sem margem nos parágrafos */
+
+    /* 4. Fonte menor sem margem */
     [data-testid="stVerticalBlockBorderWrapper"] p {
         font-size: 0.78rem !important;
         margin: 0 !important;
         line-height: 1.4 !important;
     }
-    /* Botão ✖ compacto */
+
+    /* 5. Botão ✖ compacto */
     [data-testid="stVerticalBlockBorderWrapper"] button {
         height: 22px !important;
         min-height: 22px !important;
         padding: 0 6px !important;
         font-size: 0.7rem !important;
-    }
-    /* Gap entre cards consecutivos */
-    div:has(> [data-testid="stVerticalBlockBorderWrapper"]) {
-        gap: 3px !important;
     }
     </style>
     """, unsafe_allow_html=True)

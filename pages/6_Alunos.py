@@ -238,6 +238,7 @@ with aba_tabela:
 
                     # Campos individuais por responsável
                     st.markdown("**Responsáveis**")
+                    _pending_resp = st.session_state.get(f"_del_resp_pending_{row_key}")
                     for i, resp in enumerate(resp_list):
                         r1, r2 = st.columns([12, 1])
                         r1.text_input(
@@ -245,17 +246,27 @@ with aba_tabela:
                             key=f"_resp_e_{i}_{row_key}",
                             label_visibility="collapsed",
                         )
-                        if r2.button("✕", key=f"_del_r_{i}_{row_key}", help="Remover"):
-                            cur = [
-                                st.session_state.get(f"_resp_e_{j}_{row_key}", resp_list[j])
-                                for j in range(len(resp_list))
-                            ]
-                            cur.pop(i)
+                        if r2.button("✕", key=f"_del_r_{i}_{row_key}", help="Remover responsável"):
+                            st.session_state[f"_del_resp_pending_{row_key}"] = i
+                            st.rerun()
+
+                    # Confirmação de exclusão de responsável
+                    if _pending_resp is not None and _pending_resp < len(resp_list):
+                        nome_resp = st.session_state.get(f"_resp_e_{_pending_resp}_{row_key}", resp_list[_pending_resp])
+                        st.warning(f"Remover **{nome_resp}** da lista de responsáveis?")
+                        rc1, rc2 = st.columns(2)
+                        if rc1.button("✅ Sim, remover", key=f"_resp_del_yes_{row_key}"):
+                            cur = [st.session_state.get(f"_resp_e_{j}_{row_key}", resp_list[j]) for j in range(len(resp_list))]
+                            cur.pop(_pending_resp)
                             for j in range(len(resp_list)):
                                 st.session_state.pop(f"_resp_e_{j}_{row_key}", None)
                             for j, v in enumerate(cur):
                                 st.session_state[f"_resp_e_{j}_{row_key}"] = v
                             st.session_state["_edit_resp_list"] = cur
+                            st.session_state.pop(f"_del_resp_pending_{row_key}", None)
+                            st.rerun()
+                        if rc2.button("❌ Cancelar", key=f"_resp_del_no_{row_key}"):
+                            st.session_state.pop(f"_del_resp_pending_{row_key}", None)
                             st.rerun()
 
                     # Botões de ação
@@ -295,10 +306,20 @@ with aba_tabela:
                             st.rerun()
 
                     if bc3.button("🗑️ Excluir aluno", key=f"_btn_del_{row_key}"):
-                        for rid in ids_aluno:
-                            db.deletar_aluno(int(rid))
-                        st.session_state.pop("_edit_row_key", None)
-                        st.rerun()
+                        st.session_state[f"_confirm_del_aluno_{row_key}"] = True
+
+                    # Confirmação de exclusão de aluno
+                    if st.session_state.get(f"_confirm_del_aluno_{row_key}"):
+                        st.warning(f"Tem certeza que deseja excluir **{row['nome_aluno']}** e todos os responsáveis?")
+                        cd1, cd2 = st.columns(2)
+                        if cd1.button("✅ Sim, excluir", type="primary", key=f"_del_aluno_yes_{row_key}"):
+                            for rid in ids_aluno:
+                                db.deletar_aluno(int(rid))
+                            st.session_state.pop("_edit_row_key", None)
+                            st.rerun()
+                        if cd2.button("❌ Cancelar", key=f"_del_aluno_no_{row_key}"):
+                            st.session_state.pop(f"_confirm_del_aluno_{row_key}", None)
+                            st.rerun()
 
         # Resumo por turma
         st.divider()

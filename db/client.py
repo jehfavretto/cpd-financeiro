@@ -282,6 +282,7 @@ def carregar_alunos(ano: int) -> pd.DataFrame:
         .eq("ano", ano)
         .order("turma")
         .order("nome_aluno")
+        .order("id")          # mantém ordem de inserção dos responsáveis
         .execute()
     )
     if not res.data:

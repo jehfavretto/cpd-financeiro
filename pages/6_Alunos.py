@@ -186,13 +186,14 @@ with aba_tabela:
                 st.markdown("""
                 <style>
                 [data-testid="stVerticalBlockBorderWrapper"] {
-                    background-color: #eef2fb !important;
-                    border-left: 4px solid #1C2B5F !important;
-                    border-top: 1px solid #c5cfe8 !important;
-                    border-right: 1px solid #c5cfe8 !important;
-                    border-bottom: 1px solid #c5cfe8 !important;
+                    background-color: #d0dcf5 !important;
+                    border-left: 5px solid #1C2B5F !important;
+                    border-top: 1px solid #9aadd9 !important;
+                    border-right: 1px solid #9aadd9 !important;
+                    border-bottom: 1px solid #9aadd9 !important;
                     border-radius: 8px !important;
                     padding: 4px 8px !important;
+                    box-shadow: 0 2px 8px rgba(28,43,95,0.12) !important;
                 }
                 </style>
                 """, unsafe_allow_html=True)

@@ -458,22 +458,31 @@ def _bk_label(chave: str) -> str:
 with aba_conc:
     st.markdown("""
     <style>
+    /* Padding interno dos cards */
     [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding: 2px 10px !important;
+        padding: 1px 8px !important;
     }
-    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+    /* Gap zero entre elementos dentro do card */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"],
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
         gap: 0 !important;
     }
+    /* Fonte menor e sem margem nos parágrafos */
     [data-testid="stVerticalBlockBorderWrapper"] p {
         font-size: 0.78rem !important;
         margin: 0 !important;
-        line-height: 1.3 !important;
+        line-height: 1.4 !important;
     }
+    /* Botão ✖ compacto */
     [data-testid="stVerticalBlockBorderWrapper"] button {
-        font-size: 0.75rem !important;
+        height: 22px !important;
+        min-height: 22px !important;
         padding: 0 6px !important;
-        height: 24px !important;
-        min-height: 24px !important;
+        font-size: 0.7rem !important;
+    }
+    /* Gap entre cards consecutivos */
+    div:has(> [data-testid="stVerticalBlockBorderWrapper"]) {
+        gap: 3px !important;
     }
     </style>
     """, unsafe_allow_html=True)

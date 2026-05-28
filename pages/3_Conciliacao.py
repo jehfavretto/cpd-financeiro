@@ -197,16 +197,15 @@ aba_pend, aba_conc = st.tabs([
 # ABA: PENDENTES
 # ══════════════════════════════════════════════════════════════════════════════
 with aba_pend:
-    # Traduz placeholder do multiselect para português
+    # Traduz "Select all" do multiselect para português
     st.markdown("""
     <style>
-    [data-testid="stMultiSelect"] div[class*="placeholder"] {
+    [data-testid="stMultiSelectPopover"] span:first-child {
         font-size: 0 !important;
     }
-    [data-testid="stMultiSelect"] div[class*="placeholder"]::before {
-        content: "Selecione categorias…";
+    [data-testid="stMultiSelectPopover"] span:first-child::before {
+        content: "Selecionar tudo";
         font-size: 0.9rem;
-        color: #999;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -252,6 +251,7 @@ with aba_pend:
             cats = sorted(sponte_pendente["categoria"].dropna().unique().tolist())
             cat_sel = mf3.multiselect(
                 "Categoria (Sponte)", cats, key=f"cat_{mes}_{ano}_{_fc}",
+                placeholder="Selecione categorias…",
             )
 
         # ── Aplica filtros ────────────────────────────────────────────────────

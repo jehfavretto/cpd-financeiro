@@ -36,33 +36,51 @@ if sidebar_oculta:
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
 
-    /* ─── Logo centralizada: block + margin auto ───────────────────────── */
-    /* Remove flex/padding dos containers da logo e centraliza via margin */
-    [data-testid="stSidebarHeader"],
-    [data-testid="stLogo"],
-    [data-testid="stLogoSidebar"] {
-        display: block !important;
-        width: 68px !important;
-        padding: 6px 0 !important;
-        margin: 0 !important;
-        text-align: center !important;
-        background: #FFFFFF !important;
-        box-sizing: border-box !important;
+    /* ─── Logo centralizada ─────────────────────────────────────────────
+       Testids confirmados no fonte do Streamlit:
+         stSidebarContent  → div com paddingLeft/Right
+         stSidebarHeader   → div flex justify-content:space-between
+         stLogoLink        → <a> que envolve a logo
+         stSidebarLogo     → <img> da logo
+         stSidebarCollapseButton → botão nativo de recolher (esconde)
+       Usa seletor duplo [stSidebar][stXxx] para especificidade > tema.py
+    ──────────────────────────────────────────────────────────────────── */
+
+    /* Sem padding horizontal no container de conteúdo */
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
-    /* Anchor: block com largura fixa, margem automática = centro */
-    [data-testid="stSidebar"] a:has(img) {
-        display: block !important;
-        width: 40px !important;
-        margin: 4px auto !important;
+    /* Header: flex centrado (original é space-between) */
+    [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
         padding: 0 !important;
-        position: static !important;
+        margin: 0 !important;
+        background: #FFFFFF !important;
+        border-radius: 0 0 10px 10px !important;
+        min-height: 60px !important;
+        height: auto !important;
     }
-    /* A imagem */
+    /* Oculta botão de colapso nativo (temos o nosso próprio) */
+    [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {
+        display: none !important;
+    }
+    /* Anchor da logo */
+    [data-testid="stSidebar"] [data-testid="stLogoLink"],
+    [data-testid="stSidebar"] a:has(img) {
+        display: inline-flex !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    /* Imagem da logo */
+    [data-testid="stSidebar"] [data-testid="stSidebarLogo"],
     [data-testid="stSidebar"] a:has(img) img {
-        display: block !important;
-        width: 40px !important;
-        height: 40px !important;
+        width: 44px !important;
+        height: 44px !important;
         object-fit: contain !important;
+        display: block !important;
         border-radius: 50% !important;
     }
 

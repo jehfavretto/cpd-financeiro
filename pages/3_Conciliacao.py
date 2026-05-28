@@ -249,36 +249,72 @@ with aba_pend:
             "Valor":     bk_filtrado["valor"].abs(),
         })
 
+        class _EmptySel:
+            class selection:
+                rows = []
+
+        def _msg_vazia(tudo_conciliado: bool) -> str:
+            if tudo_conciliado:
+                return (
+                    "<div style='height:460px;display:flex;flex-direction:column;"
+                    "align-items:center;justify-content:center;gap:8px;"
+                    "color:#1a7f37;font-weight:600;font-size:1rem;"
+                    "background:#f0fff4;border-radius:8px;"
+                    "border:1px solid #c3e6cb;'>"
+                    "<span style='font-size:2rem'>✅</span>"
+                    "Tudo conciliado!"
+                    "</div>"
+                )
+            else:
+                return (
+                    "<div style='height:460px;display:flex;flex-direction:column;"
+                    "align-items:center;justify-content:center;gap:8px;"
+                    "color:#6c757d;font-weight:500;font-size:0.95rem;"
+                    "background:#f8f9fa;border-radius:8px;"
+                    "border:1px solid #dee2e6;'>"
+                    "<span style='font-size:2rem'>🔍</span>"
+                    "Nenhum lançamento neste filtro"
+                    "</div>"
+                )
+
         with col_sp:
             st.markdown("**📋 FluxoCaixa Sponte**")
-            sel_sp = st.dataframe(
-                sp_show,
-                use_container_width=True,
-                height=460,
-                hide_index=True,
-                column_config={
-                    "Valor": _val_cfg,
-                    "E/S": _es_cfg,
-                    "Categoria": _cat_cfg,
-                    "Origem/Destino": _orig_cfg,
-                },
-                selection_mode="multi-row",
-                on_select="rerun",
-                key=sp_key,
-            )
+            if sp_show.empty:
+                sel_sp = _EmptySel()
+                st.markdown(_msg_vazia(sponte_pendente.empty), unsafe_allow_html=True)
+            else:
+                sel_sp = st.dataframe(
+                    sp_show,
+                    use_container_width=True,
+                    height=460,
+                    hide_index=True,
+                    column_config={
+                        "Valor": _val_cfg,
+                        "E/S": _es_cfg,
+                        "Categoria": _cat_cfg,
+                        "Origem/Destino": _orig_cfg,
+                    },
+                    selection_mode="multi-row",
+                    on_select="rerun",
+                    key=sp_key,
+                )
 
         with col_bk:
             st.markdown("**🏦 Extrato Banco**")
-            sel_bk = st.dataframe(
-                bk_show,
-                use_container_width=True,
-                height=460,
-                hide_index=True,
-                column_config={"Valor": _val_cfg, "E/S": _es_cfg},
-                selection_mode="multi-row",
-                on_select="rerun",
-                key=bk_key,
-            )
+            if bk_show.empty:
+                sel_bk = _EmptySel()
+                st.markdown(_msg_vazia(banco_pendente.empty), unsafe_allow_html=True)
+            else:
+                sel_bk = st.dataframe(
+                    bk_show,
+                    use_container_width=True,
+                    height=460,
+                    hide_index=True,
+                    column_config={"Valor": _val_cfg, "E/S": _es_cfg},
+                    selection_mode="multi-row",
+                    on_select="rerun",
+                    key=bk_key,
+                )
 
         sp_sel_rows = sel_sp.selection.rows if hasattr(sel_sp, "selection") else []
         bk_sel_rows = sel_bk.selection.rows if hasattr(sel_bk, "selection") else []

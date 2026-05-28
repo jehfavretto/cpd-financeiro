@@ -44,6 +44,30 @@ if sponte_df.empty or banco_df.empty:
     st.warning("Dados de lançamentos não encontrados para este mês.")
     st.stop()
 
+# ── Tabela alunos → mapa aluno → responsável(is) ──────────────────────────────
+import unicodedata as _ucd
+
+def _norm_nome(s: str) -> str:
+    """Normaliza nome para comparação: minúsculas sem acentos."""
+    s = _ucd.normalize("NFD", str(s).lower().strip())
+    return "".join(c for c in s if _ucd.category(c) != "Mn")
+
+try:
+    _alunos_df = db.carregar_alunos(ano)
+except Exception:
+    _alunos_df = pd.DataFrame(columns=["nome_aluno", "nome_responsavel"])
+
+# {nome_normalizado: "Resp1 / Resp2"}
+_aluno_resp_map: dict[str, str] = {}
+if not _alunos_df.empty:
+    for aluno, grp in _alunos_df.groupby("nome_aluno")["nome_responsavel"]:
+        resps = [r for r in grp.tolist() if str(r).strip()]
+        if resps:
+            _aluno_resp_map[_norm_nome(aluno)] = " / ".join(resps)
+
+def _responsavel_do_aluno(nome_aluno: str) -> str:
+    return _aluno_resp_map.get(_norm_nome(nome_aluno), "")
+
 
 # ── Funções auxiliares ─────────────────────────────────────────────────────────
 
@@ -255,10 +279,14 @@ with aba_pend:
 
         if busca.strip():
             q = busca.strip().lower()
+            # Sponte: pesquisa em categoria, aluno e responsável
+            _sp_resp_filt = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
             sp_filtrado = sp_filtrado[
                 sp_filtrado["categoria"].str.lower().str.contains(q, na=False) |
-                sp_filtrado["origem_destino"].str.lower().str.contains(q, na=False)
+                sp_filtrado["origem_destino"].str.lower().str.contains(q, na=False) |
+                _sp_resp_filt.str.lower().str.contains(q, na=False)
             ]
+            # Banco: pesquisa em histórico e origem/destino (nome do responsável)
             bk_od = bk_filtrado["origem_destino"] if "origem_destino" in bk_filtrado.columns else pd.Series("", index=bk_filtrado.index)
             bk_filtrado = bk_filtrado[
                 bk_filtrado["historico"].str.lower().str.contains(q, na=False) |
@@ -286,15 +314,17 @@ with aba_pend:
 
         _val_cfg  = st.column_config.NumberColumn("Valor", format="R$ %,.2f")
         _es_cfg   = st.column_config.TextColumn("E/S", width="small")
-        _cat_cfg  = st.column_config.TextColumn("Categoria", width="medium")
-        _orig_cfg = st.column_config.TextColumn("Origem/Destino", width="medium")
+        _cat_cfg  = st.column_config.TextColumn("Categoria", width="small")
+        _aluno_cfg = st.column_config.TextColumn("Aluno", width="medium")
+        _resp_cfg  = st.column_config.TextColumn("Responsável", width="medium")
 
+        _resp_series = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
         sp_show = pd.DataFrame({
-            "Data":           pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
-            "Categoria":      sp_filtrado["categoria"],          # sem corte → tooltip no hover
-            "E/S":            sp_filtrado["es"],
-            "Valor":          sp_filtrado["valor"].abs(),
-            "Origem/Destino": sp_filtrado["origem_destino"],     # scroll para ver
+            "Data":        pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
+            "E/S":         sp_filtrado["es"],
+            "Valor":       sp_filtrado["valor"].abs(),
+            "Aluno":       sp_filtrado["origem_destino"],
+            "Responsável": _resp_series,
         })
 
         bk_show = pd.DataFrame({
@@ -345,10 +375,10 @@ with aba_pend:
                     height=460,
                     hide_index=True,
                     column_config={
-                        "Valor": _val_cfg,
-                        "E/S": _es_cfg,
-                        "Categoria": _cat_cfg,
-                        "Origem/Destino": _orig_cfg,
+                        "Valor":       _val_cfg,
+                        "E/S":         _es_cfg,
+                        "Aluno":       _aluno_cfg,
+                        "Responsável": _resp_cfg,
                     },
                     selection_mode="multi-row",
                     on_select="rerun",

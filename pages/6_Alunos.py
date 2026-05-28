@@ -5,6 +5,7 @@ Um aluno pode ter vários responsáveis — exibidos em uma só linha.
 from __future__ import annotations
 import re
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import db.client as db
 
@@ -118,21 +119,34 @@ aba_tabela, aba_add, aba_import = st.tabs(
 # ABA 1 — Tabela agrupada
 # ══════════════════════════════════════════════════════════════════════════════
 with aba_tabela:
-    # CSS global do painel de edição — injetado no topo da aba
-    st.markdown("""
-    <style>
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        border-left: 4px solid #1C2B5F !important;
-        border-top: none !important;
-        border-radius: 0 0 8px 8px !important;
-        box-shadow: 0 3px 8px rgba(28,43,95,0.12) !important;
-        filter: brightness(0.87) !important;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] label {
-        font-size: 0.82rem !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # JS direto no DOM — bypassa qualquer CSS do Streamlit
+    components.html("""
+    <script>
+    (function() {
+        function applyEditStyle() {
+            try {
+                var d = window.parent.document;
+                d.querySelectorAll('[data-testid="stVerticalBlockBorderWrapper"]').forEach(function(w) {
+                    w.style.setProperty('background-color', '#cdd9f0', 'important');
+                    w.style.setProperty('border-left', '4px solid #1C2B5F', 'important');
+                    w.style.setProperty('border-top', 'none', 'important');
+                    w.style.setProperty('border-radius', '0 0 8px 8px', 'important');
+                    w.style.setProperty('box-shadow', '0 3px 8px rgba(28,43,95,0.15)', 'important');
+                    w.querySelectorAll('div').forEach(function(div) {
+                        var bg = window.parent.getComputedStyle(div).backgroundColor;
+                        if (bg === 'rgba(0, 0, 0, 0)' || bg === 'rgb(255, 255, 255)') {
+                            div.style.setProperty('background-color', '#cdd9f0', 'important');
+                        }
+                    });
+                });
+            } catch(e) {}
+        }
+        applyEditStyle();
+        var obs = new MutationObserver(applyEditStyle);
+        obs.observe(window.parent.document.body, {childList: true, subtree: true});
+    })();
+    </script>
+    """, height=0)
 
     if df_raw.empty:
         st.info("Nenhum aluno cadastrado. Use a aba **Importar Excel** para começar.")

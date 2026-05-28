@@ -31,7 +31,7 @@ if sidebar_oculta:
         min-width: 68px !important;
         max-width: 68px !important;
         width:     68px !important;
-        overflow: hidden !important;
+        overflow: visible !important;
     }
     /* Esconder handle de resize */
     [data-testid="stSidebar"] [data-testid="stSidebarResizeHandle"] { display: none !important; }
@@ -86,13 +86,41 @@ if sidebar_oculta:
 
     /* Links de navegação: só ícone, centralizado */
     [data-testid="stSidebarNavLink"] {
+        position: relative !important;
         padding: 10px 0 !important;
         justify-content: center !important;
         gap: 0 !important;
         min-height: 44px !important;
     }
-    [data-testid="stSidebarNavLink"] > *:not(:first-child) { display: none !important; }
-    [data-testid="stSidebarNavLink"] > *:first-child       { font-size: 1.3rem !important; margin: 0 !important; }
+    /* Ícone */
+    [data-testid="stSidebarNavLink"] > *:first-child { font-size: 1.3rem !important; margin: 0 !important; }
+    /* Label: escondida, vira tooltip no hover */
+    [data-testid="stSidebarNavLink"] > *:not(:first-child) {
+        position: absolute !important;
+        left: 100% !important;
+        margin-left: 8px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: #1C2B5F !important;
+        color: #FFFFFF !important;
+        padding: 5px 12px !important;
+        border-radius: 6px !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
+        z-index: 99999 !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        transition: opacity 0.15s, visibility 0.15s !important;
+        display: block !important;
+    }
+    /* Mostrar tooltip ao hover */
+    [data-testid="stSidebarNavLink"]:hover > *:not(:first-child) {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
     /* Conteúdo extra da sidebar (botões) */
     [data-testid="stSidebarContent"] { padding: 4px 0 !important; }
     </style>

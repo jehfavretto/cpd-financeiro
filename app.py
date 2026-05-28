@@ -46,10 +46,18 @@ if sidebar_oculta:
        Usa seletor duplo [stSidebar][stXxx] para especificidade > tema.py
     ──────────────────────────────────────────────────────────────────── */
 
-    /* Sem padding horizontal no container de conteúdo */
+    /* Sem padding horizontal + overflow visible para tooltips funcionarem */
     [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
         padding-left: 0 !important;
         padding-right: 0 !important;
+        overflow: visible !important;
+    }
+    /* Nav container: também precisa ser visible */
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"],
+    [data-testid="stSidebar"] [data-testid="stSidebarNavItems"],
+    [data-testid="stSidebar"] [data-testid="stSidebarNavItems"] > *,
+    [data-testid="stSidebar"] [data-testid="stSidebarNavLinkContainer"] {
+        overflow: visible !important;
     }
     /* Header: flex centrado (original é space-between) */
     [data-testid="stSidebar"] [data-testid="stSidebarHeader"] {

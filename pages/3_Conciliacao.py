@@ -205,20 +205,71 @@ with aba_pend:
             "ou apenas **um lado** para ignorar com justificativa."
         )
 
-        # ── Filtro E/S ────────────────────────────────────────────────────────
-        filtro_es = st.radio(
-            "Filtrar por tipo:", ["Todos", "Entradas (E)", "Saídas (S)"],
-            horizontal=True, key=f"filtro_es_{mes}_{ano}",
-        )
+        # ── Filtros ───────────────────────────────────────────────────────────
+        if "flt_cnt" not in st.session_state:
+            st.session_state["flt_cnt"] = 0
+        _fc = st.session_state["flt_cnt"]
 
+        fb1, fb2, fb3 = st.columns([5, 4, 1])
+        busca = fb1.text_input(
+            "Pesquisar", placeholder="🔍  categoria, origem/destino, histórico…",
+            key=f"busca_{mes}_{ano}_{_fc}",
+        )
+        filtro_es = fb2.radio(
+            "Tipo:", ["Todos", "Entradas (E)", "Saídas (S)"],
+            horizontal=True, key=f"filtro_es_{mes}_{ano}_{_fc}",
+        )
+        fb3.write(""); fb3.write("")
+        if fb3.button("✕", key=f"limpar_{mes}_{ano}", help="Limpar todos os filtros"):
+            st.session_state["flt_cnt"] += 1
+            st.rerun()
+
+        with st.expander("⚙️ Mais filtros"):
+            mf1, mf2, mf3 = st.columns([2, 2, 4])
+            val_min = mf1.number_input(
+                "Valor mínimo (R$)", min_value=0.0, value=0.0,
+                step=50.0, format="%.2f", key=f"vmin_{mes}_{ano}_{_fc}",
+            )
+            val_max = mf2.number_input(
+                "Valor máximo (R$)", min_value=0.0, value=0.0,
+                step=50.0, format="%.2f", key=f"vmax_{mes}_{ano}_{_fc}",
+                help="0 = sem limite",
+            )
+            cats = sorted(sponte_pendente["categoria"].dropna().unique().tolist())
+            cat_sel = mf3.multiselect(
+                "Categoria (Sponte)", cats, key=f"cat_{mes}_{ano}_{_fc}",
+            )
+
+        # ── Aplica filtros ────────────────────────────────────────────────────
         sp_filtrado = sponte_pendente.copy()
         bk_filtrado = banco_pendente.copy()
+
         if filtro_es == "Entradas (E)":
             sp_filtrado = sp_filtrado[sp_filtrado["es"] == "E"]
             bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "E"]
         elif filtro_es == "Saídas (S)":
             sp_filtrado = sp_filtrado[sp_filtrado["es"] == "S"]
             bk_filtrado = bk_filtrado[bk_filtrado["deb_cred"] == "S"]
+
+        if busca.strip():
+            q = busca.strip().lower()
+            sp_filtrado = sp_filtrado[
+                sp_filtrado["categoria"].str.lower().str.contains(q, na=False) |
+                sp_filtrado["origem_destino"].str.lower().str.contains(q, na=False)
+            ]
+            bk_filtrado = bk_filtrado[
+                bk_filtrado["historico"].str.lower().str.contains(q, na=False)
+            ]
+
+        if val_min > 0:
+            sp_filtrado = sp_filtrado[sp_filtrado["valor"].abs() >= val_min]
+            bk_filtrado = bk_filtrado[bk_filtrado["valor"].abs() >= val_min]
+        if val_max > 0:
+            sp_filtrado = sp_filtrado[sp_filtrado["valor"].abs() <= val_max]
+            bk_filtrado = bk_filtrado[bk_filtrado["valor"].abs() <= val_max]
+
+        if cat_sel:
+            sp_filtrado = sp_filtrado[sp_filtrado["categoria"].isin(cat_sel)]
 
         # Contador de ações — incrementar após cada ação reseta as seleções
         if "conc_cnt" not in st.session_state:

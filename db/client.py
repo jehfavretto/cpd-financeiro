@@ -270,3 +270,74 @@ def limpar_conciliacoes_mes(mes: int, ano: int):
     """Remove todas as conciliações de um mês (ao re-importar os dados)."""
     client = get_client()
     client.table("conciliacoes").delete().eq("mes", mes).eq("ano", ano).execute()
+
+
+# ── Alunos ────────────────────────────────────────────────────────────────────
+
+def carregar_alunos(ano: int) -> pd.DataFrame:
+    client = get_client()
+    res = (
+        client.table("alunos")
+        .select("id, ano, turma, nome_aluno, nome_responsavel")
+        .eq("ano", ano)
+        .order("turma")
+        .order("nome_aluno")
+        .execute()
+    )
+    if not res.data:
+        return pd.DataFrame(columns=["id", "ano", "turma", "nome_aluno", "nome_responsavel"])
+    return pd.DataFrame(res.data)
+
+
+def anos_com_alunos() -> list[int]:
+    client = get_client()
+    res = client.table("alunos").select("ano").execute()
+    if not res.data:
+        return []
+    return sorted(set(r["ano"] for r in res.data), reverse=True)
+
+
+def salvar_alunos_lote(rows: list[dict]):
+    """Insere uma lista de alunos de uma vez (sem deduplicar — use limpar_alunos_ano antes)."""
+    client = get_client()
+    if rows:
+        client.table("alunos").insert(rows).execute()
+
+
+def upsert_aluno(ano: int, turma: str, nome_aluno: str, nome_responsavel: str, id: int | None = None):
+    """Cria ou atualiza um aluno. Se id informado, faz update; senão insert."""
+    client = get_client()
+    payload = {
+        "ano": ano,
+        "turma": turma.strip(),
+        "nome_aluno": nome_aluno.strip(),
+        "nome_responsavel": nome_responsavel.strip(),
+    }
+    if id:
+        client.table("alunos").update(payload).eq("id", id).execute()
+    else:
+        client.table("alunos").insert(payload).execute()
+
+
+def deletar_aluno(id: int):
+    client = get_client()
+    client.table("alunos").delete().eq("id", id).execute()
+
+
+def limpar_alunos_ano(ano: int):
+    """Remove todos os alunos de um ano (antes de re-importar)."""
+    client = get_client()
+    client.table("alunos").delete().eq("ano", ano).execute()
+
+
+def buscar_aluno_por_responsavel(nome_responsavel: str, ano: int) -> list[dict]:
+    """Retorna alunos cujo nome_responsavel contém a substring (case-insensitive)."""
+    client = get_client()
+    res = (
+        client.table("alunos")
+        .select("id, turma, nome_aluno, nome_responsavel")
+        .eq("ano", ano)
+        .ilike("nome_responsavel", f"%{nome_responsavel}%")
+        .execute()
+    )
+    return res.data or []

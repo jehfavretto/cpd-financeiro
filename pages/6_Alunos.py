@@ -215,6 +215,7 @@ with aba_tabela:
                     border-top: none !important;
                     border-radius: 0 0 8px 8px !important;
                     box-shadow: 0 3px 8px rgba(28,43,95,0.12) !important;
+                    filter: brightness(0.91) !important;
                 }
                 [data-testid="stVerticalBlockBorderWrapper"] label {
                     font-size: 0.82rem !important;

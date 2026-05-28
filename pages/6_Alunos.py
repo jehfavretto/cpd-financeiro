@@ -1,6 +1,6 @@
 """
 Página de gestão de alunos e responsáveis.
-Permite visualizar, editar, adicionar e importar alunos por ano letivo.
+Um aluno pode ter vários responsáveis — exibidos em uma só linha.
 """
 from __future__ import annotations
 import re
@@ -8,7 +8,7 @@ import streamlit as st
 import pandas as pd
 import db.client as db
 
-# ── Ordem definida das turmas ─────────────────────────────────────────────────
+# ── Ordem das turmas ──────────────────────────────────────────────────────────
 ORDEM_TURMAS = [
     "Berçário", "Maternal",
     "I período", "II Período", "III Período", "Pré",
@@ -16,276 +16,324 @@ ORDEM_TURMAS = [
 ]
 
 def _sort_turma(t: str) -> int:
-    """Retorna índice para ordenar turma; desconhecidas vão para o final."""
     try:
         return ORDEM_TURMAS.index(t)
     except ValueError:
         return 999
 
 
-# ── Limpeza para import de Excel ──────────────────────────────────────────────
+# ── Padronização de nomes (Title Case BR) ─────────────────────────────────────
+_MINUSC = {"de","da","do","dos","das","e","em","na","no","nas","nos","a","o","as","os"}
+
+def _title_br(s: str) -> str:
+    """Title case respeitando artigos/preposições minúsculos."""
+    words = str(s).strip().split()
+    return " ".join(
+        w.capitalize() if (i == 0 or w.lower() not in _MINUSC) else w.lower()
+        for i, w in enumerate(words)
+    )
+
+
+# ── Limpeza para import ───────────────────────────────────────────────────────
 def _limpar_responsavel(s: str) -> str:
     s = str(s).strip()
-    # Remove CPF/CNPJ do início: ex "38.360.955 FULANO" → "FULANO"
     s = re.sub(r'^\d[\d\.\-]{0,13}\s+', '', s)
     return s.strip()
 
-
 def _parse_turma(t: str):
-    """Retorna (nome_turma, ano) a partir de 'I período - 2026' etc."""
     t = str(t).strip()
     m = re.search(r'(\d{4})', t)
     ano = int(m.group(1)) if m else None
     nome = re.sub(r'\s*[-–]\s*\d{4}\s*', '', t).strip()
-    nome = re.sub(r'\s+', ' ', nome)
-    return nome, ano
+    return re.sub(r'\s+', ' ', nome), ano
+
+
+# ── Agrupar df por aluno ──────────────────────────────────────────────────────
+def _agrupar(df: pd.DataFrame) -> pd.DataFrame:
+    """Uma linha por (turma, nome_aluno). Responsáveis separados por ' · '."""
+    if df.empty:
+        return pd.DataFrame(columns=["turma", "nome_aluno", "responsáveis", "_ids"])
+    grp = (
+        df.groupby(["turma", "nome_aluno"], sort=False)
+        .apply(lambda g: pd.Series({
+            "responsáveis": " · ".join(g["nome_responsavel"].tolist()),
+            "_ids": g["id"].tolist(),
+        }))
+        .reset_index()
+    )
+    grp = grp.sort_values("turma", key=lambda s: s.map(_sort_turma))
+    return grp.reset_index(drop=True)
 
 
 # ── Página ────────────────────────────────────────────────────────────────────
 st.title("👨‍🎓 Alunos e Responsáveis")
 
-# ── Verificar se tabela existe ────────────────────────────────────────────────
+# Verifica tabela
 try:
     anos_existentes = db.anos_com_alunos()
-    _tabela_ok = True
 except Exception as e:
-    _tabela_ok = False
     st.error(
         "**Tabela `alunos` não encontrada no Supabase.**\n\n"
-        "Crie a tabela no SQL Editor do Supabase antes de usar esta página:\n\n"
-        "```sql\n"
-        "CREATE TABLE IF NOT EXISTS alunos (\n"
-        "    id               BIGSERIAL PRIMARY KEY,\n"
-        "    ano              INTEGER   NOT NULL,\n"
-        "    turma            TEXT      NOT NULL,\n"
-        "    nome_aluno       TEXT      NOT NULL,\n"
-        "    nome_responsavel TEXT      NOT NULL,\n"
-        "    created_at       TIMESTAMPTZ DEFAULT NOW()\n"
-        ");\n"
-        "CREATE INDEX IF NOT EXISTS idx_alunos_ano         ON alunos(ano);\n"
-        "CREATE INDEX IF NOT EXISTS idx_alunos_responsavel ON alunos(LOWER(nome_responsavel));\n"
-        "CREATE INDEX IF NOT EXISTS idx_alunos_aluno       ON alunos(LOWER(nome_aluno));\n"
-        "```\n\n"
-        f"_(Detalhe técnico: {e})_"
+        "Crie a tabela no SQL Editor antes de usar esta página.\n\n"
+        f"_(Detalhe: {e})_"
     )
     st.stop()
 
-ano_atual = 2026  # fallback
-
-col_ano, col_novo, _ = st.columns([2, 2, 6])
-with col_ano:
+# Seleção de ano
+with st.columns([2, 8])[0]:
     if anos_existentes:
         ano_sel = st.selectbox("Ano letivo", anos_existentes, index=0)
     else:
-        ano_sel = st.number_input("Ano letivo", value=ano_atual, step=1, format="%d")
+        ano_sel = st.number_input("Ano letivo", value=2026, step=1, format="%d")
 
-# ── Carregar dados ────────────────────────────────────────────────────────────
 try:
-    df = db.carregar_alunos(int(ano_sel))
+    df_raw = db.carregar_alunos(int(ano_sel))
 except Exception as e:
-    st.error(f"Erro ao carregar alunos: {e}")
+    st.error(f"Erro ao carregar: {e}")
     st.stop()
 
-# ── Métricas rápidas ──────────────────────────────────────────────────────────
-if not df.empty:
-    n_alunos     = df["nome_aluno"].nunique()
-    n_resp       = df["nome_responsavel"].nunique()
-    n_turmas     = df["turma"].nunique()
+# Métricas
+if not df_raw.empty:
     m1, m2, m3 = st.columns(3)
-    m1.metric("👦 Alunos únicos", n_alunos)
-    m2.metric("👪 Responsáveis únicos", n_resp)
-    m3.metric("🏫 Turmas", n_turmas)
+    m1.metric("👦 Alunos", df_raw["nome_aluno"].nunique())
+    m2.metric("👪 Responsáveis únicos", df_raw["nome_responsavel"].nunique())
+    m3.metric("🏫 Turmas", df_raw["turma"].nunique())
     st.divider()
 
 # ── Abas ──────────────────────────────────────────────────────────────────────
-aba_tabela, aba_add, aba_import = st.tabs(["📋 Tabela", "➕ Novo registro", "📥 Importar Excel"])
+aba_tabela, aba_add, aba_import, aba_tools = st.tabs(
+    ["📋 Tabela", "➕ Novo aluno", "📥 Importar Excel", "🔧 Ferramentas"]
+)
 
-# ── ABA 1 — Tabela editável ───────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# ABA 1 — Tabela agrupada
+# ══════════════════════════════════════════════════════════════════════════════
 with aba_tabela:
-    if df.empty:
-        st.info("Nenhum aluno cadastrado para este ano. Use a aba **Importar Excel** para começar.")
+    if df_raw.empty:
+        st.info("Nenhum aluno cadastrado. Use a aba **Importar Excel** para começar.")
     else:
         # Filtros
         fc1, fc2 = st.columns([4, 3])
-        busca = fc1.text_input("🔍 Pesquisar", placeholder="aluno, responsável…", key=f"busca_alunos_{ano_sel}")
-        turmas_disp = sorted(df["turma"].unique().tolist(), key=_sort_turma)
-        turma_sel = fc2.multiselect("Turma", turmas_disp, key=f"turma_sel_{ano_sel}", placeholder="Todas as turmas")
+        busca = fc1.text_input("🔍 Pesquisar", placeholder="aluno, responsável…",
+                               key=f"busca_{ano_sel}")
+        turmas_disp = sorted(df_raw["turma"].unique(), key=_sort_turma)
+        turma_sel = fc2.multiselect("Turma", turmas_disp, key=f"turma_sel_{ano_sel}",
+                                    placeholder="Todas as turmas")
 
-        df_show = df.copy()
+        df_filt = df_raw.copy()
         if busca.strip():
             q = busca.strip().lower()
-            df_show = df_show[
-                df_show["nome_aluno"].str.lower().str.contains(q, na=False) |
-                df_show["nome_responsavel"].str.lower().str.contains(q, na=False)
+            df_filt = df_filt[
+                df_filt["nome_aluno"].str.lower().str.contains(q, na=False) |
+                df_filt["nome_responsavel"].str.lower().str.contains(q, na=False)
             ]
         if turma_sel:
-            df_show = df_show[df_show["turma"].isin(turma_sel)]
+            df_filt = df_filt[df_filt["turma"].isin(turma_sel)]
 
-        st.caption(f"{len(df_show)} registro(s) exibido(s)")
+        df_grp = _agrupar(df_filt)
+        st.caption(f"{len(df_grp)} aluno(s) exibido(s)")
 
-        # Tabela com seleção para deletar
         sel = st.dataframe(
-            df_show[["turma", "nome_aluno", "nome_responsavel"]],
+            df_grp[["turma", "nome_aluno", "responsáveis"]],
             use_container_width=True,
             hide_index=True,
-            height=min(600, 40 + 35 * len(df_show)),
-            selection_mode="multi-row",
+            height=min(620, 40 + 35 * len(df_grp)),
+            selection_mode="single-row",
             on_select="rerun",
             key=f"df_alunos_{ano_sel}",
             column_config={
-                "turma":            st.column_config.TextColumn("Turma",         width="medium"),
-                "nome_aluno":       st.column_config.TextColumn("Aluno",         width="large"),
-                "nome_responsavel": st.column_config.TextColumn("Responsável",   width="large"),
+                "turma":       st.column_config.TextColumn("Turma",        width="small"),
+                "nome_aluno":  st.column_config.TextColumn("Aluno",        width="medium"),
+                "responsáveis":st.column_config.TextColumn("Responsáveis", width="large"),
             },
         )
 
         sel_rows = sel.selection.rows if hasattr(sel, "selection") else []
-        if sel_rows:
-            st.warning(f"⚠️ {len(sel_rows)} linha(s) selecionada(s) para exclusão")
-            if st.button(f"🗑️ Excluir {len(sel_rows)} registro(s)", type="primary", key="btn_del_alunos"):
-                ids_para_deletar = df_show.iloc[sel_rows]["id"].tolist()
-                for rid in ids_para_deletar:
-                    db.deletar_aluno(int(rid))
-                st.success("Registros excluídos.")
-                st.rerun()
 
-        # ── Editar registro selecionado (apenas se 1 linha) ───────────────────
+        # ── Painel de edição (1 aluno selecionado) ────────────────────────────
         if len(sel_rows) == 1:
+            row = df_grp.iloc[sel_rows[0]]
+            ids_aluno = row["_ids"]   # lista de IDs no banco para este aluno
+            resp_lista = df_raw[df_raw["id"].isin(ids_aluno)]["nome_responsavel"].tolist()
+
             st.divider()
-            st.markdown("**✏️ Editar registro selecionado**")
-            row_edit = df_show.iloc[sel_rows[0]]
-            with st.form("form_editar_aluno"):
-                e1, e2, e3 = st.columns(3)
-                turma_edit = e1.selectbox(
-                    "Turma", ORDEM_TURMAS,
-                    index=_sort_turma(row_edit["turma"]) if row_edit["turma"] in ORDEM_TURMAS else 0,
-                    key="edit_turma",
-                )
-                aluno_edit = e2.text_input("Aluno", value=row_edit["nome_aluno"], key="edit_aluno")
-                resp_edit  = e3.text_input("Responsável", value=row_edit["nome_responsavel"], key="edit_resp")
-                if st.form_submit_button("💾 Salvar alteração", type="primary"):
-                    db.upsert_aluno(
-                        ano=int(ano_sel),
-                        turma=turma_edit,
-                        nome_aluno=aluno_edit,
-                        nome_responsavel=resp_edit,
-                        id=int(row_edit["id"]),
-                    )
-                    st.success("Registro atualizado!")
-                    st.rerun()
+            st.markdown(f"**✏️ Editando: {row['nome_aluno']}**")
 
-        # ── Resumo por turma ──────────────────────────────────────────────────
+            with st.form("form_editar"):
+                c1, c2 = st.columns(2)
+                turma_e = c1.selectbox(
+                    "Turma",
+                    ORDEM_TURMAS,
+                    index=_sort_turma(row["turma"]) if row["turma"] in ORDEM_TURMAS else 0,
+                )
+                aluno_e = c2.text_input("Nome do aluno", value=row["nome_aluno"])
+
+                st.markdown("**Responsáveis** _(um por linha)_")
+                resp_txt = st.text_area(
+                    "Responsáveis",
+                    value="\n".join(resp_lista),
+                    height=120,
+                    label_visibility="collapsed",
+                    help="Coloque cada responsável em uma linha separada.",
+                )
+
+                if st.form_submit_button("💾 Salvar", type="primary"):
+                    novos_resp = [r.strip() for r in resp_txt.splitlines() if r.strip()]
+                    if not novos_resp:
+                        st.error("Informe pelo menos um responsável.")
+                    else:
+                        # Apaga os registros antigos deste aluno
+                        for rid in ids_aluno:
+                            db.deletar_aluno(int(rid))
+                        # Insere os novos
+                        db.salvar_alunos_lote([
+                            {"ano": int(ano_sel), "turma": turma_e,
+                             "nome_aluno": aluno_e.strip(),
+                             "nome_responsavel": r}
+                            for r in novos_resp
+                        ])
+                        st.success("✅ Salvo!")
+                        st.rerun()
+
+        # ── Excluir ───────────────────────────────────────────────────────────
+        if sel_rows:
+            row = df_grp.iloc[sel_rows[0]]
+            st.divider()
+            if st.button(f"🗑️ Excluir **{row['nome_aluno']}** e todos os responsáveis",
+                         key="btn_del"):
+                for rid in row["_ids"]:
+                    db.deletar_aluno(int(rid))
+                st.success("Aluno excluído.")
+                st.rerun()
+
+        # Resumo por turma
         st.divider()
-        st.markdown("**📊 Alunos por turma**")
         resumo = (
-            df.groupby("turma")["nome_aluno"]
-            .nunique()
-            .reset_index()
-            .rename(columns={"nome_aluno": "alunos"})
+            df_raw.groupby("turma")["nome_aluno"].nunique()
+            .reset_index().rename(columns={"nome_aluno": "alunos"})
+            .sort_values("turma", key=lambda s: s.map(_sort_turma))
         )
-        resumo = resumo.sort_values("turma", key=lambda s: s.map(_sort_turma))
-        st.dataframe(
-            resumo,
-            use_container_width=False,
-            hide_index=True,
-            column_config={
-                "turma":  st.column_config.TextColumn("Turma",   width="medium"),
-                "alunos": st.column_config.NumberColumn("Alunos", width="small"),
-            },
-        )
+        st.markdown("**📊 Alunos por turma**")
+        st.dataframe(resumo, use_container_width=False, hide_index=True,
+                     column_config={
+                         "turma":  st.column_config.TextColumn("Turma",  width="medium"),
+                         "alunos": st.column_config.NumberColumn("Alunos", width="small"),
+                     })
 
 
-# ── ABA 2 — Adicionar novo registro ──────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# ABA 2 — Novo aluno
+# ══════════════════════════════════════════════════════════════════════════════
 with aba_add:
-    st.markdown("Adicione um aluno ou responsável avulso.")
-    with st.form("form_novo_aluno"):
-        a1, a2, a3 = st.columns(3)
-        nova_turma = a1.selectbox("Turma", ORDEM_TURMAS, key="add_turma")
-        novo_aluno = a2.text_input("Nome do aluno", key="add_aluno")
-        novo_resp  = a3.text_input("Nome do responsável", key="add_resp")
+    st.markdown("Adicione um aluno com um ou mais responsáveis.")
+    with st.form("form_novo"):
+        c1, c2 = st.columns(2)
+        nova_turma = c1.selectbox("Turma", ORDEM_TURMAS)
+        novo_aluno = c2.text_input("Nome do aluno")
+        st.markdown("**Responsáveis** _(um por linha)_")
+        novo_resp_txt = st.text_area("Responsáveis", height=100,
+                                     label_visibility="collapsed",
+                                     placeholder="Mãe Fulana\nPai Ciclano")
         if st.form_submit_button("➕ Adicionar", type="primary"):
-            if not novo_aluno.strip() or not novo_resp.strip():
-                st.error("Preencha nome do aluno e do responsável.")
+            novos = [r.strip() for r in novo_resp_txt.splitlines() if r.strip()]
+            if not novo_aluno.strip() or not novos:
+                st.error("Preencha nome do aluno e pelo menos um responsável.")
             else:
-                db.upsert_aluno(
-                    ano=int(ano_sel),
-                    turma=nova_turma,
-                    nome_aluno=novo_aluno.strip(),
-                    nome_responsavel=novo_resp.strip(),
-                )
-                st.success(f"✅ {novo_aluno} adicionado!")
+                db.salvar_alunos_lote([
+                    {"ano": int(ano_sel), "turma": nova_turma,
+                     "nome_aluno": novo_aluno.strip(), "nome_responsavel": r}
+                    for r in novos
+                ])
+                st.success(f"✅ {novo_aluno} adicionado com {len(novos)} responsável(eis)!")
                 st.rerun()
 
 
-# ── ABA 3 — Importar Excel ────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+# ABA 3 — Importar Excel
+# ══════════════════════════════════════════════════════════════════════════════
 with aba_import:
     st.markdown(
-        "Faça upload de uma planilha com colunas **Turma**, **Nome da criança** e "
-        "**Remetente/Destinatario**. O formato deve ser igual ao exportado do Sponte."
+        "Planilha com colunas **Turma**, **Nome da criança** e **Remetente/Destinatario** "
+        "(formato exportado do Sponte)."
     )
-
     SKIP_TURMAS = {"COLÔNIA 2026", "Caiu na conta da Maria CPF"}
-
-    uploaded = st.file_uploader("Selecione o arquivo Excel (.xlsx)", type=["xlsx", "xls"], key="upload_alunos")
-
+    uploaded = st.file_uploader("Selecione o arquivo (.xlsx)", type=["xlsx","xls"],
+                                key="upload_alunos")
     if uploaded:
         try:
-            df_raw = pd.read_excel(uploaded)
-            # Validar colunas mínimas
-            cols_obrig = {"Turma", "Nome da criança", "Remetente/Destinatario"}
-            if not cols_obrig.issubset(set(df_raw.columns)):
-                st.error(f"O arquivo precisa ter as colunas: {', '.join(cols_obrig)}")
+            df_raw2 = pd.read_excel(uploaded)
+            cols_ok = {"Turma","Nome da criança","Remetente/Destinatario"}
+            if not cols_ok.issubset(set(df_raw2.columns)):
+                st.error(f"Colunas necessárias: {', '.join(cols_ok)}")
             else:
-                # Processar
-                df_raw = df_raw[~df_raw["Turma"].isin(SKIP_TURMAS)].dropna(subset=["Turma", "Nome da criança", "Remetente/Destinatario"]).copy()
-                df_raw["nome_responsavel"] = df_raw["Remetente/Destinatario"].apply(_limpar_responsavel)
-                parsed = df_raw["Turma"].apply(_parse_turma)
-                df_raw["turma"] = [p[0] for p in parsed]
-                df_raw["ano"]   = [p[1] for p in parsed]
-                df_raw["nome_aluno"] = df_raw["Nome da criança"].str.strip()
-
-                # Deduplica
-                df_proc = df_raw[["ano", "turma", "nome_aluno", "nome_responsavel"]].drop_duplicates()
-
-                # Filtra só as do ano selecionado (ou todos se não mapeado)
+                df_raw2 = df_raw2[~df_raw2["Turma"].isin(SKIP_TURMAS)].dropna(
+                    subset=list(cols_ok)).copy()
+                df_raw2["nome_responsavel"] = df_raw2["Remetente/Destinatario"].apply(_limpar_responsavel)
+                parsed = df_raw2["Turma"].apply(_parse_turma)
+                df_raw2["turma"] = [p[0] for p in parsed]
+                df_raw2["ano"]   = [p[1] for p in parsed]
+                df_raw2["nome_aluno"] = df_raw2["Nome da criança"].str.strip()
+                df_proc = df_raw2[["ano","turma","nome_aluno","nome_responsavel"]].drop_duplicates()
                 df_proc = df_proc[df_proc["ano"] == int(ano_sel)]
 
                 if df_proc.empty:
-                    st.warning(f"Nenhum registro para o ano {ano_sel} encontrado no arquivo.")
+                    st.warning(f"Nenhum registro para {ano_sel} no arquivo.")
                 else:
-                    st.success(f"**{len(df_proc)} registros** encontrados para {ano_sel}.")
-                    st.dataframe(
-                        df_proc[["turma", "nome_aluno", "nome_responsavel"]].sort_values(["turma", "nome_aluno"]),
-                        use_container_width=True,
-                        hide_index=True,
-                    )
+                    st.success(f"**{df_proc['nome_aluno'].nunique()} alunos** encontrados.")
+                    grp_prev = _agrupar(df_proc.assign(id=range(len(df_proc))))
+                    st.dataframe(grp_prev[["turma","nome_aluno","responsáveis"]],
+                                 use_container_width=True, hide_index=True)
 
-                    modo = st.radio(
-                        "Como importar?",
-                        ["Adicionar aos existentes", "Substituir todos os registros do ano"],
-                        key="modo_import",
-                    )
-                    st.caption(
-                        "⚠️ **Substituir** apaga TODOS os registros do ano antes de importar."
-                        if modo == "Substituir todos os registros do ano"
-                        else "**Adicionar** insere os novos sem remover os existentes."
-                    )
-
-                    if st.button("📥 Confirmar importação", type="primary", key="btn_confirmar_import"):
+                    modo = st.radio("Como importar?",
+                                    ["Adicionar aos existentes",
+                                     "Substituir todos os registros do ano"])
+                    if st.button("📥 Confirmar importação", type="primary"):
                         if modo == "Substituir todos os registros do ano":
                             db.limpar_alunos_ano(int(ano_sel))
-                        rows = [
-                            {
-                                "ano":              int(r["ano"]),
-                                "turma":            r["turma"],
-                                "nome_aluno":       r["nome_aluno"],
-                                "nome_responsavel": r["nome_responsavel"],
-                            }
-                            for _, r in df_proc.iterrows()
-                        ]
-                        db.salvar_alunos_lote(rows)
-                        st.success(f"✅ {len(rows)} registros importados com sucesso!")
+                        db.salvar_alunos_lote(df_proc.to_dict("records"))
+                        st.success(f"✅ {len(df_proc)} registros importados!")
                         st.rerun()
-
         except Exception as e:
-            st.error(f"Erro ao processar o arquivo: {e}")
+            st.error(f"Erro ao processar arquivo: {e}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ABA 4 — Ferramentas
+# ══════════════════════════════════════════════════════════════════════════════
+with aba_tools:
+    st.markdown("### 🔤 Padronizar nomes dos responsáveis")
+    st.caption(
+        "Aplica Title Case brasileiro (ex: SCHEILA STUART → Scheila Stuart). "
+        "Artigos e preposições ficam minúsculos: 'de', 'da', 'do', etc."
+    )
+
+    if not df_raw.empty:
+        # Preview
+        df_prev = df_raw[["nome_responsavel"]].drop_duplicates().copy()
+        df_prev["padronizado"] = df_prev["nome_responsavel"].apply(_title_br)
+        mudancas = df_prev[df_prev["nome_responsavel"] != df_prev["padronizado"]]
+
+        if mudancas.empty:
+            st.success("✅ Todos os nomes já estão padronizados!")
+        else:
+            st.info(f"**{len(mudancas)} nomes** serão alterados. Veja o preview:")
+            st.dataframe(mudancas.rename(columns={
+                "nome_responsavel": "Atual",
+                "padronizado": "Novo"
+            }), use_container_width=True, hide_index=True)
+
+            if st.button("✅ Aplicar padronização", type="primary", key="btn_padronizar"):
+                for _, row in df_raw.iterrows():
+                    novo = _title_br(row["nome_responsavel"])
+                    if novo != row["nome_responsavel"]:
+                        db.upsert_aluno(
+                            ano=int(row["ano"]),
+                            turma=row["turma"],
+                            nome_aluno=row["nome_aluno"],
+                            nome_responsavel=novo,
+                            id=int(row["id"]),
+                        )
+                st.success("✅ Nomes padronizados com sucesso!")
+                st.rerun()
+    else:
+        st.info("Sem dados para padronizar.")

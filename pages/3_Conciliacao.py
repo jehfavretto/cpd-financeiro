@@ -436,108 +436,74 @@ with aba_pend:
 # ABA: CONCILIADOS
 # ══════════════════════════════════════════════════════════════════════════════
 
-# ── Helpers de formatação para a aba Conciliados ─────────────────────────────
-def _sp_label(chave: str) -> str:
-    """Texto formatado do lançamento Sponte (sem emoji leading)."""
+# ── Helpers de texto simples para dataframes (sem escape markdown) ────────────
+def _sp_txt(chave: str) -> str:
     r = sponte_df[sponte_df["chave"] == chave]
     if r.empty:
         return str(chave)
     row = r.iloc[0]
-    return (f"**{pd.to_datetime(row['data']).strftime('%d/%m')}** · "
-            f"{str(row['categoria'])} · **{_md_val(row['valor'])}**")
+    return f"{pd.to_datetime(row['data']).strftime('%d/%m')} · {str(row['categoria'])} · {fmt_br(abs(row['valor']))}"
 
-def _bk_label(chave: str) -> str:
-    """Texto formatado do lançamento Banco (sem emoji leading)."""
+def _bk_txt(chave: str) -> str:
     r = banco_df[banco_df["chave"] == chave]
     if r.empty:
         return str(chave)
     row = r.iloc[0]
-    return (f"**{row['data_fmt'][:5]}** · "
-            f"{str(row['historico'])} · **{_md_val(float(row['valor']))}**")
+    return f"{row['data_fmt'][:5]} · {str(row['historico'])} · {fmt_br(abs(float(row['valor'])))}"
 
 with aba_conc:
-    st.markdown("""
-    <style>
-    /* === Compactar cards de conciliação === */
-
-    /* 1. Reduz gap ENTRE os cards — alvo: o stVerticalBlock que os contém */
-    [data-testid="stVerticalBlock"]:has([data-testid="stVerticalBlockBorderWrapper"]) {
-        gap: 4px !important;
-    }
-
-    /* 2. Padding interno mínimo */
-    [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding: 2px 10px !important;
-    }
-
-    /* 3. Gap zero entre colunas dentro do card */
-    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
-        gap: 0 !important;
-    }
-
-    /* 4. Fonte menor sem margem */
-    [data-testid="stVerticalBlockBorderWrapper"] p {
-        font-size: 0.78rem !important;
-        margin: 0 !important;
-        line-height: 1.4 !important;
-    }
-
-    /* 5. Botão ✖ compacto */
-    [data-testid="stVerticalBlockBorderWrapper"] button {
-        height: 22px !important;
-        min-height: 22px !important;
-        padding: 0 6px !important;
-        font-size: 0.7rem !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
     if n_auto == 0 and n_manual == 0 and n_ign == 0:
         st.info("Nenhum item conciliado ainda.")
 
     # ── Automáticos ───────────────────────────────────────────────────────────
     if n_auto > 0:
-        st.markdown(f"**🤖 {n_auto} automáticos** — clique ✖ para desvincular e mover para pendentes")
+        st.markdown(f"**🤖 {n_auto} automáticos** — selecione linha(s) e clique em Desvincular")
+        auto_rows, auto_actions = [], []
         for chave, n in sorted(chaves_auto_counts.items()):
             sp_matches = sponte_df[sponte_df["chave"] == chave].iloc[:n]
             bk_matches = banco_df[banco_df["chave"] == chave].iloc[:n]
             for i in range(n):
-                sp_r = sp_matches.iloc[i]
-                bk_r = bk_matches.iloc[i]
-                with st.container(border=True):
-                    ca, cb, cc = st.columns([5, 5, 1])
-                    ca.markdown(f"🔵 {_sp_label(sp_r['chave'])}")
-                    cb.markdown(f"🏦 {_bk_label(bk_r['chave'])}")
-                    if cc.button("✖", key=f"desv_a_{sp_r.name}_{bk_r.name}", help="Desvincular"):
-                        db.salvar_conciliacao(mes, ano, "desvincular",
-                                              sponte_chave=sp_r["chave"],
-                                              banco_chave=bk_r["chave"])
-                        st.rerun()
+                sp_r, bk_r = sp_matches.iloc[i], bk_matches.iloc[i]
+                auto_rows.append({"🔵 Sponte": _sp_txt(sp_r["chave"]),
+                                   "🏦 Banco":  _bk_txt(bk_r["chave"])})
+                auto_actions.append((sp_r["chave"], bk_r["chave"]))
+
+        sel_a = st.dataframe(
+            pd.DataFrame(auto_rows),
+            use_container_width=True,
+            height=min(500, 38 + 35 * len(auto_rows)),
+            hide_index=True,
+            selection_mode="multi-row",
+            on_select="rerun",
+            key=f"df_auto_{mes}_{ano}",
+        )
+        sel_a_rows = sel_a.selection.rows if hasattr(sel_a, "selection") else []
+        if sel_a_rows:
+            if st.button(f"🔓 Desvincular {len(sel_a_rows)} selecionado(s)", type="primary"):
+                for idx in sel_a_rows:
+                    sp_ch, bk_ch = auto_actions[idx]
+                    db.salvar_conciliacao(mes, ano, "desvincular",
+                                          sponte_chave=sp_ch, banco_chave=bk_ch)
+                st.rerun()
 
     # ── Manuais ───────────────────────────────────────────────────────────────
     if n_manual > 0:
-        st.markdown(f"**🔗 {n_manual} manuais**")
+        st.markdown(f"**🔗 {n_manual} manuais** — selecione linha(s) e clique em Desvincular")
         manual_df = conc_df[conc_df["tipo"] == "manual"].copy()
         shown_ids: set = set()
+        manual_rows, manual_actions = [], []
 
-        # N:1 — vários Sponte → 1 Banco
+        # N:1
         bk_counts = manual_df["banco_chave"].value_counts()
         for bk_chave in bk_counts[bk_counts > 1].index:
             grupo = manual_df[manual_df["banco_chave"] == bk_chave]
             ids_grupo = grupo["id"].tolist()
             shown_ids.update(ids_grupo)
-            with st.container(border=True):
-                ca, cb, cc = st.columns([5, 5, 1])
-                with ca:
-                    for _, c in grupo.iterrows():
-                        st.markdown(f"🔵 {_sp_label(c['sponte_chave'])}")
-                cb.markdown(f"🏦 {_bk_label(bk_chave)}")
-                if cc.button("✖", key=f"del_n1_{ids_grupo[0]}", help="Desvincular grupo"):
-                    for id_c in ids_grupo:
-                        db.deletar_conciliacao(int(id_c))
-                    st.rerun()
+            sp_txt = " + ".join(_sp_txt(c["sponte_chave"]) for _, c in grupo.iterrows())
+            manual_rows.append({"🔵 Sponte": sp_txt, "🏦 Banco": _bk_txt(bk_chave)})
+            manual_actions.append(ids_grupo)
 
-        # 1:N — novo formato (§§)
+        # 1:N novo formato (§§)
         restante = manual_df[~manual_df["id"].isin(shown_ids)]
         for _, c in restante.iterrows():
             bk_raw = str(c.get("banco_chave", ""))
@@ -545,60 +511,75 @@ with aba_conc:
                 continue
             shown_ids.add(c["id"])
             bk_lista = [ch.strip() for ch in bk_raw.split("§§") if ch.strip()]
-            with st.container(border=True):
-                ca, cb, cc = st.columns([5, 5, 1])
-                ca.markdown(f"🔵 {_sp_label(c['sponte_chave'])}")
-                with cb:
-                    for bk_ch in bk_lista:
-                        st.markdown(f"🏦 {_bk_label(bk_ch)}")
-                if cc.button("✖", key=f"del_1n_{c['id']}", help="Desvincular"):
-                    db.deletar_conciliacao(int(c["id"]))
-                    st.rerun()
+            bk_txt = " + ".join(_bk_txt(ch) for ch in bk_lista)
+            manual_rows.append({"🔵 Sponte": _sp_txt(c["sponte_chave"]), "🏦 Banco": bk_txt})
+            manual_actions.append([c["id"]])
 
-        # 1:N — formato antigo (múltiplos registros com mesmo sponte_chave)
+        # 1:N formato antigo
         restante = manual_df[~manual_df["id"].isin(shown_ids)]
-        sp_counts = restante["sponte_chave"].value_counts()
-        for sp_chave in sp_counts[sp_counts > 1].index:
+        sp_counts2 = restante["sponte_chave"].value_counts()
+        for sp_chave in sp_counts2[sp_counts2 > 1].index:
             grupo = restante[restante["sponte_chave"] == sp_chave]
             ids_grupo = grupo["id"].tolist()
             shown_ids.update(ids_grupo)
-            with st.container(border=True):
-                ca, cb, cc = st.columns([5, 5, 1])
-                ca.markdown(f"🔵 {_sp_label(sp_chave)}")
-                with cb:
-                    for _, c in grupo.iterrows():
-                        st.markdown(f"🏦 {_bk_label(c['banco_chave'])}")
-                if cc.button("✖", key=f"del_1nv_{ids_grupo[0]}", help="Desvincular grupo"):
-                    for id_c in ids_grupo:
-                        db.deletar_conciliacao(int(id_c))
-                    st.rerun()
+            bk_txt = " + ".join(_bk_txt(c["banco_chave"]) for _, c in grupo.iterrows())
+            manual_rows.append({"🔵 Sponte": _sp_txt(sp_chave), "🏦 Banco": bk_txt})
+            manual_actions.append(ids_grupo)
 
         # 1:1
         for _, c in manual_df[~manual_df["id"].isin(shown_ids)].iterrows():
-            with st.container(border=True):
-                ca, cb, cc = st.columns([5, 5, 1])
-                ca.markdown(f"🔵 {_sp_label(c['sponte_chave'])}")
-                cb.markdown(f"🏦 {_bk_label(c['banco_chave'])}")
-                if cc.button("✖", key=f"del_11_{c['id']}", help="Desvincular"):
-                    db.deletar_conciliacao(int(c["id"]))
+            manual_rows.append({"🔵 Sponte": _sp_txt(c["sponte_chave"]),
+                                 "🏦 Banco":  _bk_txt(c["banco_chave"])})
+            manual_actions.append([c["id"]])
+
+        if manual_rows:
+            sel_m = st.dataframe(
+                pd.DataFrame(manual_rows),
+                use_container_width=True,
+                height=min(400, 38 + 35 * len(manual_rows)),
+                hide_index=True,
+                selection_mode="multi-row",
+                on_select="rerun",
+                key=f"df_manual_{mes}_{ano}",
+            )
+            sel_m_rows = sel_m.selection.rows if hasattr(sel_m, "selection") else []
+            if sel_m_rows:
+                if st.button(f"🔓 Desvincular {len(sel_m_rows)} selecionado(s)",
+                             type="primary", key="btn_desv_m"):
+                    for idx in sel_m_rows:
+                        for id_c in manual_actions[idx]:
+                            db.deletar_conciliacao(int(id_c))
                     st.rerun()
 
     # ── Ignorados ─────────────────────────────────────────────────────────────
     if n_ign > 0:
         st.markdown(f"**🙈 {n_ign} ignorados**")
         ign_df = conc_df[conc_df["tipo"].str.startswith("ignorado", na=False)]
+        ign_rows, ign_ids = [], []
         for _, c in ign_df.iterrows():
-            just = f" · *{c['justificativa']}*" if c.get("justificativa") else ""
+            just = f" · {c['justificativa']}" if c.get("justificativa") else ""
             if c["tipo"] == "ignorado_sponte" and pd.notna(c.get("sponte_chave")):
-                label = f"🙈 {_sp_label(c['sponte_chave'])}{just}"
+                txt = _sp_txt(c["sponte_chave"]) + just
             else:
-                label = f"🙈 {_bk_label(c.get('banco_chave', ''))}{just}"
-            with st.container(border=True):
-                ca, cb = st.columns([11, 1])
-                ca.markdown(label)
-                if cb.button("✖", key=f"del_i_{c['id']}", help="Remover"):
-                    db.deletar_conciliacao(int(c["id"]))
-                    st.rerun()
+                txt = _bk_txt(c.get("banco_chave", "")) + just
+            ign_rows.append({"Item": txt})
+            ign_ids.append(c["id"])
+
+        sel_i = st.dataframe(
+            pd.DataFrame(ign_rows),
+            use_container_width=True,
+            height=min(300, 38 + 35 * len(ign_rows)),
+            hide_index=True,
+            selection_mode="multi-row",
+            on_select="rerun",
+            key=f"df_ign_{mes}_{ano}",
+        )
+        sel_i_rows = sel_i.selection.rows if hasattr(sel_i, "selection") else []
+        if sel_i_rows:
+            if st.button(f"🗑️ Remover {len(sel_i_rows)} selecionado(s)", key="btn_rem_i"):
+                for idx in sel_i_rows:
+                    db.deletar_conciliacao(int(ign_ids[idx]))
+                st.rerun()
 
 # ── Zona de perigo — limpar toda a conciliação do mês ────────────────────────
 st.divider()

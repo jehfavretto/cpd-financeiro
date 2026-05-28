@@ -44,8 +44,32 @@ def _parse_turma(t: str):
 # ── Página ────────────────────────────────────────────────────────────────────
 st.title("👨‍🎓 Alunos e Responsáveis")
 
-# ── Seleção de ano ────────────────────────────────────────────────────────────
-anos_existentes = db.anos_com_alunos()
+# ── Verificar se tabela existe ────────────────────────────────────────────────
+try:
+    anos_existentes = db.anos_com_alunos()
+    _tabela_ok = True
+except Exception as e:
+    _tabela_ok = False
+    st.error(
+        "**Tabela `alunos` não encontrada no Supabase.**\n\n"
+        "Crie a tabela no SQL Editor do Supabase antes de usar esta página:\n\n"
+        "```sql\n"
+        "CREATE TABLE IF NOT EXISTS alunos (\n"
+        "    id               BIGSERIAL PRIMARY KEY,\n"
+        "    ano              INTEGER   NOT NULL,\n"
+        "    turma            TEXT      NOT NULL,\n"
+        "    nome_aluno       TEXT      NOT NULL,\n"
+        "    nome_responsavel TEXT      NOT NULL,\n"
+        "    created_at       TIMESTAMPTZ DEFAULT NOW()\n"
+        ");\n"
+        "CREATE INDEX IF NOT EXISTS idx_alunos_ano         ON alunos(ano);\n"
+        "CREATE INDEX IF NOT EXISTS idx_alunos_responsavel ON alunos(LOWER(nome_responsavel));\n"
+        "CREATE INDEX IF NOT EXISTS idx_alunos_aluno       ON alunos(LOWER(nome_aluno));\n"
+        "```\n\n"
+        f"_(Detalhe técnico: {e})_"
+    )
+    st.stop()
+
 ano_atual = 2026  # fallback
 
 col_ano, col_novo, _ = st.columns([2, 2, 6])
@@ -56,7 +80,11 @@ with col_ano:
         ano_sel = st.number_input("Ano letivo", value=ano_atual, step=1, format="%d")
 
 # ── Carregar dados ────────────────────────────────────────────────────────────
-df = db.carregar_alunos(int(ano_sel))
+try:
+    df = db.carregar_alunos(int(ano_sel))
+except Exception as e:
+    st.error(f"Erro ao carregar alunos: {e}")
+    st.stop()
 
 # ── Métricas rápidas ──────────────────────────────────────────────────────────
 if not df.empty:

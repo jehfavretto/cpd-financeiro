@@ -7,6 +7,7 @@ import pandas as pd
 from core.parser import (
     parse_sponte_fluxo,
     parse_banco_txt,
+    parse_banco_xlsx,
     parse_sponte_plano,
     detectar_mes_ano,
     MESES_ABREV,
@@ -30,7 +31,7 @@ with col1:
 with col2:
     st.markdown("**2. Extrato CEF**")
     arquivo_banco = st.file_uploader(
-        "Arquivo .txt do banco", type=["txt", "csv"], key="banco"
+        "Arquivo .txt ou .xlsx do banco", type=["txt", "csv", "xlsx", "xls"], key="banco"
     )
 
 with col3:
@@ -50,7 +51,12 @@ if not arquivo_sponte or not arquivo_banco or not arquivo_plano:
 with st.spinner("Lendo arquivos..."):
     try:
         sponte_df = parse_sponte_fluxo(arquivo_sponte)
-        banco_df  = parse_banco_txt(arquivo_banco)
+        # Detecta formato do extrato: XLSX novo (CEF online) ou TXT antigo
+        nome_banco = arquivo_banco.name.lower()
+        if nome_banco.endswith(".xlsx") or nome_banco.endswith(".xls"):
+            banco_df = parse_banco_xlsx(arquivo_banco)
+        else:
+            banco_df = parse_banco_txt(arquivo_banco)
         plano_df  = parse_sponte_plano(arquivo_plano)
     except Exception as e:
         st.error(f"Erro ao ler arquivos: {e}")
@@ -85,10 +91,11 @@ with st.expander("🏦 Preview — Extrato CEF", expanded=False):
     entradas_b = banco_df[banco_df["deb_cred"] == "E"]["valor_num"].sum()
     saidas_b   = banco_df[banco_df["deb_cred"] == "S"]["valor_num"].sum()
     c1, c2 = st.columns(2)
-    c1.metric("Créditos (C)", fmt_br(entradas_b))
-    c2.metric("Débitos (D)",  fmt_br(saidas_b))
+    c1.metric("Créditos", fmt_br(entradas_b))
+    c2.metric("Débitos",  fmt_br(saidas_b))
+    preview_cols = ["data_mov", "historico", "origem_destino", "valor_num", "deb_cred"]
     st.dataframe(
-        banco_df[["data_mov", "historico", "valor_num", "deb_cred"]],
+        banco_df[[c for c in preview_cols if c in banco_df.columns]],
         use_container_width=True, height=250,
     )
 
@@ -106,8 +113,8 @@ st.markdown(
 )
 
 saldo_banco_calc = (
-    banco_df[banco_df["deb_cred"] == "C"]["valor_num"].sum()
-    - banco_df[banco_df["deb_cred"] == "D"]["valor_num"].sum()
+    banco_df[banco_df["deb_cred"] == "E"]["valor_num"].sum()
+    - banco_df[banco_df["deb_cred"] == "S"]["valor_num"].sum()
 )
 
 c1, c2, c3 = st.columns(3)

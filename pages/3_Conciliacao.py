@@ -259,8 +259,10 @@ with aba_pend:
                 sp_filtrado["categoria"].str.lower().str.contains(q, na=False) |
                 sp_filtrado["origem_destino"].str.lower().str.contains(q, na=False)
             ]
+            bk_od = bk_filtrado["origem_destino"] if "origem_destino" in bk_filtrado.columns else pd.Series("", index=bk_filtrado.index)
             bk_filtrado = bk_filtrado[
-                bk_filtrado["historico"].str.lower().str.contains(q, na=False)
+                bk_filtrado["historico"].str.lower().str.contains(q, na=False) |
+                bk_od.str.lower().str.contains(q, na=False)
             ]
 
         if val_min > 0:
@@ -296,10 +298,11 @@ with aba_pend:
         })
 
         bk_show = pd.DataFrame({
-            "Data":      bk_filtrado["data_fmt"].str[:5],
-            "Histórico": bk_filtrado["historico"],               # sem corte → tooltip no hover
-            "E/S":       bk_filtrado["deb_cred"],
-            "Valor":     bk_filtrado["valor"].abs(),
+            "Data":           bk_filtrado["data_fmt"].str[:5],
+            "Histórico":      bk_filtrado["historico"],
+            "Origem/Destino": bk_filtrado["origem_destino"] if "origem_destino" in bk_filtrado.columns else "",
+            "E/S":            bk_filtrado["deb_cred"],
+            "Valor":          bk_filtrado["valor"].abs(),
         })
 
         class _EmptySel:
@@ -363,7 +366,12 @@ with aba_pend:
                     use_container_width=True,
                     height=460,
                     hide_index=True,
-                    column_config={"Valor": _val_cfg, "E/S": _es_cfg},
+                    column_config={
+                        "Valor":          _val_cfg,
+                        "E/S":            _es_cfg,
+                        "Histórico":      st.column_config.TextColumn("Histórico",      width="small"),
+                        "Origem/Destino": st.column_config.TextColumn("Origem/Destino", width="medium"),
+                    },
                     selection_mode="multi-row",
                     on_select="rerun",
                     key=bk_key,

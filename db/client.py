@@ -137,6 +137,7 @@ def salvar_transacoes_banco(mes: int, ano: int, df: pd.DataFrame):
             "historico": str(r["historico"]),
             "valor": float(r["valor_num"]),
             "deb_cred": str(r["deb_cred"]),
+            "origem_destino": str(r.get("origem_destino", "") or ""),
         }
         for _, r in df.iterrows()
     ]
@@ -159,6 +160,11 @@ def carregar_transacoes_banco(mes: int, ano: int) -> pd.DataFrame:
     df["data_mov"] = df["data_mov"].apply(_normalizar_data_banco)  # → DD/MM/YYYY
     df["deb_cred"] = df["deb_cred"].str.strip().replace({"C": "E", "D": "S"})
     df["valor"] = df["valor"].abs()
+    # Compatibilidade com dados antigos sem a coluna origem_destino
+    if "origem_destino" not in df.columns:
+        df["origem_destino"] = ""
+    else:
+        df["origem_destino"] = df["origem_destino"].fillna("")
     return df
 
 

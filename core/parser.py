@@ -87,7 +87,101 @@ def parse_banco_txt(file_bytes_or_path) -> pd.DataFrame:
     # Normaliza C/D → E/S
     df["deb_cred"] = df["deb_cred"].str.strip().map({"C": "E", "D": "S"}).fillna("S")
 
+    # Formato antigo não tem origem_destino
+    df["origem_destino"] = ""
+
     return df
+
+
+# De:para para históricos sem nome associado (XLSX novo formato)
+_DEPARA_HISTORICO_BANCO: dict[str, str] = {
+    "APLICACAO FDO - CLIENTE":  "Aplicação Financeira",
+    "MENSALIDADE CESTA SERVICO": "Tarifa Bancária",
+    "DEPOSITO DINH LOTERICO":   "Depósito Lotérico",
+    "COMPRA CARTAO DEBITO":     "Cartão de Débito",
+    "PAG BOLETO IBC":           "Pagamento Boleto",
+    "PAGAMENTO TELEFONE IBC":   "Pagamento Telefone",
+    "PIX ENVIADO":              "PIX Enviado",
+    "PIX RECEBIDO":             "PIX Recebido",
+}
+
+_MINUSC_BR = {"de","da","do","dos","das","e","em","na","no","nas","nos","a","o","as","os"}
+
+def _title_br_nome(s: str) -> str:
+    """Title case respeitando artigos/preposições minúsculos do português."""
+    words = str(s).strip().split()
+    return " ".join(
+        w.capitalize() if (i == 0 or w.lower() not in _MINUSC_BR) else w.lower()
+        for i, w in enumerate(words)
+    )
+
+def _limpar_nome_banco(nome: str) -> str:
+    """
+    Limpa o Nome/Razão Social do extrato CEF.
+    Remove prefixo numérico (ex: '52 053 009 MONICA...' → 'Monica...').
+    Converte CAIXA ALTA para Title Case BR.
+    """
+    nome = str(nome).strip()
+    if not nome or nome.lower() in ("nan", "none", ""):
+        return ""
+    # Remove prefixo de dígitos e espaços antes do primeiro caractere letra
+    # Ex: "52 053 009 MONICA ERTHAL" → "MONICA ERTHAL"
+    nome = re.sub(r'^[\d\s]+(?=[A-Za-zÀ-ÿ])', '', nome).strip()
+    # Title case se estiver em caixa alta
+    if nome.upper() == nome:
+        nome = _title_br_nome(nome)
+    return nome
+
+
+def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
+    """
+    Lê o extrato da CEF no novo formato XLSX.
+    Colunas: Data Lancamento | Data Movimento | Histórico | Documento |
+             Valor Lançamento | Saldo | CPF/CNPJ | Nome/Razão Social
+    Retorna DataFrame compatível com parse_banco_txt + coluna origem_destino.
+    """
+    raw = pd.read_excel(file_bytes_or_path, dtype=str)
+    # Primeira linha é o cabeçalho real (linha 0 do excel é "Extrato de ...")
+    raw.columns = raw.iloc[0]
+    raw = raw.iloc[1:].reset_index(drop=True)
+
+    # Remove linhas de saldo do dia (não são transações)
+    raw = raw[raw["Histórico"].fillna("") != "SALDO DIA"].copy()
+    raw = raw.dropna(subset=["Data Movimento"]).reset_index(drop=True)
+
+    # Data
+    raw["data_mov"] = raw["Data Movimento"].apply(_normalizar_data_banco)
+
+    # Documento
+    raw["nr_doc"] = raw["Documento"].fillna("").str.strip()
+
+    # Histórico
+    raw["historico"] = raw["Histórico"].str.strip()
+
+    # Valor: "2.513,00" → 2513.0 | "- 1.850,00" → 1850.0
+    val_str = (
+        raw["Valor Lançamento"]
+        .str.replace(r"\s", "", regex=True)   # remove espaços
+        .str.replace(".", "", regex=False)     # remove separador de milhar
+        .str.replace(",", ".", regex=False)    # vírgula → ponto decimal
+    )
+    val_signed = pd.to_numeric(val_str, errors="coerce").fillna(0)
+    raw["valor_num"] = val_signed.abs()
+
+    # deb_cred: negativo = S (saída), positivo = E (entrada)
+    raw["deb_cred"] = val_signed.apply(lambda v: "S" if v < 0 else "E")
+
+    # Origem/destino: usa Nome/Razão Social ou de:para do histórico
+    def _get_origem(row):
+        nome = str(row.get("Nome/Razão Social", "")).strip()
+        hist = str(row.get("historico", "")).strip()
+        if nome and nome.lower() not in ("nan", "none", ""):
+            return _limpar_nome_banco(nome)
+        return _DEPARA_HISTORICO_BANCO.get(hist, hist)
+
+    raw["origem_destino"] = raw.apply(_get_origem, axis=1)
+
+    return raw[["data_mov", "nr_doc", "historico", "valor_num", "deb_cred", "origem_destino"]].reset_index(drop=True)
 
 
 def _normalizar(s: str) -> str:

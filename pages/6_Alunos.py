@@ -49,18 +49,27 @@ def _parse_turma(t: str):
 
 
 # ── Agrupar df por aluno ──────────────────────────────────────────────────────
+MAX_RESP = 4  # máximo de colunas de responsável exibidas
+
 def _agrupar(df: pd.DataFrame) -> pd.DataFrame:
-    """Uma linha por (turma, nome_aluno). Responsáveis separados por ' · '."""
+    """Uma linha por (turma, nome_aluno). Responsáveis em colunas separadas."""
     if df.empty:
-        return pd.DataFrame(columns=["turma", "nome_aluno", "responsáveis", "_ids"])
+        cols = ["turma", "nome_aluno"] + [f"Responsável {i+1}" for i in range(MAX_RESP)] + ["_ids"]
+        return pd.DataFrame(columns=cols)
     grp = (
         df.groupby(["turma", "nome_aluno"], sort=False)
         .apply(lambda g: pd.Series({
-            "responsáveis": " · ".join(g["nome_responsavel"].tolist()),
+            "_resp_list": g["nome_responsavel"].tolist(),
             "_ids": g["id"].tolist(),
         }))
         .reset_index()
     )
+    # Expande responsáveis em colunas fixas
+    for i in range(MAX_RESP):
+        grp[f"Responsável {i+1}"] = grp["_resp_list"].apply(
+            lambda lst: lst[i] if i < len(lst) else ""
+        )
+    grp = grp.drop(columns=["_resp_list"])
     grp = grp.sort_values("turma", key=lambda s: s.map(_sort_turma))
     return grp.reset_index(drop=True)
 
@@ -133,19 +142,23 @@ with aba_tabela:
         df_grp = _agrupar(df_filt)
         st.caption(f"{len(df_grp)} aluno(s) exibido(s)")
 
+        resp_cols = [f"Responsável {i+1}" for i in range(MAX_RESP)]
+        col_config = {
+            "turma":      st.column_config.TextColumn("Turma",        width="small"),
+            "nome_aluno": st.column_config.TextColumn("Aluno",        width="medium"),
+        }
+        for c in resp_cols:
+            col_config[c] = st.column_config.TextColumn(c, width="medium")
+
         sel = st.dataframe(
-            df_grp[["turma", "nome_aluno", "responsáveis"]],
+            df_grp[["turma", "nome_aluno"] + resp_cols],
             use_container_width=True,
             hide_index=True,
             height=min(620, 40 + 35 * len(df_grp)),
             selection_mode="single-row",
             on_select="rerun",
             key=f"df_alunos_{ano_sel}",
-            column_config={
-                "turma":       st.column_config.TextColumn("Turma",        width="small"),
-                "nome_aluno":  st.column_config.TextColumn("Aluno",        width="medium"),
-                "responsáveis":st.column_config.TextColumn("Responsáveis", width="large"),
-            },
+            column_config=col_config,
         )
 
         sel_rows = sel.selection.rows if hasattr(sel, "selection") else []
@@ -281,8 +294,8 @@ with aba_import:
                 else:
                     st.success(f"**{df_proc['nome_aluno'].nunique()} alunos** encontrados.")
                     grp_prev = _agrupar(df_proc.assign(id=range(len(df_proc))))
-                    st.dataframe(grp_prev[["turma","nome_aluno","responsáveis"]],
-                                 use_container_width=True, hide_index=True)
+                    prev_cols = ["turma","nome_aluno"] + [f"Responsável {i+1}" for i in range(MAX_RESP)]
+                    st.dataframe(grp_prev[prev_cols], use_container_width=True, hide_index=True)
 
                     modo = st.radio("Como importar?",
                                     ["Adicionar aos existentes",

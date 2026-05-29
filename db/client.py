@@ -35,8 +35,12 @@ def salvar_plano_contas(mes: int, ano: int, plano_df: pd.DataFrame):
     ]
     # Upsert com conflict em (mes, ano, codigo)
     client.table("plano_contas").upsert(rows, on_conflict="mes,ano,codigo").execute()
+    carregar_plano_contas.clear()
+    carregar_plano_contas_multiplos.clear()
+    meses_com_dados.clear()
 
 
+@st.cache_data(ttl=300)
 def carregar_plano_contas(mes: int, ano: int) -> pd.DataFrame:
     client = get_client()
     res = (
@@ -51,6 +55,7 @@ def carregar_plano_contas(mes: int, ano: int) -> pd.DataFrame:
     return pd.DataFrame(res.data)
 
 
+@st.cache_data(ttl=300)
 def carregar_plano_contas_multiplos(meses: list[tuple[int, int]]) -> pd.DataFrame:
     """Retorna PlanoDeContas para vários (mes, ano), com colunas mes e ano."""
     client = get_client()
@@ -68,6 +73,7 @@ def carregar_plano_contas_multiplos(meses: list[tuple[int, int]]) -> pd.DataFram
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
 
+@st.cache_data(ttl=300)
 def meses_com_dados(ano: int) -> list[int]:
     """Retorna lista de meses com PlanoDeContas preenchido para o ano."""
     client = get_client()
@@ -86,7 +92,6 @@ def meses_com_dados(ano: int) -> list[int]:
 
 def salvar_lancamentos_sponte(mes: int, ano: int, df: pd.DataFrame):
     client = get_client()
-    # Apaga os anteriores do mesmo mês
     client.table("lancamentos_sponte").delete().eq("mes", mes).eq("ano", ano).execute()
     rows = [
         {
@@ -102,8 +107,10 @@ def salvar_lancamentos_sponte(mes: int, ano: int, df: pd.DataFrame):
         for _, r in df.iterrows()
     ]
     client.table("lancamentos_sponte").insert(rows).execute()
+    carregar_lancamentos_sponte.clear()
 
 
+@st.cache_data(ttl=300)
 def carregar_lancamentos_sponte(mes: int, ano: int) -> pd.DataFrame:
     client = get_client()
     res = (
@@ -118,8 +125,8 @@ def carregar_lancamentos_sponte(mes: int, ano: int) -> pd.DataFrame:
         return pd.DataFrame()
     df = pd.DataFrame(res.data)
     df["data"] = pd.to_datetime(df["data"]).dt.date
-    df["valor"] = df["valor"].abs()          # garante positivo (compat. dados antigos)
-    df["es"] = df["es"].str.strip()          # remove espaços
+    df["valor"] = df["valor"].abs()
+    df["es"] = df["es"].str.strip()
     return df
 
 
@@ -142,8 +149,10 @@ def salvar_transacoes_banco(mes: int, ano: int, df: pd.DataFrame):
         for _, r in df.iterrows()
     ]
     client.table("transacoes_banco").insert(rows).execute()
+    carregar_transacoes_banco.clear()
 
 
+@st.cache_data(ttl=300)
 def carregar_transacoes_banco(mes: int, ano: int) -> pd.DataFrame:
     client = get_client()
     res = (
@@ -156,11 +165,9 @@ def carregar_transacoes_banco(mes: int, ano: int) -> pd.DataFrame:
     if not res.data:
         return pd.DataFrame()
     df = pd.DataFrame(res.data)
-    # Normaliza para compat. com dados importados antes da padronização
-    df["data_mov"] = df["data_mov"].apply(_normalizar_data_banco)  # → DD/MM/YYYY
+    df["data_mov"] = df["data_mov"].apply(_normalizar_data_banco)
     df["deb_cred"] = df["deb_cred"].str.strip().replace({"C": "E", "D": "S"})
     df["valor"] = df["valor"].abs()
-    # Compatibilidade com dados antigos sem a coluna origem_destino
     if "origem_destino" not in df.columns:
         df["origem_destino"] = ""
     else:
@@ -177,8 +184,11 @@ def salvar_saldos(mes: int, ano: int, banco: float, aplicacao: float, caixa: flo
          "saldo_banco": banco, "saldo_aplicacao": aplicacao, "saldo_caixa": caixa},
         on_conflict="mes,ano",
     ).execute()
+    carregar_saldos.clear()
+    carregar_saldos_ano.clear()
 
 
+@st.cache_data(ttl=300)
 def carregar_saldos(mes: int, ano: int) -> dict:
     client = get_client()
     res = (
@@ -193,6 +203,7 @@ def carregar_saldos(mes: int, ano: int) -> dict:
     return {"saldo_banco": 0.0, "saldo_aplicacao": 0.0, "saldo_caixa": 0.0}
 
 
+@st.cache_data(ttl=300)
 def carregar_saldos_ano(ano: int) -> pd.DataFrame:
     client = get_client()
     res = (
@@ -216,8 +227,10 @@ def salvar_ajuste(mes: int, ano: int, tipo: str, valor: float):
         {"mes": mes, "ano": ano, "tipo": tipo, "valor": valor},
         on_conflict="mes,ano,tipo",
     ).execute()
+    carregar_ajustes.clear()
 
 
+@st.cache_data(ttl=300)
 def carregar_ajustes(mes: int, ano: int) -> dict:
     client = get_client()
     res = (
@@ -280,6 +293,7 @@ def limpar_conciliacoes_mes(mes: int, ano: int):
 
 # ── Alunos ────────────────────────────────────────────────────────────────────
 
+@st.cache_data(ttl=300)
 def carregar_alunos(ano: int) -> pd.DataFrame:
     client = get_client()
     res = (
@@ -296,6 +310,7 @@ def carregar_alunos(ano: int) -> pd.DataFrame:
     return pd.DataFrame(res.data)
 
 
+@st.cache_data(ttl=300)
 def anos_com_alunos() -> list[int]:
     client = get_client()
     res = client.table("alunos").select("ano").execute()
@@ -309,6 +324,7 @@ def salvar_alunos_lote(rows: list[dict]):
     client = get_client()
     if rows:
         client.table("alunos").insert(rows).execute()
+    carregar_alunos.clear()
 
 
 def upsert_aluno(ano: int, turma: str, nome_aluno: str, nome_responsavel: str, id: int | None = None):
@@ -329,12 +345,14 @@ def upsert_aluno(ano: int, turma: str, nome_aluno: str, nome_responsavel: str, i
 def deletar_aluno(id: int):
     client = get_client()
     client.table("alunos").delete().eq("id", id).execute()
+    carregar_alunos.clear()
 
 
 def limpar_alunos_ano(ano: int):
     """Remove todos os alunos de um ano (antes de re-importar)."""
     client = get_client()
     client.table("alunos").delete().eq("ano", ano).execute()
+    carregar_alunos.clear()
 
 
 def buscar_aluno_por_responsavel(nome_responsavel: str, ano: int) -> list[dict]:

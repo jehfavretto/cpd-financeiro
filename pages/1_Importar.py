@@ -61,16 +61,76 @@ if not arquivo_sponte or not arquivo_banco or not arquivo_plano:
 # Lê e valida arquivos
 with st.spinner("Lendo arquivos..."):
     try:
-        import io as _io
+        import io as _io, re as _re
         sponte_df = parse_sponte_fluxo(arquivo_sponte)
-        # Lê os bytes do extrato UMA SÓ VEZ e cria BytesIO fresco para o parser
         nome_banco = arquivo_banco.name.lower()
         arquivo_banco.seek(0)
         _banco_bytes = arquivo_banco.read()
+
         if nome_banco.endswith(".xlsx") or nome_banco.endswith(".xls"):
-            banco_df = parse_banco_xlsx(_io.BytesIO(_banco_bytes))
+            # Parse XLSX inline — evita cache de módulo no servidor
+            _DEPARA = {
+                "APLICACAO FDO - CLIENTE":   "Aplicação Financeira",
+                "MENSALIDADE CESTA SERVICO": "Tarifa Bancária",
+                "DEPOSITO DINH LOTERICO":    "Depósito Lotérico",
+                "COMPRA CARTAO DEBITO":      "Cartão de Débito",
+                "PAG BOLETO IBC":            "Pagamento Boleto",
+                "PAGAMENTO TELEFONE IBC":    "Telefone",
+            }
+            _MINUSC2 = {"de","da","do","dos","das","e","em","na","no","nas","nos","a","o","as","os"}
+
+            def _title_br2(s):
+                words = str(s).strip().split()
+                return " ".join(
+                    w.capitalize() if (i == 0 or w.lower() not in _MINUSC2) else w.lower()
+                    for i, w in enumerate(words)
+                )
+
+            def _limpar_nome2(nome):
+                nome = str(nome).strip()
+                if not nome or nome.lower() == "nan":
+                    return ""
+                nome = _re.sub(r'^[\d\s]+(?=[A-Za-z])', '', nome).strip()
+                return _title_br2(nome) if nome.isupper() else nome
+
+            def _parse_val2(v):
+                if isinstance(v, (int, float)):
+                    return float(v)
+                s = str(v).strip()
+                if not s or s.lower() == "nan":
+                    return 0.0
+                negative = "-" in s or "−" in s
+                digits = _re.sub(r"[^\d,.]", "", s)
+                if not digits:
+                    return 0.0
+                if "," in digits:
+                    digits = digits.replace(".", "").replace(",", ".")
+                try:
+                    return -float(digits) if negative else float(digits)
+                except ValueError:
+                    return 0.0
+
+            _r = pd.read_excel(_io.BytesIO(_banco_bytes), dtype=str)
+            _r.columns = _r.iloc[0]
+            _r = _r.iloc[1:].reset_index(drop=True)
+            _r = _r[_r["Histórico"] != "SALDO DIA"].copy()
+            _r["data_mov"] = pd.to_datetime(
+                _r["Data Movimento"], format="%d/%m/%Y", errors="coerce"
+            ).dt.strftime("%d/%m/%Y").fillna(_r["Data Movimento"])
+            _r["nr_doc"]   = _r["Documento"].fillna("").str.strip()
+            _r["historico"] = _r["Histórico"].str.strip()
+            _r["_vs"]      = _r["Valor Lançamento"].apply(_parse_val2)
+            _r["valor_num"] = _r["_vs"].abs()
+            _r["deb_cred"]  = _r["_vs"].apply(lambda v: "S" if v < 0 else "E")
+            _r["origem_destino"] = _r.apply(
+                lambda row: _limpar_nome2(row.get("Nome/Razão Social", ""))
+                            or _DEPARA.get(str(row["historico"]).strip(), str(row["historico"]).strip()),
+                axis=1
+            )
+            banco_df = _r[["data_mov","nr_doc","historico","valor_num","deb_cred","origem_destino"]].reset_index(drop=True)
         else:
             banco_df = parse_banco_txt(_io.BytesIO(_banco_bytes))
+
         plano_df  = parse_sponte_plano(arquivo_plano)
     except Exception as e:
         st.error(f"Erro ao ler arquivos: {e}")

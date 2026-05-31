@@ -119,7 +119,8 @@ def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
 
     # Valor: suporta formato BR ("- 1.850,00") e numérico padrão ("-1850.0")
     def _parse_val_xlsx(v):
-        s = str(v).strip().replace(" ", "")
+        # Remove espaço normal E espaço não-quebrável (\xa0) que o Excel usa nos negativos
+        s = str(v).strip().replace("\xa0", "").replace(" ", "")
         if not s or s.lower() == "nan":
             return 0.0
         if "," in s:                          # formato BR: "1.850,00" ou "-1.850,00"

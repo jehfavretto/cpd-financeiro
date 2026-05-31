@@ -17,6 +17,7 @@ from core.utils import fmt_br
 
 
 st.title("📥 Importar Mês")
+st.caption("parser v4 · 30/05/2026")
 
 # ── Contador para resetar os uploaders ───────────────────────────────────────
 if "upload_cnt" not in st.session_state:

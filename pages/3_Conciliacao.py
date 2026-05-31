@@ -21,20 +21,28 @@ from core.utils import fmt_br
 st.title("🔍 Conciliação")
 st.markdown("Vincule os lançamentos do Sponte com o extrato bancário.")
 
-# ── Seleção de mês ─────────────────────────────────────────────────────────────
+# ── Seleção de mês — persiste ao trocar de página ──────────────────────────────
+_anos = [2026, 2025]
 col1, col2 = st.columns([1, 3])
 with col1:
-    ano = st.selectbox("Ano", [2026, 2025])
+    _ano_idx = _anos.index(st.session_state.get("conc_ano", _anos[0]))
+    ano = st.selectbox("Ano", _anos, index=_ano_idx)
+    st.session_state["conc_ano"] = ano
+
 meses_com_dados = db.meses_com_dados(ano)
 if not meses_com_dados:
     st.info("Nenhum mês importado. Use **📥 Importar Mês** para começar.")
     st.stop()
+
 with col2:
+    _mes_salvo = st.session_state.get("conc_mes")
+    _mes_idx   = meses_com_dados.index(_mes_salvo) if _mes_salvo in meses_com_dados else len(meses_com_dados) - 1
     mes = st.selectbox(
         "Mês", meses_com_dados,
         format_func=lambda m: f"{MESES_ABREV[m]}/{ano}",
-        index=len(meses_com_dados) - 1,
+        index=_mes_idx,
     )
+    st.session_state["conc_mes"] = mes
 
 # ── Carrega dados ──────────────────────────────────────────────────────────────
 sponte_df = db.carregar_lancamentos_sponte(mes, ano)

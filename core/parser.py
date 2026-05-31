@@ -117,14 +117,20 @@ def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
     # Histórico
     raw["historico"] = raw["Histórico"].str.strip()
 
-    # Valor: "2.513,00" → 2513.0 / "- 1.850,00" → 1850.0
-    _v = (
-        raw["Valor Lançamento"]
-        .str.replace(" ", "", regex=False)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
-    )
-    raw["_val_signed"] = pd.to_numeric(_v, errors="coerce").fillna(0.0)
+    # Valor: suporta formato BR ("- 1.850,00") e numérico padrão ("-1850.0")
+    def _parse_val_xlsx(v):
+        s = str(v).strip().replace(" ", "")
+        if not s or s.lower() == "nan":
+            return 0.0
+        if "," in s:                          # formato BR: "1.850,00" ou "-1.850,00"
+            s = s.replace(".", "").replace(",", ".")
+        # else: já numérico padrão ("-1850.0"), não mexe no ponto decimal
+        try:
+            return float(s)
+        except ValueError:
+            return 0.0
+
+    raw["_val_signed"] = raw["Valor Lançamento"].apply(_parse_val_xlsx)
     raw["valor_num"]   = raw["_val_signed"].abs()
     raw["deb_cred"]    = raw["_val_signed"].apply(lambda v: "S" if v < 0 else "E")
 

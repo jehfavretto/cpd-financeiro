@@ -58,56 +58,19 @@ if not arquivo_sponte or not arquivo_banco or not arquivo_plano:
     st.info("Faça o upload dos 3 arquivos para continuar.")
     st.stop()
 
-# ── DEBUG temporário: mostra valor RAW e resultado do parse ──────────────────
-if arquivo_banco and arquivo_banco.name.lower().endswith(".xlsx"):
-    import re as _re
-    arquivo_banco.seek(0)
-    _dbg = pd.read_excel(arquivo_banco, dtype=str)
-    arquivo_banco.seek(0)
-    _dbg.columns = _dbg.iloc[0]
-    _dbg = _dbg.iloc[1:].reset_index(drop=True)
-    _dbg = _dbg[_dbg["Histórico"] != "SALDO DIA"]
-    _vals = [repr(v) for v in _dbg["Valor Lançamento"].head(6).tolist()]
-
-    # Testa a função de parse diretamente
-    def _test_parse(v):
-        if isinstance(v, (int, float)):
-            return float(v)
-        s = str(v).strip()
-        if not s or s.lower() == "nan":
-            return 0.0
-        negative = "-" in s or "−" in s
-        digits = _re.sub(r"[^\d,.]", "", s)
-        if not digits:
-            return 0.0
-        if "," in digits:
-            digits = digits.replace(".", "").replace(",", ".")
-        try:
-            return -float(digits) if negative else float(digits)
-        except ValueError:
-            return 0.0
-
-    _raw_val = _dbg["Valor Lançamento"].iloc[2]
-    _s       = str(_raw_val).strip()
-    _neg     = "-" in _s
-    _digits  = _re.sub(r"[^\d,.]", "", _s)
-    _parsed  = _test_parse(_raw_val)
-    st.info(
-        f"🔍 DEBUG  raw: {repr(_raw_val)}  →  "
-        f"negative={_neg}  digits={repr(_digits)}  resultado={_parsed}"
-    )
-    st.caption("Todos brutos: " + " | ".join(_vals))
-
 # Lê e valida arquivos
 with st.spinner("Lendo arquivos..."):
     try:
+        import io as _io
         sponte_df = parse_sponte_fluxo(arquivo_sponte)
-        # Detecta formato do extrato: XLSX novo (CEF online) ou TXT antigo
+        # Lê os bytes do extrato UMA SÓ VEZ e cria BytesIO fresco para o parser
         nome_banco = arquivo_banco.name.lower()
+        arquivo_banco.seek(0)
+        _banco_bytes = arquivo_banco.read()
         if nome_banco.endswith(".xlsx") or nome_banco.endswith(".xls"):
-            banco_df = parse_banco_xlsx(arquivo_banco)
+            banco_df = parse_banco_xlsx(_io.BytesIO(_banco_bytes))
         else:
-            banco_df = parse_banco_txt(arquivo_banco)
+            banco_df = parse_banco_txt(_io.BytesIO(_banco_bytes))
         plano_df  = parse_sponte_plano(arquivo_plano)
     except Exception as e:
         st.error(f"Erro ao ler arquivos: {e}")

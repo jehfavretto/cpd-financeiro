@@ -17,7 +17,17 @@ from core.utils import fmt_br
 
 
 st.title("📥 Importar Mês")
-st.markdown("Faça o upload dos arquivos exportados do Sponte e da CEF para processar o mês.")
+
+# ── Contador para resetar os uploaders ───────────────────────────────────────
+if "upload_cnt" not in st.session_state:
+    st.session_state["upload_cnt"] = 0
+_cnt = st.session_state["upload_cnt"]
+
+_header, _btn_col = st.columns([8, 1])
+_header.markdown("Faça o upload dos arquivos exportados do Sponte e da CEF para processar o mês.")
+if _btn_col.button("✕ Limpar", help="Remover todos os arquivos enviados"):
+    st.session_state["upload_cnt"] += 1
+    st.rerun()
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 col1, col2, col3 = st.columns(3)
@@ -25,19 +35,19 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown("**1. FluxoCaixa (Sponte)**")
     arquivo_sponte = st.file_uploader(
-        "Arquivo .xls do Sponte", type=["xls", "xlsx"], key="sponte"
+        "Arquivo .xls do Sponte", type=["xls", "xlsx"], key=f"sponte_{_cnt}"
     )
 
 with col2:
     st.markdown("**2. Extrato CEF**")
     arquivo_banco = st.file_uploader(
-        "Arquivo .txt ou .xlsx do banco", type=["txt", "csv", "xlsx", "xls"], key="banco"
+        "Arquivo .txt ou .xlsx do banco", type=["txt", "csv", "xlsx", "xls"], key=f"banco_{_cnt}"
     )
 
 with col3:
     st.markdown("**3. PlanoDeContas (Sponte)**")
     arquivo_plano = st.file_uploader(
-        "Arquivo .xls do PlanoDeContas", type=["xls", "xlsx"], key="plano"
+        "Arquivo .xls do PlanoDeContas", type=["xls", "xlsx"], key=f"plano_{_cnt}"
     )
 
 st.divider()

@@ -99,10 +99,15 @@ def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
     Retorna DataFrame normalizado igual ao parse_banco_txt:
     data_mov (DD/MM/YYYY), nr_doc, historico, valor_num, deb_cred, origem_destino.
     """
-    # Garante que o stream está no início (necessário para UploadedFile do Streamlit)
-    if hasattr(file_bytes_or_path, "seek"):
+    # Copia para BytesIO fresco — evita problema de posição de stream com UploadedFile
+    import io as _io
+    if hasattr(file_bytes_or_path, "read"):
         file_bytes_or_path.seek(0)
-    raw = pd.read_excel(file_bytes_or_path, dtype=str)
+        _content = file_bytes_or_path.read()
+        _file = _io.BytesIO(_content)
+    else:
+        _file = file_bytes_or_path
+    raw = pd.read_excel(_file, dtype=str)
     # Linha 0 é o cabeçalho real
     raw.columns = raw.iloc[0]
     raw = raw.iloc[1:].reset_index(drop=True)

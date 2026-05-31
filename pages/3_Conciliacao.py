@@ -337,11 +337,18 @@ with aba_pend:
         })
 
         _tem_orig = "origem_destino" in bk_filtrado.columns
+        # Nome: usa origem_destino se preenchido, senão cai no histórico
+        _bk_nome = (
+            bk_filtrado["origem_destino"]
+            .where(bk_filtrado["origem_destino"].fillna("").str.strip() != "",
+                   bk_filtrado["historico"])
+            if _tem_orig else bk_filtrado["historico"]
+        )
         bk_show = pd.DataFrame({
             "Data":      bk_filtrado["data_fmt"].str[:5],
             "E/S":       bk_filtrado["deb_cred"],
             "Valor":     bk_filtrado["valor"].abs(),
-            "Nome":      bk_filtrado["origem_destino"] if _tem_orig else bk_filtrado["historico"],
+            "Nome":      _bk_nome,
             "Histórico": bk_filtrado["historico"],
         })
 

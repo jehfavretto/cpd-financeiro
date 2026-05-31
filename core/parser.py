@@ -119,15 +119,24 @@ def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
 
     # Valor: suporta formato BR ("- 1.850,00") e numérico padrão ("-1850.0")
     def _parse_val_xlsx(v):
-        # Remove espaço normal E espaço não-quebrável (\xa0) que o Excel usa nos negativos
-        s = str(v).strip().replace("\xa0", "").replace(" ", "")
+        # Se pandas já leu como número, usa direto
+        if isinstance(v, (int, float)):
+            return float(v)
+        s = str(v).strip()
         if not s or s.lower() == "nan":
             return 0.0
-        if "," in s:                          # formato BR: "1.850,00" ou "-1.850,00"
-            s = s.replace(".", "").replace(",", ".")
-        # else: já numérico padrão ("-1850.0"), não mexe no ponto decimal
+        # Detecta sinal negativo ANTES de limpar (o Excel usa '-', '−' ou '\xa0' após o '-')
+        negative = "-" in s or "−" in s
+        # Extrai apenas dígitos, ponto e vírgula — remove tudo mais (espaço, \xa0, etc.)
+        digits = re.sub(r"[^\d,.]", "", s)
+        if not digits:
+            return 0.0
+        # Formato BR: vírgula como separador decimal ("1.850,00" → "1850.00")
+        if "," in digits:
+            digits = digits.replace(".", "").replace(",", ".")
         try:
-            return float(s)
+            val = float(digits)
+            return -val if negative else val
         except ValueError:
             return 0.0
 

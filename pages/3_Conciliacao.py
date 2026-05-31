@@ -467,8 +467,22 @@ with aba_pend:
                             unsafe_allow_html=True,
                         )
 
+                    _MOTIVOS_DIF = [
+                        "Pagamento agrupado (vários alunos)",
+                        "Desconto concedido",
+                        "Juros / multa por atraso",
+                        "Pagamento parcial",
+                        "Complemento de pagamento anterior",
+                        "Erro de lançamento no Sponte",
+                        "Outro",
+                    ]
+                    _justificativa = None
                     if diff > 0.02:
                         st.warning(f"⚠️ Dif: {_md_val(diff)}")
+                        _justificativa = st.selectbox(
+                            "Motivo:", _MOTIVOS_DIF,
+                            key=f"motivo_dif_{cnt}",
+                        )
 
                     if n_sp > 1:
                         lbl = f"🔗 Vincular {n_sp}→1"
@@ -483,16 +497,16 @@ with aba_pend:
                             for r in sp_selecionados:
                                 db.salvar_conciliacao(mes, ano, "manual",
                                                       sponte_chave=r["chave"],
-                                                      banco_chave=bk_r["chave"])
+                                                      banco_chave=bk_r["chave"],
+                                                      justificativa=_justificativa)
                         else:
                             # 1:N — 1 Sponte → vários Banco
-                            # Salva UM ÚNICO registro com banco_chaves separadas por §§
-                            # para não duplicar o sponte_chave e não quebrar o auto-match
                             sp_r = sp_selecionados[0]
                             bk_chaves_unidas = "§§".join(r["chave"] for r in bk_selecionados)
                             db.salvar_conciliacao(mes, ano, "manual",
                                                   sponte_chave=sp_r["chave"],
-                                                  banco_chave=bk_chaves_unidas)
+                                                  banco_chave=bk_chaves_unidas,
+                                                  justificativa=_justificativa)
                         st.session_state["conc_cnt"] += 1
                         st.rerun()
 

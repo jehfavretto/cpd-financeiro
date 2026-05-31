@@ -99,6 +99,9 @@ def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
     Retorna DataFrame normalizado igual ao parse_banco_txt:
     data_mov (DD/MM/YYYY), nr_doc, historico, valor_num, deb_cred, origem_destino.
     """
+    # Garante que o stream está no início (necessário para UploadedFile do Streamlit)
+    if hasattr(file_bytes_or_path, "seek"):
+        file_bytes_or_path.seek(0)
     raw = pd.read_excel(file_bytes_or_path, dtype=str)
     # Linha 0 é o cabeçalho real
     raw.columns = raw.iloc[0]

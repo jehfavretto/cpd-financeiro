@@ -353,7 +353,11 @@ with aba_tabela:
 # ══════════════════════════════════════════════════════════════════════════════
 with aba_add:
     st.markdown("Adicione um aluno com um ou mais responsáveis.")
-    with st.form("form_novo"):
+    if "form_add_cnt" not in st.session_state:
+        st.session_state["form_add_cnt"] = 0
+    _fadd = st.session_state["form_add_cnt"]
+
+    with st.form(f"form_novo_{_fadd}"):
         c1, c2 = st.columns(2)
         nova_turma = c1.selectbox("Turma", ORDEM_TURMAS)
         novo_aluno = c2.text_input("Nome do aluno")
@@ -371,7 +375,7 @@ with aba_add:
                      "nome_aluno": novo_aluno.strip(), "nome_responsavel": r}
                     for r in novos
                 ])
-                st.success(f"✅ {novo_aluno} adicionado com {len(novos)} responsável(eis)!")
+                st.session_state["form_add_cnt"] += 1
                 st.rerun()
 
 

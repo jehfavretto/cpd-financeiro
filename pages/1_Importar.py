@@ -58,6 +58,18 @@ if not arquivo_sponte or not arquivo_banco or not arquivo_plano:
     st.info("Faça o upload dos 3 arquivos para continuar.")
     st.stop()
 
+# ── DEBUG temporário: mostra valor RAW do extrato ────────────────────────────
+if arquivo_banco and arquivo_banco.name.lower().endswith(".xlsx"):
+    import io as _io
+    arquivo_banco.seek(0)
+    _dbg = pd.read_excel(arquivo_banco, dtype=str)
+    arquivo_banco.seek(0)
+    _dbg.columns = _dbg.iloc[0]
+    _dbg = _dbg.iloc[1:].reset_index(drop=True)
+    _dbg = _dbg[_dbg["Histórico"] != "SALDO DIA"]
+    _vals = [repr(v) for v in _dbg["Valor Lançamento"].head(6).tolist()]
+    st.info("🔍 DEBUG — primeiros 6 valores brutos:\n" + "\n".join(_vals))
+
 # Lê e valida arquivos
 with st.spinner("Lendo arquivos..."):
     try:

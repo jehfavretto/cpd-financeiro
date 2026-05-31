@@ -327,12 +327,13 @@ with aba_pend:
             "Responsável": _resp_series,
         })
 
+        _tem_orig = "origem_destino" in bk_filtrado.columns
         bk_show = pd.DataFrame({
-            "Data":           bk_filtrado["data_fmt"].str[:5],
-            "Histórico":      bk_filtrado["historico"],
-            "Origem/Destino": bk_filtrado["origem_destino"] if "origem_destino" in bk_filtrado.columns else "",
-            "E/S":            bk_filtrado["deb_cred"],
-            "Valor":          bk_filtrado["valor"].abs(),
+            "Data":      bk_filtrado["data_fmt"].str[:5],
+            "E/S":       bk_filtrado["deb_cred"],
+            "Valor":     bk_filtrado["valor"].abs(),
+            "Nome":      bk_filtrado["origem_destino"] if _tem_orig else bk_filtrado["historico"],
+            "Histórico": bk_filtrado["historico"],
         })
 
         class _EmptySel:
@@ -397,10 +398,10 @@ with aba_pend:
                     height=460,
                     hide_index=True,
                     column_config={
-                        "Valor":          _val_cfg,
-                        "E/S":            _es_cfg,
-                        "Histórico":      st.column_config.TextColumn("Histórico",      width="small"),
-                        "Origem/Destino": st.column_config.TextColumn("Origem/Destino", width="medium"),
+                        "Valor":     _val_cfg,
+                        "E/S":       _es_cfg,
+                        "Nome":      st.column_config.TextColumn("Nome (banco)", width="medium"),
+                        "Histórico": st.column_config.TextColumn("Histórico",    width="small"),
                     },
                     selection_mode="multi-row",
                     on_select="rerun",

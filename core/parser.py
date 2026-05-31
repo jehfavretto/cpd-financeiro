@@ -66,6 +66,81 @@ def parse_sponte_fluxo(file_bytes_or_path) -> pd.DataFrame:
     return df
 
 
+_MINUSC = {"de","da","do","dos","das","e","em","na","no","nas","nos","a","o","as","os"}
+
+def _title_br(s: str) -> str:
+    words = str(s).strip().split()
+    return " ".join(
+        w.capitalize() if (i == 0 or w.lower() not in _MINUSC) else w.lower()
+        for i, w in enumerate(words)
+    )
+
+def _limpar_nome_banco(nome: str) -> str:
+    """Remove prefixo numérico de CNPJ ('52 053 009 NOME...') e aplica Title Case."""
+    nome = str(nome).strip()
+    if not nome or nome.lower() == "nan":
+        return ""
+    # Remove dígitos/espaços do início antes do primeiro caractere alfabético
+    nome = re.sub(r'^[\d\s]+(?=[A-Za-z])', '', nome).strip()
+    return _title_br(nome) if nome.isupper() else nome
+
+_DE_PARA_HISTORICO = {
+    "APLICACAO FDO - CLIENTE":  "Aplicação Financeira",
+    "MENSALIDADE CESTA SERVICO": "Tarifa Bancária",
+    "DEPOSITO DINH LOTERICO":   "Depósito Lotérico",
+    "COMPRA CARTAO DEBITO":     "Cartão de Débito",
+    "PAG BOLETO IBC":           "Pagamento Boleto",
+    "PAGAMENTO TELEFONE IBC":   "Telefone",
+}
+
+def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
+    """
+    Lê o extrato CEF no novo formato XLSX.
+    Retorna DataFrame normalizado igual ao parse_banco_txt:
+    data_mov (DD/MM/YYYY), nr_doc, historico, valor_num, deb_cred, origem_destino.
+    """
+    raw = pd.read_excel(file_bytes_or_path, dtype=str)
+    # Linha 0 é o cabeçalho real
+    raw.columns = raw.iloc[0]
+    raw = raw.iloc[1:].reset_index(drop=True)
+    # Remove linhas de SALDO DIA (não são transações)
+    raw = raw[raw["Histórico"] != "SALDO DIA"].copy()
+
+    # Data de movimento
+    raw["data_mov"] = pd.to_datetime(
+        raw["Data Movimento"], format="%d/%m/%Y", errors="coerce"
+    ).dt.strftime("%d/%m/%Y").fillna(raw["Data Movimento"])
+
+    # Documento
+    raw["nr_doc"] = raw["Documento"].fillna("").str.strip()
+
+    # Histórico
+    raw["historico"] = raw["Histórico"].str.strip()
+
+    # Valor: "2.513,00" → 2513.0 / "- 1.850,00" → 1850.0
+    _v = (
+        raw["Valor Lançamento"]
+        .str.replace(" ", "", regex=False)
+        .str.replace(".", "", regex=False)
+        .str.replace(",", ".", regex=False)
+    )
+    raw["_val_signed"] = pd.to_numeric(_v, errors="coerce").fillna(0.0)
+    raw["valor_num"]   = raw["_val_signed"].abs()
+    raw["deb_cred"]    = raw["_val_signed"].apply(lambda v: "S" if v < 0 else "E")
+
+    # Origem/destino: Nome/Razão Social > de:para do histórico
+    def _origem(row):
+        nome = str(row.get("Nome/Razão Social", "")).strip()
+        hist = str(row.get("historico", "")).strip()
+        if nome and nome.lower() not in ("nan", ""):
+            return _limpar_nome_banco(nome)
+        return _DE_PARA_HISTORICO.get(hist, hist)
+
+    raw["origem_destino"] = raw.apply(_origem, axis=1)
+
+    return raw[["data_mov", "nr_doc", "historico", "valor_num", "deb_cred", "origem_destino"]].reset_index(drop=True)
+
+
 def parse_banco_txt(file_bytes_or_path) -> pd.DataFrame:
     """
     Lê o extrato da CEF (.txt, separador ';').

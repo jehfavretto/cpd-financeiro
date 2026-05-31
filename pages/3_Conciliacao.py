@@ -320,11 +320,14 @@ with aba_pend:
 
         col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
-        _val_cfg  = st.column_config.NumberColumn("Valor", format="R$ %,.2f")
-        _es_cfg   = st.column_config.TextColumn("E/S", width="small")
-        _cat_cfg  = st.column_config.TextColumn("Categoria", width="small")
-        _orig_cfg = st.column_config.TextColumn("Origem/Destino", width="medium")
-        _resp_cfg = st.column_config.TextColumn("Responsável", width="medium")
+        _val_cfg  = st.column_config.NumberColumn("Valor",          format="R$ %,.2f", width=110)
+        _es_cfg   = st.column_config.TextColumn("E/S",             width=45)
+        _dat_cfg  = st.column_config.TextColumn("Data",            width=55)
+        _cat_cfg  = st.column_config.TextColumn("Categoria",       width=130)
+        _orig_cfg = st.column_config.TextColumn("Origem/Destino",  width=170)
+        _resp_cfg = st.column_config.TextColumn("Responsável",     width=170)
+        _nom_cfg  = st.column_config.TextColumn("Nome",            width=180)
+        _his_cfg  = st.column_config.TextColumn("Histórico",       width=130)
 
         _resp_series = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
         sp_show = pd.DataFrame({
@@ -392,11 +395,12 @@ with aba_pend:
                     height=460,
                     hide_index=True,
                     column_config={
-                        "Valor":           _val_cfg,
-                        "E/S":             _es_cfg,
-                        "Categoria":       _cat_cfg,
-                        "Origem/Destino":  _orig_cfg,
-                        "Responsável":     _resp_cfg,
+                        "Data":           _dat_cfg,
+                        "E/S":            _es_cfg,
+                        "Valor":          _val_cfg,
+                        "Categoria":      _cat_cfg,
+                        "Origem/Destino": _orig_cfg,
+                        "Responsável":    _resp_cfg,
                     },
                     selection_mode="multi-row",
                     on_select="rerun",
@@ -415,10 +419,11 @@ with aba_pend:
                     height=460,
                     hide_index=True,
                     column_config={
-                        "Valor":     _val_cfg,
+                        "Data":      _dat_cfg,
                         "E/S":       _es_cfg,
-                        "Nome":      st.column_config.TextColumn("Nome (banco)", width="medium"),
-                        "Histórico": st.column_config.TextColumn("Histórico",    width="small"),
+                        "Valor":     _val_cfg,
+                        "Nome":      _nom_cfg,
+                        "Histórico": _his_cfg,
                     },
                     selection_mode="multi-row",
                     on_select="rerun",

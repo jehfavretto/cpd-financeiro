@@ -323,16 +323,17 @@ with aba_pend:
         _val_cfg  = st.column_config.NumberColumn("Valor", format="R$ %,.2f")
         _es_cfg   = st.column_config.TextColumn("E/S", width="small")
         _cat_cfg  = st.column_config.TextColumn("Categoria", width="small")
-        _aluno_cfg = st.column_config.TextColumn("Aluno", width="medium")
-        _resp_cfg  = st.column_config.TextColumn("Responsável", width="medium")
+        _orig_cfg = st.column_config.TextColumn("Origem/Destino", width="medium")
+        _resp_cfg = st.column_config.TextColumn("Responsável", width="medium")
 
         _resp_series = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
         sp_show = pd.DataFrame({
-            "Data":        pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
-            "E/S":         sp_filtrado["es"],
-            "Valor":       sp_filtrado["valor"].abs(),
-            "Aluno":       sp_filtrado["origem_destino"],
-            "Responsável": _resp_series,
+            "Data":           pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
+            "E/S":            sp_filtrado["es"],
+            "Valor":          sp_filtrado["valor"].abs(),
+            "Categoria":      sp_filtrado["categoria"],
+            "Origem/Destino": sp_filtrado["origem_destino"],
+            "Responsável":    _resp_series,
         })
 
         _tem_orig = "origem_destino" in bk_filtrado.columns
@@ -384,10 +385,11 @@ with aba_pend:
                     height=460,
                     hide_index=True,
                     column_config={
-                        "Valor":       _val_cfg,
-                        "E/S":         _es_cfg,
-                        "Aluno":       _aluno_cfg,
-                        "Responsável": _resp_cfg,
+                        "Valor":           _val_cfg,
+                        "E/S":             _es_cfg,
+                        "Categoria":       _cat_cfg,
+                        "Origem/Destino":  _orig_cfg,
+                        "Responsável":     _resp_cfg,
                     },
                     selection_mode="multi-row",
                     on_select="rerun",

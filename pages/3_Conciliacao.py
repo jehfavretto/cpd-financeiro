@@ -44,38 +44,56 @@ with col2:
     )
     st.session_state["conc_mes"] = mes
 
-# ── Seleciona modo: Banco ou Caixa ────────────────────────────────────────────
-modo_conc = st.radio(
-    "Conciliando:", ["🏦 Banco", "💵 Caixa"],
-    horizontal=True, key=f"modo_conc_{mes}_{ano}",
-)
+# ── Seleciona fonte: Banco e/ou Caixa ─────────────────────────────────────────
+_fc1, _fc2, _ = st.columns([2, 2, 8])
+usar_banco = _fc1.checkbox("🏦 Banco", value=st.session_state.get("conc_banco", True),  key=f"cb_banco_{mes}_{ano}")
+usar_caixa = _fc2.checkbox("💵 Caixa", value=st.session_state.get("conc_caixa", False), key=f"cb_caixa_{mes}_{ano}")
+st.session_state["conc_banco"] = usar_banco
+st.session_state["conc_caixa"] = usar_caixa
+
+if not usar_banco and not usar_caixa:
+    st.warning("Selecione pelo menos uma fonte: Banco ou Caixa.")
+    st.stop()
 
 # ── Carrega dados ──────────────────────────────────────────────────────────────
 sponte_df = db.carregar_lancamentos_sponte(mes, ano)
 banco_df  = db.carregar_transacoes_banco(mes, ano)
 
-if modo_conc == "💵 Caixa":
-    caixa_df = db.carregar_lancamentos_caixa(mes, ano)
-    if caixa_df.empty:
-        st.info("Nenhum lançamento de caixa importado para este mês. Use **📥 Importar Mês** para carregar a planilha de caixa.")
-        st.stop()
-    # Adapta caixa_df para ter as mesmas colunas que banco_df usa na conciliação
-    caixa_df = caixa_df.copy()
-    caixa_df["historico"]      = caixa_df["descricao"]
-    # Usa Origem/Destino se disponível, senão Descrição
-    caixa_df["origem_destino"] = caixa_df.get("descricao", pd.Series("", index=caixa_df.index)).fillna("")
-    caixa_df["historico"]      = caixa_df.apply(
+def _adaptar_caixa(df_cx: pd.DataFrame) -> pd.DataFrame:
+    """Adapta caixa_df para ter as mesmas colunas que banco_df."""
+    df_cx = df_cx.copy()
+    df_cx["historico"] = df_cx.apply(
         lambda r: " · ".join(filter(None, [str(r.get("categoria","")), str(r.get("descricao",""))])), axis=1
     )
-    caixa_df["valor"]          = caixa_df["valor"].abs()
-    caixa_df["data_fmt"]       = caixa_df["data_mov"]
-    caixa_df["nr_doc"]         = ""
-    # Chave de matching igual ao banco
-    caixa_df["chave"] = caixa_df.apply(
+    df_cx["origem_destino"] = df_cx.get("descricao", pd.Series("", index=df_cx.index)).fillna("")
+    df_cx["valor"]    = df_cx["valor"].abs()
+    df_cx["data_fmt"] = df_cx["data_mov"]
+    df_cx["nr_doc"]   = ""
+    df_cx["chave"]    = df_cx.apply(
         lambda r: f"{str(r['data_mov'])[:5]}|{r['deb_cred']}|{float(r['valor']):.2f}".replace(".", ","),
         axis=1
     )
-    banco_df = caixa_df  # substitui banco_df pelo caixa para a lógica de conciliação funcionar igual
+    return df_cx
+
+if usar_caixa:
+    _caixa_raw = db.carregar_lancamentos_caixa(mes, ano)
+    if _caixa_raw.empty and not usar_banco:
+        st.info("Nenhum lançamento de caixa importado para este mês. Use **📥 Importar Mês** para carregar a planilha de caixa.")
+        st.stop()
+    elif not _caixa_raw.empty:
+        _caixa_adaptado = _adaptar_caixa(_caixa_raw)
+        if usar_banco and not banco_df.empty:
+            # Combina banco + caixa numa tabela só
+            banco_df = pd.concat([banco_df, _caixa_adaptado], ignore_index=True)
+        elif not usar_banco:
+            banco_df = _caixa_adaptado
+
+# Título dinâmico do extrato
+_titulo_extrato = (
+    "🏦💵 Banco + Caixa" if (usar_banco and usar_caixa)
+    else "💵 Extrato Caixa" if usar_caixa
+    else "🏦 Extrato Banco"
+)
 
 if sponte_df.empty or banco_df.empty:
     st.warning("Dados de lançamentos não encontrados para este mês.")
@@ -437,7 +455,7 @@ with aba_pend:
                 )
 
         with col_bk:
-            st.markdown("**🏦 Extrato Banco**")
+            st.markdown(f"**{_titulo_extrato}**")
             if bk_show.empty:
                 sel_bk = _EmptySel()
                 st.markdown(_msg_vazia(banco_pendente.empty), unsafe_allow_html=True)

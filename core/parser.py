@@ -192,6 +192,75 @@ def parse_banco_txt(file_bytes_or_path) -> pd.DataFrame:
     return df
 
 
+def parse_caixa_xlsx(file_bytes_or_path) -> pd.DataFrame:
+    """
+    Lê planilha de caixa físico.
+    Colunas esperadas: Data | Descrição | Valor | E/S
+    Retorna: data_mov, descricao, valor (abs), deb_cred (E/S)
+    """
+    import io as _io, unicodedata as _ud
+    if hasattr(file_bytes_or_path, "read"):
+        file_bytes_or_path.seek(0)
+        _file = _io.BytesIO(file_bytes_or_path.read())
+    else:
+        _file = file_bytes_or_path
+
+    df = pd.read_excel(_file, dtype=str)
+
+    def _nc(c):
+        c = _ud.normalize("NFD", str(c).strip().lower())
+        return "".join(ch for ch in c if _ud.category(ch) != "Mn")
+
+    df.columns = [_nc(c) for c in df.columns]
+
+    col_map = {}
+    for c in df.columns:
+        if c in ("data", "dt", "data_mov", "data mov"):          col_map.setdefault("data_mov", c)
+        elif c in ("descricao", "descricacao", "historico",
+                   "descr", "desc", "descricao", "descricao"):   col_map.setdefault("descricao", c)
+        elif c in ("valor", "value", "vlr", "vl"):               col_map.setdefault("valor", c)
+        elif c in ("e/s", "es", "tipo", "entrada/saida",
+                   "entrada_saida", "deb_cred"):                  col_map.setdefault("deb_cred", c)
+
+    missing = [k for k in ("data_mov", "descricao", "valor", "deb_cred") if k not in col_map]
+    if missing:
+        raise ValueError(
+            f"Colunas não encontradas: {missing}. "
+            "A planilha precisa ter: Data, Descrição, Valor, E/S"
+        )
+
+    df = df.rename(columns={v: k for k, v in col_map.items()})
+    df = df.dropna(subset=["data_mov", "valor"]).copy()
+
+    df["data_mov"] = pd.to_datetime(
+        df["data_mov"], format="%d/%m/%Y", errors="coerce"
+    ).dt.strftime("%d/%m/%Y").fillna(df["data_mov"])
+
+    def _pv(v):
+        if isinstance(v, (int, float)):
+            return abs(float(v))
+        s = str(v).strip().replace("\xa0", "").replace(" ", "")
+        if "," in s:
+            s = s.replace(".", "").replace(",", ".")
+        try:
+            return abs(float(s))
+        except ValueError:
+            return 0.0
+
+    df["valor"] = df["valor"].apply(_pv)
+
+    _es_map = {
+        "e": "E", "entrada": "E", "entradas": "E", "c": "E", "credito": "E", "1": "E",
+        "s": "S", "saida": "S", "saída": "S", "saidas": "S", "d": "S", "debito": "S", "0": "S",
+    }
+    df["deb_cred"] = df["deb_cred"].fillna("E").apply(
+        lambda v: _es_map.get(str(v).strip().lower(), "E")
+    )
+    df["descricao"] = df["descricao"].fillna("").str.strip()
+
+    return df[["data_mov", "descricao", "valor", "deb_cred"]].reset_index(drop=True)
+
+
 # De:para para históricos sem nome associado (XLSX novo formato)
 _DEPARA_HISTORICO_BANCO: dict[str, str] = {
     "APLICACAO FDO - CLIENTE":  "Aplicação Financeira",

@@ -8,6 +8,7 @@ from core.parser import (
     parse_sponte_fluxo,
     parse_banco_txt,
     parse_banco_xlsx,
+    parse_caixa_xlsx,
     parse_sponte_plano,
     detectar_mes_ano,
     MESES_ABREV,
@@ -31,7 +32,7 @@ if _btn_col.button("✕ Limpar", help="Remover todos os arquivos enviados"):
     st.rerun()
 
 # ── Upload ────────────────────────────────────────────────────────────────────
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown("**1. FluxoCaixa (Sponte)**")
@@ -49,6 +50,14 @@ with col3:
     st.markdown("**3. PlanoDeContas (Sponte)**")
     arquivo_plano = st.file_uploader(
         "Arquivo .xls do PlanoDeContas", type=["xls", "xlsx"], key=f"plano_{_cnt}"
+    )
+
+with col4:
+    st.markdown("**4. Caixa** _(opcional)_")
+    arquivo_caixa = st.file_uploader(
+        "Planilha de caixa físico (.xlsx)", type=["xlsx", "xls"],
+        key=f"caixa_{_cnt}",
+        help="Colunas: Data | Descrição | Valor | E/S",
     )
 
 st.divider()
@@ -136,16 +145,25 @@ with st.spinner("Lendo arquivos..."):
         st.error(f"Erro ao ler arquivos: {e}")
         st.stop()
 
+# Caixa (opcional — parse separado para não bloquear os 3 obrigatórios)
+caixa_df = None
+if arquivo_caixa:
+    try:
+        caixa_df = parse_caixa_xlsx(arquivo_caixa)
+    except Exception as e:
+        st.warning(f"⚠️ Planilha de caixa ignorada: {e}")
+
 mes, ano = detectar_mes_ano(sponte_df)
 mes_nome = MESES_ABREV[mes]
 
 # ── Resumo do que será importado ─────────────────────────────────────────────
 st.subheader(f"Mês detectado: {mes_nome}/{ano}")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 col1.metric("Lançamentos Sponte", len(sponte_df))
 col2.metric("Transações Banco",   len(banco_df))
 col3.metric("Contas PlanoDeContas", len(plano_df[plano_df["valor"] > 0]))
+col4.metric("Lançamentos Caixa", len(caixa_df) if caixa_df is not None else "—")
 
 st.divider()
 
@@ -176,6 +194,13 @@ with st.expander("🏦 Preview — Extrato CEF", expanded=False):
 with st.expander("📑 Preview — PlanoDeContas", expanded=False):
     plano_view = plano_df[plano_df["valor"] > 0].copy()
     st.dataframe(plano_view, use_container_width=True, height=300)
+
+if caixa_df is not None:
+    with st.expander("💵 Preview — Caixa Físico", expanded=False):
+        c1, c2 = st.columns(2)
+        c1.metric("Entradas", fmt_br(caixa_df[caixa_df["deb_cred"]=="E"]["valor"].sum()))
+        c2.metric("Saídas",   fmt_br(caixa_df[caixa_df["deb_cred"]=="S"]["valor"].sum()))
+        st.dataframe(caixa_df, use_container_width=True, height=250)
 
 st.divider()
 
@@ -216,15 +241,19 @@ if st.button(f"✅ Confirmar importação de {mes_nome}/{ano}", type="primary", 
             db.salvar_transacoes_banco(mes, ano, banco_df)
             db.salvar_plano_contas(mes, ano, plano_df)
             db.salvar_saldos(mes, ano, saldo_banco, saldo_aplicacao, saldo_caixa)
+            if caixa_df is not None:
+                db.salvar_lancamentos_caixa(mes, ano, caixa_df)
         except Exception as e:
             st.error(f"Erro ao salvar: {e}")
             st.stop()
 
+    caixa_info = f"\n- {len(caixa_df)} lançamentos de caixa" if caixa_df is not None else ""
     st.success(
         f"✅ **{mes_nome}/{ano} importado com sucesso!**\n\n"
         f"- {len(sponte_df)} lançamentos do Sponte\n"
         f"- {len(banco_df)} transações do banco\n"
-        f"- {len(plano_df)} contas do PlanoDeContas\n\n"
+        f"- {len(plano_df)} contas do PlanoDeContas"
+        f"{caixa_info}\n\n"
         f"Acesse o **DFC / Resumo** para ver o resultado do mês."
     )
     st.balloons()

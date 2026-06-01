@@ -44,9 +44,35 @@ with col2:
     )
     st.session_state["conc_mes"] = mes
 
+# ── Seleciona modo: Banco ou Caixa ────────────────────────────────────────────
+modo_conc = st.radio(
+    "Conciliando:", ["🏦 Banco", "💵 Caixa"],
+    horizontal=True, key=f"modo_conc_{mes}_{ano}",
+)
+
 # ── Carrega dados ──────────────────────────────────────────────────────────────
 sponte_df = db.carregar_lancamentos_sponte(mes, ano)
 banco_df  = db.carregar_transacoes_banco(mes, ano)
+
+if modo_conc == "💵 Caixa":
+    caixa_df = db.carregar_lancamentos_caixa(mes, ano)
+    if caixa_df.empty:
+        st.info("Nenhum lançamento de caixa importado para este mês. Use **📥 Importar Mês** para carregar a planilha de caixa.")
+        st.stop()
+    # Adapta caixa_df para ter as mesmas colunas que banco_df usa na conciliação
+    caixa_df = caixa_df.copy()
+    caixa_df["historico"]      = caixa_df["descricao"]
+    caixa_df["origem_destino"] = caixa_df["descricao"]
+    caixa_df["valor"]          = caixa_df["valor"].abs()
+    caixa_df["deb_cred"]       = caixa_df["deb_cred"]
+    caixa_df["data_fmt"]       = caixa_df["data_mov"]
+    caixa_df["nr_doc"]         = ""
+    # Chave de matching igual ao banco
+    caixa_df["chave"] = caixa_df.apply(
+        lambda r: f"{str(r['data_mov'])[:5]}|{r['deb_cred']}|{float(r['valor']):.2f}".replace(".", ","),
+        axis=1
+    )
+    banco_df = caixa_df  # substitui banco_df pelo caixa para a lógica de conciliação funcionar igual
 
 if sponte_df.empty or banco_df.empty:
     st.warning("Dados de lançamentos não encontrados para este mês.")

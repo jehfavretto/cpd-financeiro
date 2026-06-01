@@ -355,6 +355,44 @@ def limpar_alunos_ano(ano: int):
     carregar_alunos.clear()
 
 
+# ── Lançamentos Caixa ────────────────────────────────────────────────────────
+
+def salvar_lancamentos_caixa(mes: int, ano: int, df: pd.DataFrame):
+    client = get_client()
+    client.table("lancamentos_caixa").delete().eq("mes", mes).eq("ano", ano).execute()
+    rows = [
+        {
+            "mes": mes, "ano": ano,
+            "data_mov": str(r["data_mov"]),
+            "descricao": str(r.get("descricao", "") or ""),
+            "valor": float(r["valor"]),
+            "deb_cred": str(r["deb_cred"]),
+        }
+        for _, r in df.iterrows()
+    ]
+    if rows:
+        client.table("lancamentos_caixa").insert(rows).execute()
+    carregar_lancamentos_caixa.clear()
+
+
+@st.cache_data(ttl=300)
+def carregar_lancamentos_caixa(mes: int, ano: int) -> pd.DataFrame:
+    client = get_client()
+    res = (
+        client.table("lancamentos_caixa")
+        .select("*")
+        .eq("mes", mes)
+        .eq("ano", ano)
+        .order("data_mov")
+        .execute()
+    )
+    if not res.data:
+        return pd.DataFrame(columns=["id", "mes", "ano", "data_mov", "descricao", "valor", "deb_cred"])
+    df = pd.DataFrame(res.data)
+    df["valor"] = df["valor"].abs()
+    return df
+
+
 def buscar_aluno_por_responsavel(nome_responsavel: str, ano: int) -> list[dict]:
     """Retorna alunos cujo nome_responsavel contém a substring (case-insensitive)."""
     client = get_client()

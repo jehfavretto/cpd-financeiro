@@ -195,8 +195,10 @@ def parse_banco_txt(file_bytes_or_path) -> pd.DataFrame:
 def parse_caixa_xlsx(file_bytes_or_path) -> pd.DataFrame:
     """
     Lê planilha de caixa físico.
-    Colunas esperadas: Data | Descrição | Valor | E/S
-    Retorna: data_mov, descricao, valor (abs), deb_cred (E/S)
+    Aceita dois formatos:
+      - Simples:  Data | E/S | Valor | Descrição
+      - Completo: Data | E/S | Valor | Categoria | Origem/Destino  (igual ao Sponte)
+    Retorna: data_mov, descricao, categoria, valor (abs), deb_cred (E/S)
     """
     import io as _io, unicodedata as _ud
     if hasattr(file_bytes_or_path, "read"):
@@ -215,18 +217,23 @@ def parse_caixa_xlsx(file_bytes_or_path) -> pd.DataFrame:
 
     col_map = {}
     for c in df.columns:
-        if c in ("data", "dt", "data_mov", "data mov"):          col_map.setdefault("data_mov", c)
-        elif c in ("descricao", "descricacao", "historico",
-                   "descr", "desc", "descricao", "descricao"):   col_map.setdefault("descricao", c)
-        elif c in ("valor", "value", "vlr", "vl"):               col_map.setdefault("valor", c)
-        elif c in ("e/s", "es", "tipo", "entrada/saida",
-                   "entrada_saida", "deb_cred"):                  col_map.setdefault("deb_cred", c)
+        if c in ("data", "dt", "data_mov", "data mov"):
+            col_map.setdefault("data_mov", c)
+        elif c in ("e/s", "es", "tipo", "entrada/saida", "entrada_saida", "deb_cred"):
+            col_map.setdefault("deb_cred", c)
+        elif c in ("valor", "value", "vlr", "vl"):
+            col_map.setdefault("valor", c)
+        elif c in ("categoria", "cat", "categorias"):
+            col_map.setdefault("categoria", c)
+        elif c in ("origem/destino", "origem destino", "origdest", "origem_destino",
+                   "descricao", "descricacao", "historico", "descr", "desc"):
+            col_map.setdefault("descricao", c)
 
-    missing = [k for k in ("data_mov", "descricao", "valor", "deb_cred") if k not in col_map]
+    missing = [k for k in ("data_mov", "valor", "deb_cred") if k not in col_map]
     if missing:
         raise ValueError(
             f"Colunas não encontradas: {missing}. "
-            "A planilha precisa ter: Data, Descrição, Valor, E/S"
+            "A planilha precisa ter pelo menos: Data, E/S, Valor"
         )
 
     df = df.rename(columns={v: k for k, v in col_map.items()})
@@ -256,9 +263,16 @@ def parse_caixa_xlsx(file_bytes_or_path) -> pd.DataFrame:
     df["deb_cred"] = df["deb_cred"].fillna("E").apply(
         lambda v: _es_map.get(str(v).strip().lower(), "E")
     )
-    df["descricao"] = df["descricao"].fillna("").str.strip()
 
-    return df[["data_mov", "descricao", "valor", "deb_cred"]].reset_index(drop=True)
+    if "descricao" not in df.columns:
+        df["descricao"] = ""
+    if "categoria" not in df.columns:
+        df["categoria"] = ""
+
+    df["descricao"]  = df["descricao"].fillna("").str.strip()
+    df["categoria"]  = df["categoria"].fillna("").str.strip()
+
+    return df[["data_mov", "descricao", "categoria", "valor", "deb_cred"]].reset_index(drop=True)
 
 
 # De:para para históricos sem nome associado (XLSX novo formato)

@@ -62,9 +62,12 @@ if modo_conc == "💵 Caixa":
     # Adapta caixa_df para ter as mesmas colunas que banco_df usa na conciliação
     caixa_df = caixa_df.copy()
     caixa_df["historico"]      = caixa_df["descricao"]
-    caixa_df["origem_destino"] = caixa_df["descricao"]
+    # Usa Origem/Destino se disponível, senão Descrição
+    caixa_df["origem_destino"] = caixa_df.get("descricao", pd.Series("", index=caixa_df.index)).fillna("")
+    caixa_df["historico"]      = caixa_df.apply(
+        lambda r: " · ".join(filter(None, [str(r.get("categoria","")), str(r.get("descricao",""))])), axis=1
+    )
     caixa_df["valor"]          = caixa_df["valor"].abs()
-    caixa_df["deb_cred"]       = caixa_df["deb_cred"]
     caixa_df["data_fmt"]       = caixa_df["data_mov"]
     caixa_df["nr_doc"]         = ""
     # Chave de matching igual ao banco

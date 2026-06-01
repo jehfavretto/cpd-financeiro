@@ -363,10 +363,11 @@ def salvar_lancamentos_caixa(mes: int, ano: int, df: pd.DataFrame):
     rows = [
         {
             "mes": mes, "ano": ano,
-            "data_mov": str(r["data_mov"]),
+            "data_mov":  str(r["data_mov"]),
             "descricao": str(r.get("descricao", "") or ""),
-            "valor": float(r["valor"]),
-            "deb_cred": str(r["deb_cred"]),
+            "categoria": str(r.get("categoria", "") or ""),
+            "valor":     float(r["valor"]),
+            "deb_cred":  str(r["deb_cred"]),
         }
         for _, r in df.iterrows()
     ]

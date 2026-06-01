@@ -318,24 +318,29 @@ with aba_pend:
         sp_key = f"dfsp_{mes}_{ano}_{cnt}"
         bk_key = f"dfbk_{mes}_{ano}_{cnt}"
 
-        # ── Column configs ────────────────────────────────────────────────────
-        _val_cfg  = st.column_config.NumberColumn("Valor",       format="R$ %,.2f", width=115)
-        _es_cfg   = st.column_config.TextColumn("E/S",           width=48)
-        _dat_cfg  = st.column_config.TextColumn("Data",          width=58)
-        _resp_cfg = st.column_config.TextColumn("Responsável",   width=190)
-        _orig_cfg = st.column_config.TextColumn("Origem/Destino",width=170)
-        _nom_cfg  = st.column_config.TextColumn("Nome (banco)",  width=210)
+        col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
-        # ── DataFrames ────────────────────────────────────────────────────────
+        _val_cfg  = st.column_config.NumberColumn("Valor",          format="R$ %,.2f", width=110)
+        _es_cfg   = st.column_config.TextColumn("E/S",             width=45)
+        _dat_cfg  = st.column_config.TextColumn("Data",            width=55)
+        _cat_cfg  = st.column_config.TextColumn("Categoria",       width=130)
+        _orig_cfg = st.column_config.TextColumn("Origem/Destino",  width=170)
+        _resp_cfg = st.column_config.TextColumn("Responsável",     width=170)
+        _nom_cfg  = st.column_config.TextColumn("Nome",            width=180)
+        _his_cfg  = st.column_config.TextColumn("Histórico",       width=130)
+
         _resp_series = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
         sp_show = pd.DataFrame({
-            "Responsável":    _resp_series,
-            "Valor":          sp_filtrado["valor"].abs(),
             "Data":           pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
+            "E/S":            sp_filtrado["es"],
+            "Valor":          sp_filtrado["valor"].abs(),
+            "Categoria":      sp_filtrado["categoria"],
             "Origem/Destino": sp_filtrado["origem_destino"],
+            "Responsável":    _resp_series,
         })
 
         _tem_orig = "origem_destino" in bk_filtrado.columns
+        # Nome: usa origem_destino se preenchido, senão cai no histórico
         _bk_nome = (
             bk_filtrado["origem_destino"]
             .where(bk_filtrado["origem_destino"].fillna("").str.strip() != "",
@@ -343,9 +348,11 @@ with aba_pend:
             if _tem_orig else bk_filtrado["historico"]
         )
         bk_show = pd.DataFrame({
-            "Nome (banco)": _bk_nome,
-            "Valor":        bk_filtrado["valor"].abs(),
-            "Data":         bk_filtrado["data_fmt"].str[:5],
+            "Data":      bk_filtrado["data_fmt"].str[:5],
+            "E/S":       bk_filtrado["deb_cred"],
+            "Valor":     bk_filtrado["valor"].abs(),
+            "Nome":      _bk_nome,
+            "Histórico": bk_filtrado["historico"],
         })
 
         class _EmptySel:
@@ -358,19 +365,23 @@ with aba_pend:
                     "<div style='height:460px;display:flex;flex-direction:column;"
                     "align-items:center;justify-content:center;gap:8px;"
                     "color:#1a7f37;font-weight:600;font-size:1rem;"
-                    "background:#f0fff4;border-radius:8px;border:1px solid #c3e6cb;'>"
-                    "<span style='font-size:2rem'>✅</span>Tudo conciliado!</div>"
+                    "background:#f0fff4;border-radius:8px;"
+                    "border:1px solid #c3e6cb;'>"
+                    "<span style='font-size:2rem'>✅</span>"
+                    "Tudo conciliado!"
+                    "</div>"
                 )
             else:
                 return (
                     "<div style='height:460px;display:flex;flex-direction:column;"
                     "align-items:center;justify-content:center;gap:8px;"
                     "color:#6c757d;font-weight:500;font-size:0.95rem;"
-                    "background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;'>"
-                    "<span style='font-size:2rem'>🔍</span>Nenhum lançamento neste filtro</div>"
+                    "background:#f8f9fa;border-radius:8px;"
+                    "border:1px solid #dee2e6;'>"
+                    "<span style='font-size:2rem'>🔍</span>"
+                    "Nenhum lançamento neste filtro"
+                    "</div>"
                 )
-
-        col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
         with col_sp:
             st.markdown("**📋 FluxoCaixa Sponte**")
@@ -379,14 +390,21 @@ with aba_pend:
                 st.markdown(_msg_vazia(sponte_pendente.empty), unsafe_allow_html=True)
             else:
                 sel_sp = st.dataframe(
-                    sp_show, use_container_width=True, height=460, hide_index=True,
+                    sp_show,
+                    use_container_width=True,
+                    height=460,
+                    hide_index=True,
                     column_config={
-                        "Responsável":    _resp_cfg,
-                        "Valor":          _val_cfg,
                         "Data":           _dat_cfg,
+                        "E/S":            _es_cfg,
+                        "Valor":          _val_cfg,
+                        "Categoria":      _cat_cfg,
                         "Origem/Destino": _orig_cfg,
+                        "Responsável":    _resp_cfg,
                     },
-                    selection_mode="multi-row", on_select="rerun", key=sp_key,
+                    selection_mode="multi-row",
+                    on_select="rerun",
+                    key=sp_key,
                 )
 
         with col_bk:
@@ -396,13 +414,20 @@ with aba_pend:
                 st.markdown(_msg_vazia(banco_pendente.empty), unsafe_allow_html=True)
             else:
                 sel_bk = st.dataframe(
-                    bk_show, use_container_width=True, height=460, hide_index=True,
+                    bk_show,
+                    use_container_width=True,
+                    height=460,
+                    hide_index=True,
                     column_config={
-                        "Nome (banco)": _nom_cfg,
-                        "Valor":        _val_cfg,
-                        "Data":         _dat_cfg,
+                        "Data":      _dat_cfg,
+                        "E/S":       _es_cfg,
+                        "Valor":     _val_cfg,
+                        "Nome":      _nom_cfg,
+                        "Histórico": _his_cfg,
                     },
-                    selection_mode="multi-row", on_select="rerun", key=bk_key,
+                    selection_mode="multi-row",
+                    on_select="rerun",
+                    key=bk_key,
                 )
 
         sp_sel_rows = sel_sp.selection.rows if hasattr(sel_sp, "selection") else []
@@ -410,68 +435,93 @@ with aba_pend:
         n_sp = len(sp_sel_rows)
         n_bk = len(bk_sel_rows)
 
-        _MOTIVOS_DIF = [
-            "Pagamento agrupado (vários alunos)",
-            "Desconto concedido",
-            "Juros / multa por atraso",
-            "Pagamento parcial",
-            "Complemento de pagamento anterior",
-            "Erro de lançamento no Sponte",
-            "Outro",
-        ]
-
         with col_mid:
             st.caption("**Ações**")
             st.markdown("---")
 
             if n_sp > 0 and n_bk > 0:
+                # ── N Sponte → 1 Banco  ou  1 Sponte → N Banco ────────────────
                 sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
                 bk_selecionados = [bk_filtrado.iloc[i] for i in bk_sel_rows]
                 soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
                 soma_bk = sum(abs(float(r["valor"])) for r in bk_selecionados)
-                diff    = abs(soma_sp - soma_bk)
+                diff = abs(soma_sp - soma_bk)
 
                 if n_sp > 1 and n_bk > 1:
                     st.warning("Selecione **1 Banco** para vários Sponte, ou **1 Sponte** para vários Banco.")
                 else:
                     for r in sp_selecionados:
-                        st.caption(f"🔵 {str(r['origem_destino'])[:20]}  \n**{_md_val(r['valor'])}**")
+                        st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
                     if n_sp > 1:
-                        st.markdown(f"<span style='font-size:0.9rem;color:#888;font-weight:700'>Total {_html_val(soma_sp)}</span>", unsafe_allow_html=True)
+                        st.markdown(
+                            f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                            f"Total {_html_val(soma_sp)}</span>",
+                            unsafe_allow_html=True,
+                        )
                     for r in bk_selecionados:
-                        st.caption(f"🏦 {str(r.get('historico',''))[:20]}  \n**{_md_val(float(r['valor']))}**")
+                        st.caption(f"🏦 {str(r['historico'])[:22]}  \n**{_md_val(float(r['valor']))}**")
                     if n_bk > 1:
-                        st.markdown(f"<span style='font-size:0.9rem;color:#888;font-weight:700'>Total {_html_val(soma_bk)}</span>", unsafe_allow_html=True)
+                        st.markdown(
+                            f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                            f"Total {_html_val(soma_bk)}</span>",
+                            unsafe_allow_html=True,
+                        )
 
+                    _MOTIVOS_DIF = [
+                        "Pagamento agrupado (vários alunos)",
+                        "Desconto concedido",
+                        "Juros / multa por atraso",
+                        "Pagamento parcial",
+                        "Complemento de pagamento anterior",
+                        "Erro de lançamento no Sponte",
+                        "Outro",
+                    ]
                     _justificativa = None
                     if diff > 0.02:
                         st.warning(f"⚠️ Dif: {_md_val(diff)}")
-                        _justificativa = st.selectbox("Motivo:", _MOTIVOS_DIF, key=f"motivo_dif_{cnt}")
+                        _justificativa = st.selectbox(
+                            "Motivo:", _MOTIVOS_DIF,
+                            key=f"motivo_dif_{cnt}",
+                        )
 
-                    lbl = f"🔗 Vincular {n_sp}→1" if n_sp > 1 else (f"🔗 Vincular 1→{n_bk}" if n_bk > 1 else "🔗 Vincular")
+                    if n_sp > 1:
+                        lbl = f"🔗 Vincular {n_sp}→1"
+                    elif n_bk > 1:
+                        lbl = f"🔗 Vincular 1→{n_bk}"
+                    else:
+                        lbl = "🔗 Vincular"
                     if st.button(lbl, type="primary", use_container_width=True):
                         if n_bk == 1:
                             bk_r = bk_selecionados[0]
                             for r in sp_selecionados:
                                 db.salvar_conciliacao(mes, ano, "manual",
-                                    sponte_chave=r["chave"], banco_chave=bk_r["chave"],
-                                    justificativa=_justificativa)
+                                                      sponte_chave=r["chave"],
+                                                      banco_chave=bk_r["chave"],
+                                                      justificativa=_justificativa)
                         else:
                             sp_r = sp_selecionados[0]
+                            bk_chaves_unidas = "§§".join(r["chave"] for r in bk_selecionados)
                             db.salvar_conciliacao(mes, ano, "manual",
-                                sponte_chave=sp_r["chave"],
-                                banco_chave="§§".join(r["chave"] for r in bk_selecionados),
-                                justificativa=_justificativa)
+                                                  sponte_chave=sp_r["chave"],
+                                                  banco_chave=bk_chaves_unidas,
+                                                  justificativa=_justificativa)
                         st.session_state["conc_cnt"] += 1
                         st.rerun()
 
             elif n_sp > 0:
+                # ── Só Sponte selecionado ─────────────────────────────────────
                 sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
                 soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
+
                 for r in sp_selecionados:
-                    st.caption(f"🔵 {str(r['origem_destino'])[:20]}  \n**{_md_val(r['valor'])}**")
+                    st.caption(f"🔵 {str(r['categoria'])[:22]}  \n**{_md_val(r['valor'])}**")
                 if n_sp > 1:
-                    st.markdown(f"<span style='font-size:0.9rem;color:#888;font-weight:700'>Total {_html_val(soma_sp)}</span>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                        f"Total {_html_val(soma_sp)}</span>",
+                        unsafe_allow_html=True,
+                    )
+
                 if n_sp == 1:
                     sp_r = sp_filtrado.iloc[sp_sel_rows[0]]
                     st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
@@ -479,27 +529,34 @@ with aba_pend:
                         just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
                         if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
                             db.salvar_conciliacao(mes, ano, "ignorado_sponte",
-                                sponte_chave=sp_r["chave"], justificativa=just or None)
+                                                  sponte_chave=sp_r["chave"],
+                                                  justificativa=just or None)
                             st.session_state["conc_cnt"] += 1
                             st.rerun()
                 else:
                     st.caption("*Selecione 1 linha do Banco para vincular.*")
 
             elif n_bk > 0:
+                # ── Só Banco selecionado ──────────────────────────────────────
                 if n_bk == 1:
                     bk_r = bk_filtrado.iloc[bk_sel_rows[0]]
-                    st.caption(f"🏦 {str(bk_r['historico'])[:20]}  \n**{_md_val(float(bk_r['valor']))}**")
+                    st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(float(bk_r['valor']))}**")
                     with st.form(key=f"form_ibk_{cnt}"):
                         just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")
                         if st.form_submit_button("🙈 Ignorar Banco", use_container_width=True):
                             db.salvar_conciliacao(mes, ano, "ignorado_banco",
-                                banco_chave=bk_r["chave"], justificativa=just or None)
+                                                  banco_chave=bk_r["chave"],
+                                                  justificativa=just or None)
                             st.session_state["conc_cnt"] += 1
                             st.rerun()
                 else:
                     st.caption("*Selecione também 1 Sponte para vincular.*")
+
             else:
-                st.caption("👈 Selecione linhas do **Sponte** e do **Banco** para vincular.\n\nOu selecione apenas um lado para ignorar.")
+                st.caption(
+                    "👈 Selecione linhas do **Sponte** e do **Banco** para vincular.\n\n"
+                    "Ou selecione apenas um lado para ignorar."
+                )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ABA: CONCILIADOS

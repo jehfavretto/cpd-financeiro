@@ -59,19 +59,23 @@ if not usar_banco and not usar_caixa:
 sponte_df = db.carregar_lancamentos_sponte(mes, ano)
 banco_df  = db.carregar_transacoes_banco(mes, ano)
 
+def _normalizar_data_caixa(v) -> str:
+    """Converte qualquer formato de data para DD/MM/YYYY."""
+    try:
+        return pd.to_datetime(str(v), dayfirst=True).strftime("%d/%m/%Y")
+    except Exception:
+        return str(v)
+
 def _adaptar_caixa(df_cx: pd.DataFrame) -> pd.DataFrame:
     """Adapta caixa_df para ter as mesmas colunas que banco_df."""
     df_cx = df_cx.copy()
     # Normaliza data para DD/MM/YYYY (Supabase pode devolver ISO YYYY-MM-DD)
-    df_cx["data_mov"] = (
-        pd.to_datetime(df_cx["data_mov"], dayfirst=True, errors="coerce")
-        .dt.strftime("%d/%m/%Y")
-        .fillna(df_cx["data_mov"].astype(str))
-    )
-    df_cx["historico"] = df_cx.apply(
-        lambda r: " · ".join(filter(None, [str(r.get("categoria","")), str(r.get("descricao",""))])), axis=1
-    )
-    df_cx["origem_destino"] = df_cx.get("descricao", pd.Series("", index=df_cx.index)).fillna("")
+    df_cx["data_mov"] = df_cx["data_mov"].apply(_normalizar_data_caixa)
+    cat  = df_cx.get("categoria", pd.Series("", index=df_cx.index)).fillna("").str.strip()
+    desc = df_cx.get("descricao", pd.Series("", index=df_cx.index)).fillna("").str.strip()
+    # Histórico = categoria; Nome (origem_destino) = descrição se disponível, senão categoria
+    df_cx["historico"]     = cat.where(cat != "", "Caixa")
+    df_cx["origem_destino"] = desc.where(desc != "", cat)
     df_cx["valor"]    = df_cx["valor"].abs()
     df_cx["data_fmt"] = df_cx["data_mov"]
     df_cx["nr_doc"]   = ""

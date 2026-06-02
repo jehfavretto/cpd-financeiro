@@ -35,7 +35,7 @@ if _btn_col.button("✕ Limpar", help="Remover todos os arquivos enviados"):
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown("**1. FluxoCaixa (Sponte)**")
+    st.markdown("**1. Fluxo de Caixa (Sponte)**")
     arquivo_sponte = st.file_uploader(
         "Arquivo .xls do Sponte", type=["xls", "xlsx"], key=f"sponte_{_cnt}"
     )
@@ -47,9 +47,9 @@ with col2:
     )
 
 with col3:
-    st.markdown("**3. PlanoDeContas (Sponte)**")
+    st.markdown("**3. Plano de Contas (Sponte)**")
     arquivo_plano = st.file_uploader(
-        "Arquivo .xls do PlanoDeContas", type=["xls", "xlsx"], key=f"plano_{_cnt}"
+        "Arquivo .xls do Plano de Contas", type=["xls", "xlsx"], key=f"plano_{_cnt}"
     )
 
 with col4:

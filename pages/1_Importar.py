@@ -168,7 +168,7 @@ col4.metric("Lançamentos Caixa", len(caixa_df) if caixa_df is not None else "�
 st.divider()
 
 # ── Preview dos dados ─────────────────────────────────────────────────────────
-with st.expander("📋 Preview — FluxoCaixa Sponte", expanded=False):
+with st.expander("📋 Preview — Fluxo de Caixa Sponte", expanded=False):
     entradas = sponte_df[sponte_df["es"] == "E"]["valor"].sum()
     saidas   = sponte_df[sponte_df["es"] == "S"]["valor"].sum()
     c1, c2 = st.columns(2)
@@ -191,7 +191,7 @@ with st.expander("🏦 Preview — Extrato CEF", expanded=False):
         use_container_width=True, height=250,
     )
 
-with st.expander("📑 Preview — PlanoDeContas", expanded=False):
+with st.expander("📑 Preview — Plano de Contas", expanded=False):
     plano_view = plano_df[plano_df["valor"] > 0].copy()
     st.dataframe(plano_view, use_container_width=True, height=300)
 

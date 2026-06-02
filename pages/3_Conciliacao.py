@@ -75,18 +75,25 @@ def _adaptar_caixa(df_cx: pd.DataFrame) -> pd.DataFrame:
     )
     return df_cx
 
-if usar_caixa:
-    _caixa_raw = db.carregar_lancamentos_caixa(mes, ano)
-    if _caixa_raw.empty and not usar_banco:
+# Carrega caixa sempre (para auto-match não quebrar ao filtrar fonte)
+_caixa_raw = db.carregar_lancamentos_caixa(mes, ano)
+_caixa_adaptado = _adaptar_caixa(_caixa_raw) if not _caixa_raw.empty else pd.DataFrame()
+
+# banco_df_full: todos os dados disponíveis (usado em auto-match e conciliados)
+_partes_full = [p for p in [banco_df if not banco_df.empty else None,
+                              _caixa_adaptado if not _caixa_adaptado.empty else None]
+                if p is not None]
+banco_df_full = pd.concat(_partes_full, ignore_index=True) if _partes_full else pd.DataFrame()
+
+# banco_df: apenas a fonte selecionada (usado nos pendentes)
+if usar_caixa and not usar_banco:
+    if _caixa_adaptado.empty:
         st.info("Nenhum lançamento de caixa importado para este mês. Use **📥 Importar Mês** para carregar a planilha de caixa.")
         st.stop()
-    elif not _caixa_raw.empty:
-        _caixa_adaptado = _adaptar_caixa(_caixa_raw)
-        if usar_banco and not banco_df.empty:
-            # Combina banco + caixa numa tabela só
-            banco_df = pd.concat([banco_df, _caixa_adaptado], ignore_index=True)
-        elif not usar_banco:
-            banco_df = _caixa_adaptado
+    banco_df = _caixa_adaptado
+elif usar_banco and usar_caixa and not _caixa_adaptado.empty:
+    banco_df = pd.concat([banco_df, _caixa_adaptado], ignore_index=True)
+# se só banco: banco_df já está correto
 
 # Título dinâmico do extrato
 _titulo_extrato = (
@@ -95,7 +102,7 @@ _titulo_extrato = (
     else "🏦 Extrato Banco"
 )
 
-if sponte_df.empty or banco_df.empty:
+if sponte_df.empty or banco_df_full.empty:
     st.warning("Dados de lançamentos não encontrados para este mês.")
     st.stop()
 
@@ -153,11 +160,14 @@ def make_key_banco(row) -> str:
 
 
 # ── Prepara DataFrames ─────────────────────────────────────────────────────────
-sponte_df = sponte_df.copy()
-banco_df  = banco_df.copy()
-sponte_df["chave"]    = sponte_df.apply(make_key_sponte, axis=1)
-banco_df["chave"]     = banco_df.apply(make_key_banco, axis=1)
-banco_df["data_fmt"]  = banco_df["data_mov"].apply(_data_banco_fmt)
+sponte_df    = sponte_df.copy()
+banco_df     = banco_df.copy()
+banco_df_full = banco_df_full.copy()
+sponte_df["chave"]         = sponte_df.apply(make_key_sponte, axis=1)
+banco_df["chave"]          = banco_df.apply(make_key_banco, axis=1)
+banco_df["data_fmt"]       = banco_df["data_mov"].apply(_data_banco_fmt)
+banco_df_full["chave"]     = banco_df_full.apply(make_key_banco, axis=1)
+banco_df_full["data_fmt"]  = banco_df_full["data_mov"].apply(_data_banco_fmt)
 
 # ── Carrega conciliações já salvas ─────────────────────────────────────────────
 try:
@@ -180,7 +190,7 @@ chaves_sp_desvincular = set(_desv["sponte_chave"].dropna()) if not _desv.empty e
 # banco_chave pode conter múltiplas chaves separadas por §§ (formato 1→N)
 # sp_manual_cnt[X] = nº de operações de linkage que consumiram o Sponte X (1 por vinculação)
 _cnt_sp = Counter(sponte_df["chave"])
-_cnt_bk = Counter(banco_df["chave"])
+_cnt_bk = Counter(banco_df_full["chave"])
 
 sp_manual_cnt: Counter = Counter()
 bk_manual_cnt: Counter = Counter()   # conta cada banco_chave individual
@@ -230,24 +240,29 @@ for _chave, _n in chaves_auto_counts.items():
     _sp_cands = sponte_df[
         (sponte_df["chave"] == _chave) & (~sponte_df.index.isin(sp_manually_used_idx))
     ]
-    _bk_cands = banco_df[
-        (banco_df["chave"] == _chave) & (~banco_df.index.isin(bk_manually_used_idx))
+    _bk_cands = banco_df_full[
+        (banco_df_full["chave"] == _chave) & (~banco_df_full.index.isin(bk_manually_used_idx))
     ]
     _sp_idx_auto.update(_sp_cands.index[:_n].tolist())
     _bk_idx_auto.update(_bk_cands.index[:_n].tolist())
 
 # ── Separa pendentes ───────────────────────────────────────────────────────────
 mask_sp_ok = sponte_df.index.isin(_sp_idx_auto) | sponte_df.index.isin(sp_manually_used_idx)
-mask_bk_ok = banco_df.index.isin(_bk_idx_auto)  | banco_df.index.isin(bk_manually_used_idx)
+# pendentes do banco: filtra só pela fonte selecionada (banco_df já tem só a fonte do filtro)
+_bk_full_ok = banco_df_full.index.isin(_bk_idx_auto) | banco_df_full.index.isin(bk_manually_used_idx)
+_bk_full_pendente = banco_df_full[~_bk_full_ok]
+# mantém só linhas da fonte selecionada (banco_df) que também estão pendentes no full
+mask_bk_ok = banco_df.index.isin(_bk_full_pendente.index)
 sponte_pendente = sponte_df[~mask_sp_ok].reset_index(drop=True)
 banco_pendente  = banco_df[~mask_bk_ok].reset_index(drop=True)
 
 
 # ── Barra de progresso ─────────────────────────────────────────────────────────
 total_sp   = len(sponte_df)
-total_bk   = len(banco_df)
+total_bk   = len(banco_df_full)
 total      = total_sp + total_bk
-pendente   = len(sponte_pendente) + len(banco_pendente)
+_bk_full_pend_count = len(banco_df_full[~(banco_df_full.index.isin(_bk_idx_auto) | banco_df_full.index.isin(bk_manually_used_idx))])
+pendente   = len(sponte_pendente) + _bk_full_pend_count
 conciliado = total - pendente
 pct        = conciliado / total if total else 0.0
 
@@ -256,7 +271,7 @@ st.progress(
     pct,
     text=(
         f"**{conciliado} de {total}** itens conciliados ({pct:.0%}) — "
-        f"{len(sponte_pendente)} Sponte + {len(banco_pendente)} Banco ainda pendentes"
+        f"{len(sponte_pendente)} Sponte + {_bk_full_pend_count} Banco ainda pendentes"
     ),
 )
 st.divider()
@@ -618,7 +633,7 @@ def _sp_txt(chave: str) -> str:
     return f"{pd.to_datetime(row['data']).strftime('%d/%m')} · {str(row['categoria'])} · {fmt_br(abs(row['valor']))}"
 
 def _bk_txt(chave: str) -> str:
-    r = banco_df[banco_df["chave"] == chave]
+    r = banco_df_full[banco_df_full["chave"] == chave]
     if r.empty:
         return str(chave)
     row = r.iloc[0]
@@ -634,7 +649,7 @@ with aba_conc:
         auto_rows, auto_actions = [], []
         for chave, n in sorted(chaves_auto_counts.items()):
             sp_matches = sponte_df[sponte_df["chave"] == chave].iloc[:n]
-            bk_matches = banco_df[banco_df["chave"] == chave].iloc[:n]
+            bk_matches = banco_df_full[banco_df_full["chave"] == chave].iloc[:n]
             for i in range(n):
                 sp_r, bk_r = sp_matches.iloc[i], bk_matches.iloc[i]
                 auto_rows.append({"🔵 Sponte": _sp_txt(sp_r["chave"]),

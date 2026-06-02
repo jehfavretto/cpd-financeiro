@@ -62,6 +62,12 @@ banco_df  = db.carregar_transacoes_banco(mes, ano)
 def _adaptar_caixa(df_cx: pd.DataFrame) -> pd.DataFrame:
     """Adapta caixa_df para ter as mesmas colunas que banco_df."""
     df_cx = df_cx.copy()
+    # Normaliza data para DD/MM/YYYY (Supabase pode devolver ISO YYYY-MM-DD)
+    df_cx["data_mov"] = (
+        pd.to_datetime(df_cx["data_mov"], dayfirst=True, errors="coerce")
+        .dt.strftime("%d/%m/%Y")
+        .fillna(df_cx["data_mov"].astype(str))
+    )
     df_cx["historico"] = df_cx.apply(
         lambda r: " · ".join(filter(None, [str(r.get("categoria","")), str(r.get("descricao",""))])), axis=1
     )

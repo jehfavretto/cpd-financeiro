@@ -225,7 +225,8 @@ def parse_caixa_xlsx(file_bytes_or_path) -> pd.DataFrame:
             col_map.setdefault("valor", c)
         elif c in ("categoria", "cat", "categorias"):
             col_map.setdefault("categoria", c)
-        elif c in ("origem/destino", "origem destino", "origdest", "origem_destino",
+        elif c in ("origem/destino", "origem/ destino", "origem /destino", "origem destino",
+                   "origdest", "origem_destino",
                    "descricao", "descricacao", "historico", "descr", "desc"):
             col_map.setdefault("descricao", c)
 

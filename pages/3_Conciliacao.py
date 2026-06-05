@@ -404,21 +404,19 @@ with aba_pend:
         _val_cfg  = st.column_config.NumberColumn("Valor",          format="R$ %,.2f", width=110)
         _es_cfg   = st.column_config.TextColumn("E/S",             width=45)
         _dat_cfg  = st.column_config.TextColumn("Data",            width=55)
-        _cat_cfg  = st.column_config.TextColumn("Categoria",       width=130)
-        _orig_cfg = st.column_config.TextColumn("Origem/Destino",  width=170)
-        _resp_cfg = st.column_config.TextColumn("Responsável",     width=170)
-        _nom_cfg  = st.column_config.TextColumn("Nome",            width=180)
-        _alu_cfg  = st.column_config.TextColumn("Aluno",           width=180)
-        _his_cfg  = st.column_config.TextColumn("Histórico",       width=130)
+        _cat_cfg  = st.column_config.TextColumn("Categoria",    width=130)
+        _alu_cfg  = st.column_config.TextColumn("Aluno",        width=180)
+        _resp_cfg = st.column_config.TextColumn("Responsável",  width=180)
+        _his_cfg  = st.column_config.TextColumn("Histórico",    width=130)
 
         _resp_series = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
         sp_show_full = pd.DataFrame({
-            "Data":           pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
-            "E/S":            sp_filtrado["es"],
-            "Valor":          sp_filtrado["valor"].abs(),
-            "Categoria":      sp_filtrado["categoria"],
-            "Origem/Destino": sp_filtrado["origem_destino"],
-            "Responsável":    _resp_series,
+            "Data":        pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
+            "E/S":         sp_filtrado["es"],
+            "Valor":       sp_filtrado["valor"].abs(),
+            "Categoria":   sp_filtrado["categoria"],
+            "Aluno":       sp_filtrado["origem_destino"],
+            "Responsável": _resp_series,
         })
 
         _tem_orig = "origem_destino" in bk_filtrado.columns
@@ -432,14 +430,14 @@ with aba_pend:
             "Data":        bk_filtrado["data_fmt"].str[:5],
             "E/S":         bk_filtrado["deb_cred"],
             "Valor":       bk_filtrado["valor"].abs(),
-            "Nome":        _bk_nome,
             "Aluno":       _bk_nome.apply(_aluno_do_responsavel),
+            "Responsável": _bk_nome,
             "Histórico":   bk_filtrado["historico"],
         })
 
         # ── Defaults de configuração de tabela ───────────────────────────────
-        _SP_COLS_DEF = ["Data", "E/S", "Valor", "Categoria", "Origem/Destino", "Responsável"]
-        _BK_COLS_DEF = ["Data", "E/S", "Valor", "Nome", "Aluno", "Histórico"]
+        _SP_COLS_DEF = ["Data", "E/S", "Valor", "Categoria", "Aluno", "Responsável"]
+        _BK_COLS_DEF = ["Data", "E/S", "Valor", "Aluno", "Responsável", "Histórico"]
         _SP_SORT_DEF = "Data"
         _BK_SORT_DEF = "Data"
 
@@ -491,9 +489,9 @@ with aba_pend:
             st.markdown('<div class="cpd-sort">', unsafe_allow_html=True)
             _sc1, _sc2 = st.columns([3, 2])
             _sp_sort = _sc1.selectbox(
-                "Ordenar por", ["Data","Valor","Categoria","Origem/Destino","Responsável"],
-                index=["Data","Valor","Categoria","Origem/Destino","Responsável"].index(
-                    st.session_state[f"sp_sort_{_sk}"]
+                "Ordenar por", ["Data","Valor","Categoria","Aluno","Responsável"],
+                index=["Data","Valor","Categoria","Aluno","Responsável"].index(
+                    st.session_state[f"sp_sort_{_sk}"] if st.session_state[f"sp_sort_{_sk}"] in ["Data","Valor","Categoria","Aluno","Responsável"] else "Data"
                 ),
                 key=f"sp_sort_sel_{_sk}", label_visibility="collapsed",
             )
@@ -527,7 +525,7 @@ with aba_pend:
             else:
                 _sp_cfg = {c: cfg for c, cfg in {
                     "Data": _dat_cfg, "E/S": _es_cfg, "Valor": _val_cfg,
-                    "Categoria": _cat_cfg, "Origem/Destino": _orig_cfg, "Responsável": _resp_cfg,
+                    "Categoria": _cat_cfg, "Aluno": _alu_cfg, "Responsável": _resp_cfg,
                 }.items() if c in _sp_cols_vis}
                 sel_sp = st.dataframe(
                     sp_show,
@@ -580,7 +578,7 @@ with aba_pend:
             else:
                 _bk_cfg = {c: cfg for c, cfg in {
                     "Data": _dat_cfg, "E/S": _es_cfg, "Valor": _val_cfg,
-                    "Nome": _nom_cfg, "Aluno": _alu_cfg, "Histórico": _his_cfg,
+                    "Aluno": _alu_cfg, "Responsável": _resp_cfg, "Histórico": _his_cfg,
                 }.items() if c in _bk_cols_vis}
                 sel_bk = st.dataframe(
                     bk_show,

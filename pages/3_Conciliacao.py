@@ -390,6 +390,17 @@ with aba_pend:
         sp_key = f"dfsp_{mes}_{ano}_{cnt}"
         bk_key = f"dfbk_{mes}_{ano}_{cnt}"
 
+        st.markdown("""
+        <style>
+        /* Fonte menor nos controles de ordenação/colunas */
+        [data-testid="stSelectbox"] label,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] *,
+        [data-testid="stRadio"] label,
+        [data-testid="stRadio"] div,
+        [data-testid="stExpander"] summary span { font-size: 0.78rem !important; }
+        </style>
+        """, unsafe_allow_html=True)
+
         col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
         _val_cfg  = st.column_config.NumberColumn("Valor",          format="R$ %,.2f", width=110)

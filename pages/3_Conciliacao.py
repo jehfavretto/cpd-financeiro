@@ -390,17 +390,6 @@ with aba_pend:
         sp_key = f"dfsp_{mes}_{ano}_{cnt}"
         bk_key = f"dfbk_{mes}_{ano}_{cnt}"
 
-        st.markdown("""
-        <style>
-        /* Fonte menor nos controles de ordenação/colunas */
-        [data-testid="stSelectbox"] label,
-        [data-testid="stSelectbox"] div[data-baseweb="select"] *,
-        [data-testid="stRadio"] label,
-        [data-testid="stRadio"] div,
-        [data-testid="stExpander"] summary span { font-size: 0.78rem !important; }
-        </style>
-        """, unsafe_allow_html=True)
-
         col_sp, col_mid, col_bk = st.columns([5, 2, 5])
 
         _val_cfg  = st.column_config.NumberColumn("Valor",          format="R$ %,.2f", width=110)
@@ -488,6 +477,7 @@ with aba_pend:
 
         with col_sp:
             st.markdown("**📋 FluxoCaixa Sponte**")
+            st.markdown('<div class="cpd-sort">', unsafe_allow_html=True)
             _sc1, _sc2 = st.columns([3, 2])
             _sp_sort = _sc1.selectbox(
                 "Ordenar por", ["Data","Valor","Categoria","Origem/Destino","Responsável"],
@@ -511,6 +501,7 @@ with aba_pend:
                     key=f"sp_cols_sel_{_sk}", label_visibility="collapsed",
                 ) or _SP_COLS_DEF
             st.session_state[f"sp_cols_{_sk}"] = _sp_cols_vis
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # Aplica ordenação — guarda mapeamento pos→índice original
             _sp_sort_col = _sp_sort if _sp_sort in sp_show_full.columns else "Data"
@@ -540,6 +531,7 @@ with aba_pend:
 
         with col_bk:
             st.markdown(f"**{_titulo_extrato}**")
+            st.markdown('<div class="cpd-sort">', unsafe_allow_html=True)
             _bc1, _bc2 = st.columns([3, 2])
             _bk_sort = _bc1.selectbox(
                 "Ordenar por", ["Data","Valor","Nome","Histórico"],
@@ -563,6 +555,7 @@ with aba_pend:
                     key=f"bk_cols_sel_{_sk}", label_visibility="collapsed",
                 ) or _BK_COLS_DEF
             st.session_state[f"bk_cols_{_sk}"] = _bk_cols_vis
+            st.markdown('</div>', unsafe_allow_html=True)
 
             _bk_sort_col = _bk_sort if _bk_sort in bk_show_full.columns else "Data"
             _bk_sorted_idx = bk_show_full.sort_values(
@@ -598,6 +591,17 @@ with aba_pend:
         n_bk = len(bk_sel_rows)
 
         with col_mid:
+            # empurra para baixo para alinhar com as tabelas
+            st.markdown("""
+            <style>
+            .cpd-sort label, .cpd-sort div[data-baseweb="select"] *,
+            .cpd-sort [data-testid="stRadio"] label,
+            .cpd-sort [data-testid="stExpander"] summary span {
+                font-size: 0.78rem !important;
+            }
+            </style>
+            <div style="height:108px"></div>
+            """, unsafe_allow_html=True)
             st.caption("**Ações**")
             st.markdown("---")
 

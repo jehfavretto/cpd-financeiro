@@ -494,7 +494,7 @@ with aba_pend:
             st.session_state[f"sp_sort_{_sk}"] = _sp_sort
             st.session_state[f"sp_asc_{_sk}"]  = (_sp_asc == "Crescente")
 
-            with st.expander("⚙️ Colunas visíveis", expanded=False):
+            with st.popover("⚙️ Colunas visíveis", use_container_width=True):
                 _sp_cols_vis = st.multiselect(
                     "Colunas Sponte", _SP_COLS_DEF,
                     default=st.session_state[f"sp_cols_{_sk}"],
@@ -548,7 +548,7 @@ with aba_pend:
             st.session_state[f"bk_sort_{_sk}"] = _bk_sort
             st.session_state[f"bk_asc_{_sk}"]  = (_bk_asc == "Crescente")
 
-            with st.expander("⚙️ Colunas visíveis", expanded=False):
+            with st.popover("⚙️ Colunas visíveis", use_container_width=True):
                 _bk_cols_vis = st.multiselect(
                     "Colunas Banco", _BK_COLS_DEF,
                     default=st.session_state[f"bk_cols_{_sk}"],

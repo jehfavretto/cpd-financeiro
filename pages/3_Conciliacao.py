@@ -594,13 +594,11 @@ with aba_pend:
             # empurra para baixo para alinhar com as tabelas
             st.markdown("""
             <style>
-            .cpd-sort label, .cpd-sort div[data-baseweb="select"] *,
-            .cpd-sort [data-testid="stRadio"] label,
-            .cpd-sort [data-testid="stExpander"] summary span {
-                font-size: 0.78rem !important;
-            }
+            [data-testid="stSelectbox"] div[data-baseweb="select"] *,
+            [data-testid="stRadio"] label p,
+            [data-testid="stExpander"] summary p { font-size: 0.8rem !important; }
             </style>
-            <div style="height:108px"></div>
+            <div style="height:175px"></div>
             """, unsafe_allow_html=True)
             st.caption("**Ações**")
             st.markdown("---")

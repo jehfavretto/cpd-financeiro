@@ -477,8 +477,7 @@ with aba_pend:
 
         with col_sp:
             st.markdown("**📋 FluxoCaixa Sponte**")
-            # Controles de ordenação e colunas
-            _sc1, _sc2, _sc3 = st.columns([3, 2, 2])
+            _sc1, _sc2 = st.columns([3, 2])
             _sp_sort = _sc1.selectbox(
                 "Ordenar por", ["Data","Valor","Categoria","Origem/Destino","Responsável"],
                 index=["Data","Valor","Categoria","Origem/Destino","Responsável"].index(
@@ -494,12 +493,12 @@ with aba_pend:
             st.session_state[f"sp_sort_{_sk}"] = _sp_sort
             st.session_state[f"sp_asc_{_sk}"]  = (_sp_asc == "↑ Asc")
 
-            _sp_cols_vis = _sc3.multiselect(
-                "Colunas", _SP_COLS_DEF,
-                default=st.session_state[f"sp_cols_{_sk}"],
-                key=f"sp_cols_sel_{_sk}", label_visibility="collapsed",
-                placeholder="Colunas…",
-            ) or _SP_COLS_DEF
+            with st.expander("⚙️ Colunas visíveis", expanded=False):
+                _sp_cols_vis = st.multiselect(
+                    "Colunas Sponte", _SP_COLS_DEF,
+                    default=st.session_state[f"sp_cols_{_sk}"],
+                    key=f"sp_cols_sel_{_sk}", label_visibility="collapsed",
+                ) or _SP_COLS_DEF
             st.session_state[f"sp_cols_{_sk}"] = _sp_cols_vis
 
             # Aplica ordenação — guarda mapeamento pos→índice original
@@ -530,7 +529,7 @@ with aba_pend:
 
         with col_bk:
             st.markdown(f"**{_titulo_extrato}**")
-            _bc1, _bc2, _bc3 = st.columns([3, 2, 2])
+            _bc1, _bc2 = st.columns([3, 2])
             _bk_sort = _bc1.selectbox(
                 "Ordenar por", ["Data","Valor","Nome","Histórico"],
                 index=["Data","Valor","Nome","Histórico"].index(
@@ -546,12 +545,12 @@ with aba_pend:
             st.session_state[f"bk_sort_{_sk}"] = _bk_sort
             st.session_state[f"bk_asc_{_sk}"]  = (_bk_asc == "↑ Asc")
 
-            _bk_cols_vis = _bc3.multiselect(
-                "Colunas", _BK_COLS_DEF,
-                default=st.session_state[f"bk_cols_{_sk}"],
-                key=f"bk_cols_sel_{_sk}", label_visibility="collapsed",
-                placeholder="Colunas…",
-            ) or _BK_COLS_DEF
+            with st.expander("⚙️ Colunas visíveis", expanded=False):
+                _bk_cols_vis = st.multiselect(
+                    "Colunas Banco", _BK_COLS_DEF,
+                    default=st.session_state[f"bk_cols_{_sk}"],
+                    key=f"bk_cols_sel_{_sk}", label_visibility="collapsed",
+                ) or _BK_COLS_DEF
             st.session_state[f"bk_cols_{_sk}"] = _bk_cols_vis
 
             _bk_sort_col = _bk_sort if _bk_sort in bk_show_full.columns else "Data"

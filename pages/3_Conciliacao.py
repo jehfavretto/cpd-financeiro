@@ -486,12 +486,12 @@ with aba_pend:
                 key=f"sp_sort_sel_{_sk}", label_visibility="collapsed",
             )
             _sp_asc = _sc2.radio(
-                "Ordem", ["↑ A→Z","↓ Z→A"],
+                "Ordem", ["Crescente","Decrescente"],
                 index=0 if st.session_state[f"sp_asc_{_sk}"] else 1,
                 horizontal=True, key=f"sp_ord_{_sk}", label_visibility="collapsed",
             )
             st.session_state[f"sp_sort_{_sk}"] = _sp_sort
-            st.session_state[f"sp_asc_{_sk}"]  = (_sp_asc == "↑ A→Z")
+            st.session_state[f"sp_asc_{_sk}"]  = (_sp_asc == "Crescente")
 
             with st.expander("⚙️ Colunas visíveis", expanded=False):
                 _sp_cols_vis = st.multiselect(
@@ -538,12 +538,12 @@ with aba_pend:
                 key=f"bk_sort_sel_{_sk}", label_visibility="collapsed",
             )
             _bk_asc = _bc2.radio(
-                "Ordem", ["↑ A→Z","↓ Z→A"],
+                "Ordem", ["Crescente","Decrescente"],
                 index=0 if st.session_state[f"bk_asc_{_sk}"] else 1,
                 horizontal=True, key=f"bk_ord_{_sk}", label_visibility="collapsed",
             )
             st.session_state[f"bk_sort_{_sk}"] = _bk_sort
-            st.session_state[f"bk_asc_{_sk}"]  = (_bk_asc == "↑ A→Z")
+            st.session_state[f"bk_asc_{_sk}"]  = (_bk_asc == "Crescente")
 
             with st.expander("⚙️ Colunas visíveis", expanded=False):
                 _bk_cols_vis = st.multiselect(

@@ -598,7 +598,7 @@ with aba_pend:
             [data-testid="stRadio"] label p,
             [data-testid="stExpander"] summary p { font-size: 0.8rem !important; }
             </style>
-            <div style="height:175px"></div>
+            <div style="height:210px"></div>
             """, unsafe_allow_html=True)
             st.caption("**Ações**")
             st.markdown("---")

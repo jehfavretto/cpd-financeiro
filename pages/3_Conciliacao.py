@@ -475,12 +475,31 @@ with aba_pend:
                    bk_filtrado["historico"])
             if _tem_orig else bk_filtrado["historico"]
         )
+        def _bk_aluno_resp(nome: str):
+            """Dado um nome do banco, retorna (aluno, responsável).
+            Se o nome é responsável → (aluno lookup, nome).
+            Se o nome é aluno      → (nome, responsável lookup).
+            Se nenhum dos dois     → ('', nome).
+            """
+            if not nome or nome.lower() == "nan":
+                return "", ""
+            aluno = _aluno_do_responsavel(nome)
+            if aluno:
+                return aluno, nome          # nome é responsável
+            resp = _responsavel_do_aluno(nome)
+            if resp:
+                return nome, resp           # nome é aluno
+            return "", nome                 # desconhecido → só responsável
+
+        _bk_aluno_col  = _bk_nome.apply(lambda n: _bk_aluno_resp(n)[0])
+        _bk_resp_col   = _bk_nome.apply(lambda n: _bk_aluno_resp(n)[1])
+
         bk_show_full = pd.DataFrame({
             "Data":        bk_filtrado["data_fmt"].str[:5],
             "E/S":         bk_filtrado["deb_cred"],
             "Valor":       bk_filtrado["valor"].abs(),
-            "Aluno":       _bk_nome.apply(_aluno_do_responsavel),
-            "Responsável": _bk_nome,
+            "Aluno":       _bk_aluno_col,
+            "Responsável": _bk_resp_col,
             "Histórico":   bk_filtrado["historico"],
         })
 

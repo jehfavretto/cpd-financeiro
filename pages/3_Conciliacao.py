@@ -640,14 +640,18 @@ def _sp_txt(chave: str) -> str:
     if r.empty:
         return str(chave)
     row = r.iloc[0]
-    return f"{pd.to_datetime(row['data']).strftime('%d/%m')} · {str(row['categoria'])} · {fmt_br(abs(row['valor']))}"
+    nome = str(row.get("origem_destino", "")).strip()
+    nome_part = f" · {nome}" if nome else ""
+    return f"{pd.to_datetime(row['data']).strftime('%d/%m')} · {str(row['categoria'])}{nome_part} · {fmt_br(abs(row['valor']))}"
 
 def _bk_txt(chave: str) -> str:
     r = banco_df_full[banco_df_full["chave"] == chave]
     if r.empty:
         return str(chave)
     row = r.iloc[0]
-    return f"{row['data_fmt'][:5]} · {str(row['historico'])} · {fmt_br(abs(float(row['valor'])))}"
+    nome = str(row.get("origem_destino", "")).strip()
+    nome_part = f" · {nome}" if nome else ""
+    return f"{row['data_fmt'][:5]} · {str(row['historico'])}{nome_part} · {fmt_br(abs(float(row['valor'])))}"
 
 with aba_conc:
     if n_auto == 0 and n_manual == 0 and n_ign == 0:

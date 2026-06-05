@@ -653,6 +653,17 @@ with aba_conc:
     if n_auto == 0 and n_manual == 0 and n_ign == 0:
         st.info("Nenhum item conciliado ainda.")
 
+    # ── Pesquisa nos conciliados ──────────────────────────────────────────────
+    busca_conc = st.text_input(
+        "Pesquisar conciliados",
+        placeholder="🔍  categoria, nome, histórico, valor…",
+        key=f"busca_conc_{mes}_{ano}",
+    )
+    _q_conc = busca_conc.strip().lower()
+
+    def _conc_match(texto: str) -> bool:
+        return not _q_conc or _q_conc in texto.lower()
+
     # ── Automáticos ───────────────────────────────────────────────────────────
     if n_auto > 0:
         st.markdown(f"**🤖 {n_auto} automáticos** — selecione linha(s) e clique em Desvincular")
@@ -662,8 +673,11 @@ with aba_conc:
             bk_matches = banco_df_full[banco_df_full["chave"] == chave].iloc[:n]
             for i in range(n):
                 sp_r, bk_r = sp_matches.iloc[i], bk_matches.iloc[i]
-                auto_rows.append({"🔵 Sponte": _sp_txt(sp_r["chave"]),
-                                   "🏦 Banco":  _bk_txt(bk_r["chave"])})
+                sp_txt_v = _sp_txt(sp_r["chave"])
+                bk_txt_v = _bk_txt(bk_r["chave"])
+                if not _conc_match(sp_txt_v) and not _conc_match(bk_txt_v):
+                    continue
+                auto_rows.append({"🔵 Sponte": sp_txt_v, "🏦 Banco": bk_txt_v})
                 auto_actions.append((sp_r["chave"], bk_r["chave"]))
 
         sel_a = st.dataframe(
@@ -698,7 +712,10 @@ with aba_conc:
             ids_grupo = grupo["id"].tolist()
             shown_ids.update(ids_grupo)
             sp_txt = " + ".join(_sp_txt(c["sponte_chave"]) for _, c in grupo.iterrows())
-            manual_rows.append({"🔵 Sponte": sp_txt, "🏦 Banco": _bk_txt(bk_chave)})
+            bk_txt_v = _bk_txt(bk_chave)
+            if not _conc_match(sp_txt) and not _conc_match(bk_txt_v):
+                continue
+            manual_rows.append({"🔵 Sponte": sp_txt, "🏦 Banco": bk_txt_v})
             manual_actions.append(ids_grupo)
 
         # 1:N novo formato (§§)
@@ -710,7 +727,10 @@ with aba_conc:
             shown_ids.add(c["id"])
             bk_lista = [ch.strip() for ch in bk_raw.split("§§") if ch.strip()]
             bk_txt = " + ".join(_bk_txt(ch) for ch in bk_lista)
-            manual_rows.append({"🔵 Sponte": _sp_txt(c["sponte_chave"]), "🏦 Banco": bk_txt})
+            sp_txt_v = _sp_txt(c["sponte_chave"])
+            if not _conc_match(sp_txt_v) and not _conc_match(bk_txt):
+                continue
+            manual_rows.append({"🔵 Sponte": sp_txt_v, "🏦 Banco": bk_txt})
             manual_actions.append([c["id"]])
 
         # 1:N formato antigo
@@ -721,13 +741,19 @@ with aba_conc:
             ids_grupo = grupo["id"].tolist()
             shown_ids.update(ids_grupo)
             bk_txt = " + ".join(_bk_txt(c["banco_chave"]) for _, c in grupo.iterrows())
-            manual_rows.append({"🔵 Sponte": _sp_txt(sp_chave), "🏦 Banco": bk_txt})
+            sp_txt_v = _sp_txt(sp_chave)
+            if not _conc_match(sp_txt_v) and not _conc_match(bk_txt):
+                continue
+            manual_rows.append({"🔵 Sponte": sp_txt_v, "🏦 Banco": bk_txt})
             manual_actions.append(ids_grupo)
 
         # 1:1
         for _, c in manual_df[~manual_df["id"].isin(shown_ids)].iterrows():
-            manual_rows.append({"🔵 Sponte": _sp_txt(c["sponte_chave"]),
-                                 "🏦 Banco":  _bk_txt(c["banco_chave"])})
+            sp_txt_v = _sp_txt(c["sponte_chave"])
+            bk_txt_v = _bk_txt(c["banco_chave"])
+            if not _conc_match(sp_txt_v) and not _conc_match(bk_txt_v):
+                continue
+            manual_rows.append({"🔵 Sponte": sp_txt_v, "🏦 Banco": bk_txt_v})
             manual_actions.append([c["id"]])
 
         if manual_rows:
@@ -760,6 +786,8 @@ with aba_conc:
                 txt = _sp_txt(c["sponte_chave"]) + just
             else:
                 txt = _bk_txt(c.get("banco_chave", "")) + just
+            if not _conc_match(txt):
+                continue
             ign_rows.append({"Item": txt})
             ign_ids.append(c["id"])
 

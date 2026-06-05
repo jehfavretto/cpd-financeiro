@@ -688,8 +688,17 @@ with aba_pend:
                 if n_sp == 1:
                     sp_r = sp_filtrado.loc[sp_sel_rows[0]]
                     st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
+                    # Botões de justificativa rápida
+                    _MOTIVOS_RAPIDOS = ["Desconto em folha", "Pago em caixa físico", "Estorno/Cancelamento"]
+                    for _mot in _MOTIVOS_RAPIDOS:
+                        if st.button(_mot, key=f"ign_rapido_{_mot}_{cnt}", use_container_width=True):
+                            db.salvar_conciliacao(mes, ano, "ignorado_sponte",
+                                                  sponte_chave=sp_r["chave"],
+                                                  justificativa=_mot)
+                            st.session_state["conc_cnt"] += 1
+                            st.rerun()
                     with st.form(key=f"form_isp_{cnt}"):
-                        just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
+                        just = st.text_input("Outro motivo:", placeholder="ex: saída em caixa físico")
                         if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
                             db.salvar_conciliacao(mes, ano, "ignorado_sponte",
                                                   sponte_chave=sp_r["chave"],

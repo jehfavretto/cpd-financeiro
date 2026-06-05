@@ -129,16 +129,25 @@ try:
 except Exception:
     _alunos_df = pd.DataFrame(columns=["nome_aluno", "nome_responsavel"])
 
-# {nome_normalizado: "Resp1 / Resp2"}
+# {nome_aluno_normalizado: "Resp1 / Resp2"}
 _aluno_resp_map: dict[str, str] = {}
+# {nome_resp_normalizado: "Aluno1 / Aluno2"}
+_resp_aluno_map: dict[str, str] = {}
 if not _alunos_df.empty:
     for aluno, grp in _alunos_df.groupby("nome_aluno")["nome_responsavel"]:
         resps = [r for r in grp.tolist() if str(r).strip()]
         if resps:
             _aluno_resp_map[_norm_nome(aluno)] = " / ".join(resps)
+    for resp, grp in _alunos_df.groupby("nome_responsavel")["nome_aluno"]:
+        alunos = [a for a in grp.tolist() if str(a).strip()]
+        if alunos:
+            _resp_aluno_map[_norm_nome(resp)] = " / ".join(alunos)
 
 def _responsavel_do_aluno(nome_aluno: str) -> str:
     return _aluno_resp_map.get(_norm_nome(nome_aluno), "")
+
+def _aluno_do_responsavel(nome_resp: str) -> str:
+    return _resp_aluno_map.get(_norm_nome(nome_resp), "")
 
 
 # ── Funções auxiliares ─────────────────────────────────────────────────────────
@@ -399,6 +408,7 @@ with aba_pend:
         _orig_cfg = st.column_config.TextColumn("Origem/Destino",  width=170)
         _resp_cfg = st.column_config.TextColumn("Responsável",     width=170)
         _nom_cfg  = st.column_config.TextColumn("Nome",            width=180)
+        _alu_cfg  = st.column_config.TextColumn("Aluno",           width=180)
         _his_cfg  = st.column_config.TextColumn("Histórico",       width=130)
 
         _resp_series = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
@@ -419,16 +429,17 @@ with aba_pend:
             if _tem_orig else bk_filtrado["historico"]
         )
         bk_show_full = pd.DataFrame({
-            "Data":      bk_filtrado["data_fmt"].str[:5],
-            "E/S":       bk_filtrado["deb_cred"],
-            "Valor":     bk_filtrado["valor"].abs(),
-            "Nome":      _bk_nome,
-            "Histórico": bk_filtrado["historico"],
+            "Data":        bk_filtrado["data_fmt"].str[:5],
+            "E/S":         bk_filtrado["deb_cred"],
+            "Valor":       bk_filtrado["valor"].abs(),
+            "Nome":        _bk_nome,
+            "Aluno":       _bk_nome.apply(_aluno_do_responsavel),
+            "Histórico":   bk_filtrado["historico"],
         })
 
         # ── Defaults de configuração de tabela ───────────────────────────────
         _SP_COLS_DEF = ["Data", "E/S", "Valor", "Categoria", "Origem/Destino", "Responsável"]
-        _BK_COLS_DEF = ["Data", "E/S", "Valor", "Nome", "Histórico"]
+        _BK_COLS_DEF = ["Data", "E/S", "Valor", "Nome", "Aluno", "Histórico"]
         _SP_SORT_DEF = "Data"
         _BK_SORT_DEF = "Data"
 
@@ -569,7 +580,7 @@ with aba_pend:
             else:
                 _bk_cfg = {c: cfg for c, cfg in {
                     "Data": _dat_cfg, "E/S": _es_cfg, "Valor": _val_cfg,
-                    "Nome": _nom_cfg, "Histórico": _his_cfg,
+                    "Nome": _nom_cfg, "Aluno": _alu_cfg, "Histórico": _his_cfg,
                 }.items() if c in _bk_cols_vis}
                 sel_bk = st.dataframe(
                     bk_show,

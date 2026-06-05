@@ -263,10 +263,10 @@ def _resps_do_aluno_set(nome_aluno: str) -> set:
 def _nome_compativel(sp_row, bk_row) -> bool:
     """
     Retorna True se o par sp+bk é compatível por nome, ou se não dá para verificar.
-    Incompatível somente quando:
-      - banco tem origem_destino preenchido
-      - sponte tem aluno com responsáveis cadastrados
-      - o responsável do banco NÃO está na lista do aluno
+    Incompatível somente quando há dados suficientes e os nomes claramente não batem.
+    Aceita:
+      - banco tem o nome do responsável do aluno Sponte
+      - banco tem o próprio nome do aluno Sponte
     """
     bk_nome = str(bk_row.get("origem_destino", "")).strip()
     if not bk_nome:
@@ -274,10 +274,19 @@ def _nome_compativel(sp_row, bk_row) -> bool:
     sp_aluno = str(sp_row.get("origem_destino", "")).strip()
     if not sp_aluno:
         return True  # sponte sem aluno: não dá para verificar
+
+    bk_norm = _norm_nome(bk_nome)
+
+    # Caso 1: banco tem o próprio nome do aluno
+    if bk_norm == _norm_nome(sp_aluno):
+        return True
+
     resps = _resps_do_aluno_set(sp_aluno)
     if not resps:
         return True  # aluno sem responsáveis cadastrados: não dá para verificar
-    return _norm_nome(bk_nome) in resps
+
+    # Caso 2: banco tem o nome de um responsável do aluno
+    return bk_norm in resps
 
 # Índices do auto-match com verificação de nome
 _sp_idx_auto: set = set()

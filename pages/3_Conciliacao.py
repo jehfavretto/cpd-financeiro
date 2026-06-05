@@ -402,7 +402,7 @@ with aba_pend:
         _his_cfg  = st.column_config.TextColumn("Histórico",       width=130)
 
         _resp_series = sp_filtrado["origem_destino"].apply(_responsavel_do_aluno)
-        sp_show = pd.DataFrame({
+        sp_show_full = pd.DataFrame({
             "Data":           pd.to_datetime(sp_filtrado["data"]).dt.strftime("%d/%m"),
             "E/S":            sp_filtrado["es"],
             "Valor":          sp_filtrado["valor"].abs(),
@@ -412,20 +412,40 @@ with aba_pend:
         })
 
         _tem_orig = "origem_destino" in bk_filtrado.columns
-        # Nome: usa origem_destino se preenchido, senão cai no histórico
         _bk_nome = (
             bk_filtrado["origem_destino"]
             .where(bk_filtrado["origem_destino"].fillna("").str.strip() != "",
                    bk_filtrado["historico"])
             if _tem_orig else bk_filtrado["historico"]
         )
-        bk_show = pd.DataFrame({
+        bk_show_full = pd.DataFrame({
             "Data":      bk_filtrado["data_fmt"].str[:5],
             "E/S":       bk_filtrado["deb_cred"],
             "Valor":     bk_filtrado["valor"].abs(),
             "Nome":      _bk_nome,
             "Histórico": bk_filtrado["historico"],
         })
+
+        # ── Defaults de configuração de tabela ───────────────────────────────
+        _SP_COLS_DEF = ["Data", "E/S", "Valor", "Categoria", "Origem/Destino", "Responsável"]
+        _BK_COLS_DEF = ["Data", "E/S", "Valor", "Nome", "Histórico"]
+        _SP_SORT_DEF = "Data"
+        _BK_SORT_DEF = "Data"
+
+        _sk = f"{mes}_{ano}"   # chave base para session_state
+
+        if f"sp_cols_{_sk}" not in st.session_state:
+            st.session_state[f"sp_cols_{_sk}"] = _SP_COLS_DEF
+        if f"bk_cols_{_sk}" not in st.session_state:
+            st.session_state[f"bk_cols_{_sk}"] = _BK_COLS_DEF
+        if f"sp_sort_{_sk}" not in st.session_state:
+            st.session_state[f"sp_sort_{_sk}"] = _SP_SORT_DEF
+        if f"sp_asc_{_sk}" not in st.session_state:
+            st.session_state[f"sp_asc_{_sk}"] = True
+        if f"bk_sort_{_sk}" not in st.session_state:
+            st.session_state[f"bk_sort_{_sk}"] = _BK_SORT_DEF
+        if f"bk_asc_{_sk}" not in st.session_state:
+            st.session_state[f"bk_asc_{_sk}"] = True
 
         class _EmptySel:
             class selection:
@@ -434,7 +454,7 @@ with aba_pend:
         def _msg_vazia(tudo_conciliado: bool) -> str:
             if tudo_conciliado:
                 return (
-                    "<div style='height:460px;display:flex;flex-direction:column;"
+                    "<div style='height:400px;display:flex;flex-direction:column;"
                     "align-items:center;justify-content:center;gap:8px;"
                     "color:#1a7f37;font-weight:600;font-size:1rem;"
                     "background:#f0fff4;border-radius:8px;"
@@ -445,7 +465,7 @@ with aba_pend:
                 )
             else:
                 return (
-                    "<div style='height:460px;display:flex;flex-direction:column;"
+                    "<div style='height:400px;display:flex;flex-direction:column;"
                     "align-items:center;justify-content:center;gap:8px;"
                     "color:#6c757d;font-weight:500;font-size:0.95rem;"
                     "background:#f8f9fa;border-radius:8px;"
@@ -457,23 +477,52 @@ with aba_pend:
 
         with col_sp:
             st.markdown("**📋 FluxoCaixa Sponte**")
+            # Controles de ordenação e colunas
+            _sc1, _sc2, _sc3 = st.columns([3, 2, 2])
+            _sp_sort = _sc1.selectbox(
+                "Ordenar por", ["Data","Valor","Categoria","Origem/Destino","Responsável"],
+                index=["Data","Valor","Categoria","Origem/Destino","Responsável"].index(
+                    st.session_state[f"sp_sort_{_sk}"]
+                ),
+                key=f"sp_sort_sel_{_sk}", label_visibility="collapsed",
+            )
+            _sp_asc = _sc2.radio(
+                "Ordem", ["↑ Asc","↓ Desc"],
+                index=0 if st.session_state[f"sp_asc_{_sk}"] else 1,
+                horizontal=True, key=f"sp_ord_{_sk}", label_visibility="collapsed",
+            )
+            st.session_state[f"sp_sort_{_sk}"] = _sp_sort
+            st.session_state[f"sp_asc_{_sk}"]  = (_sp_asc == "↑ Asc")
+
+            _sp_cols_vis = _sc3.multiselect(
+                "Colunas", _SP_COLS_DEF,
+                default=st.session_state[f"sp_cols_{_sk}"],
+                key=f"sp_cols_sel_{_sk}", label_visibility="collapsed",
+                placeholder="Colunas…",
+            ) or _SP_COLS_DEF
+            st.session_state[f"sp_cols_{_sk}"] = _sp_cols_vis
+
+            # Aplica ordenação — guarda mapeamento pos→índice original
+            _sp_sort_col = _sp_sort if _sp_sort in sp_show_full.columns else "Data"
+            _sp_sorted_idx = sp_show_full.sort_values(
+                _sp_sort_col, ascending=st.session_state[f"sp_asc_{_sk}"]
+            ).index.tolist()
+            sp_show = sp_show_full.loc[_sp_sorted_idx, _sp_cols_vis].reset_index(drop=True)
+
             if sp_show.empty:
                 sel_sp = _EmptySel()
                 st.markdown(_msg_vazia(sponte_pendente.empty), unsafe_allow_html=True)
             else:
+                _sp_cfg = {c: cfg for c, cfg in {
+                    "Data": _dat_cfg, "E/S": _es_cfg, "Valor": _val_cfg,
+                    "Categoria": _cat_cfg, "Origem/Destino": _orig_cfg, "Responsável": _resp_cfg,
+                }.items() if c in _sp_cols_vis}
                 sel_sp = st.dataframe(
                     sp_show,
                     use_container_width=True,
-                    height=460,
+                    height=400,
                     hide_index=True,
-                    column_config={
-                        "Data":           _dat_cfg,
-                        "E/S":            _es_cfg,
-                        "Valor":          _val_cfg,
-                        "Categoria":      _cat_cfg,
-                        "Origem/Destino": _orig_cfg,
-                        "Responsável":    _resp_cfg,
-                    },
+                    column_config=_sp_cfg,
                     selection_mode="multi-row",
                     on_select="rerun",
                     key=sp_key,
@@ -481,29 +530,60 @@ with aba_pend:
 
         with col_bk:
             st.markdown(f"**{_titulo_extrato}**")
+            _bc1, _bc2, _bc3 = st.columns([3, 2, 2])
+            _bk_sort = _bc1.selectbox(
+                "Ordenar por", ["Data","Valor","Nome","Histórico"],
+                index=["Data","Valor","Nome","Histórico"].index(
+                    st.session_state[f"bk_sort_{_sk}"]
+                ),
+                key=f"bk_sort_sel_{_sk}", label_visibility="collapsed",
+            )
+            _bk_asc = _bc2.radio(
+                "Ordem", ["↑ Asc","↓ Desc"],
+                index=0 if st.session_state[f"bk_asc_{_sk}"] else 1,
+                horizontal=True, key=f"bk_ord_{_sk}", label_visibility="collapsed",
+            )
+            st.session_state[f"bk_sort_{_sk}"] = _bk_sort
+            st.session_state[f"bk_asc_{_sk}"]  = (_bk_asc == "↑ Asc")
+
+            _bk_cols_vis = _bc3.multiselect(
+                "Colunas", _BK_COLS_DEF,
+                default=st.session_state[f"bk_cols_{_sk}"],
+                key=f"bk_cols_sel_{_sk}", label_visibility="collapsed",
+                placeholder="Colunas…",
+            ) or _BK_COLS_DEF
+            st.session_state[f"bk_cols_{_sk}"] = _bk_cols_vis
+
+            _bk_sort_col = _bk_sort if _bk_sort in bk_show_full.columns else "Data"
+            _bk_sorted_idx = bk_show_full.sort_values(
+                _bk_sort_col, ascending=st.session_state[f"bk_asc_{_sk}"]
+            ).index.tolist()
+            bk_show = bk_show_full.loc[_bk_sorted_idx, _bk_cols_vis].reset_index(drop=True)
+
             if bk_show.empty:
                 sel_bk = _EmptySel()
                 st.markdown(_msg_vazia(banco_pendente.empty), unsafe_allow_html=True)
             else:
+                _bk_cfg = {c: cfg for c, cfg in {
+                    "Data": _dat_cfg, "E/S": _es_cfg, "Valor": _val_cfg,
+                    "Nome": _nom_cfg, "Histórico": _his_cfg,
+                }.items() if c in _bk_cols_vis}
                 sel_bk = st.dataframe(
                     bk_show,
                     use_container_width=True,
-                    height=460,
+                    height=400,
                     hide_index=True,
-                    column_config={
-                        "Data":      _dat_cfg,
-                        "E/S":       _es_cfg,
-                        "Valor":     _val_cfg,
-                        "Nome":      _nom_cfg,
-                        "Histórico": _his_cfg,
-                    },
+                    column_config=_bk_cfg,
                     selection_mode="multi-row",
                     on_select="rerun",
                     key=bk_key,
                 )
 
-        sp_sel_rows = sel_sp.selection.rows if hasattr(sel_sp, "selection") else []
-        bk_sel_rows = sel_bk.selection.rows if hasattr(sel_bk, "selection") else []
+        # Mapeia posições selecionadas → índices originais (respeitando a ordenação)
+        _sp_raw_rows = sel_sp.selection.rows if hasattr(sel_sp, "selection") else []
+        _bk_raw_rows = sel_bk.selection.rows if hasattr(sel_bk, "selection") else []
+        sp_sel_rows = [_sp_sorted_idx[i] for i in _sp_raw_rows if i < len(_sp_sorted_idx)]
+        bk_sel_rows = [_bk_sorted_idx[i] for i in _bk_raw_rows if i < len(_bk_sorted_idx)]
         n_sp = len(sp_sel_rows)
         n_bk = len(bk_sel_rows)
 
@@ -513,8 +593,8 @@ with aba_pend:
 
             if n_sp > 0 and n_bk > 0:
                 # ── N Sponte → 1 Banco  ou  1 Sponte → N Banco ────────────────
-                sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
-                bk_selecionados = [bk_filtrado.iloc[i] for i in bk_sel_rows]
+                sp_selecionados = [sp_filtrado.loc[i] for i in sp_sel_rows]
+                bk_selecionados = [bk_filtrado.loc[i] for i in bk_sel_rows]
                 soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
                 soma_bk = sum(abs(float(r["valor"])) for r in bk_selecionados)
                 diff = abs(soma_sp - soma_bk)
@@ -582,7 +662,7 @@ with aba_pend:
 
             elif n_sp > 0:
                 # ── Só Sponte selecionado ─────────────────────────────────────
-                sp_selecionados = [sp_filtrado.iloc[i] for i in sp_sel_rows]
+                sp_selecionados = [sp_filtrado.loc[i] for i in sp_sel_rows]
                 soma_sp = sum(abs(r["valor"]) for r in sp_selecionados)
 
                 for r in sp_selecionados:
@@ -595,7 +675,7 @@ with aba_pend:
                     )
 
                 if n_sp == 1:
-                    sp_r = sp_filtrado.iloc[sp_sel_rows[0]]
+                    sp_r = sp_filtrado.loc[sp_sel_rows[0]]
                     st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
                     with st.form(key=f"form_isp_{cnt}"):
                         just = st.text_input("Motivo:", placeholder="ex: saída em caixa físico")
@@ -611,7 +691,7 @@ with aba_pend:
             elif n_bk > 0:
                 # ── Só Banco selecionado ──────────────────────────────────────
                 if n_bk == 1:
-                    bk_r = bk_filtrado.iloc[bk_sel_rows[0]]
+                    bk_r = bk_filtrado.loc[bk_sel_rows[0]]
                     st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(float(bk_r['valor']))}**")
                     with st.form(key=f"form_ibk_{cnt}"):
                         just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")

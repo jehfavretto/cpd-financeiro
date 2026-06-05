@@ -264,7 +264,7 @@ _bk_full_pendente = banco_df_full[~_bk_full_ok]
 # mantém só linhas da fonte selecionada (banco_df) que também estão pendentes no full
 mask_bk_ok = banco_df.index.isin(_bk_full_pendente.index)
 sponte_pendente = sponte_df[~mask_sp_ok].reset_index(drop=True)
-banco_pendente  = banco_df[~mask_bk_ok].reset_index(drop=True)
+banco_pendente  = banco_df[mask_bk_ok].reset_index(drop=True)
 
 
 # ── Barra de progresso ─────────────────────────────────────────────────────────

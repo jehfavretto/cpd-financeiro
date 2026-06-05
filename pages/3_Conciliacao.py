@@ -598,10 +598,9 @@ with aba_pend:
             [data-testid="stRadio"] label p,
             [data-testid="stExpander"] summary p { font-size: 0.8rem !important; }
             </style>
-            <div style="height:210px"></div>
+            <div style="height:188px"></div>
             """, unsafe_allow_html=True)
-            st.caption("**Ações**")
-            st.markdown("---")
+            st.markdown("<p style='text-align:center;font-weight:600;color:#555;margin-bottom:4px'>Ações</p><hr style='margin:0 0 8px 0'>", unsafe_allow_html=True)
 
             if n_sp > 0 and n_bk > 0:
                 # ── N Sponte → 1 Banco  ou  1 Sponte → N Banco ────────────────

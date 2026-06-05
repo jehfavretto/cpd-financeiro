@@ -252,18 +252,67 @@ bk_manually_used_idx: set = set()
 for _ch, _cnt in bk_manual_cnt.items():
     bk_manually_used_idx.update(banco_df[banco_df["chave"] == _ch].index[:_cnt].tolist())
 
-# Índices do auto-match (excluindo os já usados manualmente)
+# ── Helpers de verificação de nome para auto-match ────────────────────────────
+def _resps_do_aluno_set(nome_aluno: str) -> set:
+    """Retorna set de responsáveis normalizados do aluno (vazio se não cadastrado)."""
+    resp_str = _aluno_resp_map.get(_norm_nome(nome_aluno), "")
+    if not resp_str:
+        return set()
+    return {_norm_nome(r) for r in resp_str.split(" / ") if r.strip()}
+
+def _nome_compativel(sp_row, bk_row) -> bool:
+    """
+    Retorna True se o par sp+bk é compatível por nome, ou se não dá para verificar.
+    Incompatível somente quando:
+      - banco tem origem_destino preenchido
+      - sponte tem aluno com responsáveis cadastrados
+      - o responsável do banco NÃO está na lista do aluno
+    """
+    bk_nome = str(bk_row.get("origem_destino", "")).strip()
+    if not bk_nome:
+        return True  # banco sem nome: não dá para verificar
+    sp_aluno = str(sp_row.get("origem_destino", "")).strip()
+    if not sp_aluno:
+        return True  # sponte sem aluno: não dá para verificar
+    resps = _resps_do_aluno_set(sp_aluno)
+    if not resps:
+        return True  # aluno sem responsáveis cadastrados: não dá para verificar
+    return _norm_nome(bk_nome) in resps
+
+# Índices do auto-match com verificação de nome
 _sp_idx_auto: set = set()
 _bk_idx_auto: set = set()
 for _chave, _n in chaves_auto_counts.items():
     _sp_cands = sponte_df[
         (sponte_df["chave"] == _chave) & (~sponte_df.index.isin(sp_manually_used_idx))
-    ]
+    ].copy()
     _bk_cands = banco_df_full[
         (banco_df_full["chave"] == _chave) & (~banco_df_full.index.isin(bk_manually_used_idx))
-    ]
-    _sp_idx_auto.update(_sp_cands.index[:_n].tolist())
-    _bk_idx_auto.update(_bk_cands.index[:_n].tolist())
+    ].copy()
+
+    if _sp_cands.empty or _bk_cands.empty:
+        continue
+
+    # Tenta fazer pares verificando compatibilidade de nome
+    _sp_usados: set = set()
+    _bk_usados: set = set()
+    _pares_ok: list = []
+    _pares_sem_verif: list = []
+
+    for _si, _sp_r in _sp_cands.iterrows():
+        for _bi, _bk_r in _bk_cands.iterrows():
+            if _bi in _bk_usados:
+                continue
+            if _nome_compativel(_sp_r, _bk_r):
+                _pares_ok.append((_si, _bi))
+                _bk_usados.add(_bi)
+                _sp_usados.add(_si)
+                break
+
+    # Pares confirmados (até _n)
+    for _si, _bi in _pares_ok[:_n]:
+        _sp_idx_auto.add(_si)
+        _bk_idx_auto.add(_bi)
 
 # ── Separa pendentes ───────────────────────────────────────────────────────────
 mask_sp_ok = sponte_df.index.isin(_sp_idx_auto) | sponte_df.index.isin(sp_manually_used_idx)

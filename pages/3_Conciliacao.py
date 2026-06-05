@@ -46,8 +46,8 @@ with col2:
 
 # ── Seleciona fonte: Banco e/ou Caixa ─────────────────────────────────────────
 _fc1, _fc2, _ = st.columns([2, 2, 8])
-usar_banco = _fc1.checkbox("🏦 Banco", value=st.session_state.get("conc_banco", True),  key=f"cb_banco_{mes}_{ano}")
-usar_caixa = _fc2.checkbox("💵 Caixa", value=st.session_state.get("conc_caixa", False), key=f"cb_caixa_{mes}_{ano}")
+usar_banco = _fc1.checkbox("🏦 Banco", value=st.session_state.get("conc_banco", True), key=f"cb_banco_{mes}_{ano}")
+usar_caixa = _fc2.checkbox("💵 Caixa", value=st.session_state.get("conc_caixa", True), key=f"cb_caixa_{mes}_{ano}")
 st.session_state["conc_banco"] = usar_banco
 st.session_state["conc_caixa"] = usar_caixa
 

@@ -28,8 +28,9 @@ def _parse_valor_br(v):
 
 def _normalizar_data_banco(s: str) -> str:
     """Normaliza data do banco para DD/MM/YYYY, tentando vários formatos."""
-    s = str(s).strip()
-    for fmt in ("%Y%m%d", "%d%m%Y", "%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d"):
+    s = str(s).strip().split(".")[0]  # remove microsegundos se houver
+    for fmt in ("%Y%m%d", "%d%m%Y", "%d/%m/%Y", "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%y"):
         try:
             d = datetime.strptime(s, fmt)
             return f"{d.day:02d}/{d.month:02d}/{d.year}"
@@ -116,7 +117,7 @@ def parse_banco_xlsx(file_bytes_or_path) -> pd.DataFrame:
 
     # Data de movimento
     raw["data_mov"] = pd.to_datetime(
-        raw["Data Movimento"], format="%d/%m/%Y", errors="coerce"
+        raw["Data Movimento"], dayfirst=True, errors="coerce"
     ).dt.strftime("%d/%m/%Y").fillna(raw["Data Movimento"])
 
     # Documento

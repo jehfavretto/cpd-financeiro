@@ -124,7 +124,7 @@ with st.spinner("Lendo arquivos..."):
             _r = _r.iloc[1:].reset_index(drop=True)
             _r = _r[_r["Histórico"] != "SALDO DIA"].copy()
             _r["data_mov"] = pd.to_datetime(
-                _r["Data Lancamento"], format="%d/%m/%Y", errors="coerce"
+                _r["Data Lancamento"], dayfirst=True, errors="coerce"
             ).dt.strftime("%d/%m/%Y").fillna(_r["Data Lancamento"])
             _r["nr_doc"]   = _r["Documento"].fillna("").str.strip()
             _r["historico"] = _r["Histórico"].str.strip()

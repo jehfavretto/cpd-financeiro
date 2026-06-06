@@ -183,7 +183,15 @@ def make_key_sponte(row) -> str:
 def make_key_banco(row) -> str:
     dia_mes = str(row["data_mov"])[:5]        # "DD/MM/YYYY" → "DD/MM"
     nome = str(row.get("origem_destino", "") or "").strip()
-    nome_norm = _norm_nome(nome) if nome else ""
+    if nome:
+        # Se o banco trouxe o nome do aluno, normaliza para o responsável (igual ao Sponte)
+        resp_via_aluno = _aluno_resp_map.get(_norm_nome(nome), "")
+        if resp_via_aluno:
+            nome_norm = _norm_nome(resp_via_aluno.split(" / ")[0])
+        else:
+            nome_norm = _norm_nome(nome)
+    else:
+        nome_norm = ""
     return f"{dia_mes}|{row['deb_cred']}|{float(row['valor']):.2f}|{nome_norm}".replace(".", ",")
 
 

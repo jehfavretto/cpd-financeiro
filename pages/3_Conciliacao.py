@@ -318,15 +318,10 @@ for _chave, _n in chaves_auto_counts.items():
                 _sp_usados.add(_si)
                 break
 
-    # Se nenhum par compatível por nome foi encontrado,
-    # cai no match simples (evita bloquear por diferença de grafia)
-    if not _pares_ok:
-        _sp_idx_auto.update(_sp_cands.index[:_n].tolist())
-        _bk_idx_auto.update(_bk_cands.index[:_n].tolist())
-    else:
-        for _si, _bi in _pares_ok[:_n]:
-            _sp_idx_auto.add(_si)
-            _bk_idx_auto.add(_bi)
+    # Pares confirmados (até _n)
+    for _si, _bi in _pares_ok[:_n]:
+        _sp_idx_auto.add(_si)
+        _bk_idx_auto.add(_bi)
 
 # ── Separa pendentes ───────────────────────────────────────────────────────────
 mask_sp_ok = sponte_df.index.isin(_sp_idx_auto) | sponte_df.index.isin(sp_manually_used_idx)

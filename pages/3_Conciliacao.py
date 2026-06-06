@@ -80,9 +80,9 @@ def _adaptar_caixa(df_cx: pd.DataFrame) -> pd.DataFrame:
     df_cx["data_fmt"] = df_cx["data_mov"]
     df_cx["nr_doc"]   = ""
     df_cx["chave"]    = df_cx.apply(
-        lambda r: f"{str(r['data_mov'])[:5]}|{r['deb_cred']}|{float(r['valor']):.2f}".replace(".", ","),
+        lambda r: f"{str(r['data_mov'])[:5]}|{r['deb_cred']}|{float(r['valor']):.2f}|".replace(".", ","),
         axis=1
-    )
+    )  # chave provisória — será refeita por make_key_banco ao entrar em banco_df_full
     return df_cx
 
 # Carrega caixa sempre (para auto-match não quebrar ao filtrar fonte)
@@ -167,15 +167,45 @@ def _html_val(v) -> str:
     return fmt_br(abs(float(v))).replace("$", "&#36;")
 
 
+def _nome_para_chave(nome: str, é_aluno: bool = True) -> str:
+    """
+    Normaliza nome para usar na chave.
+    - Se é_aluno=True (Sponte): converte aluno → 1º responsável (se cadastrado)
+    - Se é_aluno=False (Banco): se o nome for um aluno cadastrado, converte para responsável;
+      caso contrário mantém como está (já é responsável ou fornecedor)
+    Sempre retorna string normalizada sem acentos/maiúsculas.
+    """
+    if not nome:
+        return ""
+    nome_norm = _norm_nome(nome)
+    if é_aluno:
+        resp_str = _aluno_resp_map.get(nome_norm, "")
+        if resp_str:
+            resps = [r.strip() for r in resp_str.split(" / ") if r.strip()]
+            return _norm_nome(resps[0]) if resps else nome_norm
+        return nome_norm
+    else:
+        # banco: se o nome é um aluno cadastrado, converte para seu responsável
+        if nome_norm in _aluno_resp_map:
+            resp_str = _aluno_resp_map[nome_norm]
+            resps = [r.strip() for r in resp_str.split(" / ") if r.strip()]
+            return _norm_nome(resps[0]) if resps else nome_norm
+        return nome_norm
+
+
 def make_key_sponte(row) -> str:
     d = row["data"]
-    dia_mes = f"{d.day:02d}/{d.month:02d}"   # DD/MM sem ano
-    return f"{dia_mes}|{row['es']}|{float(row['valor']):.2f}".replace(".", ",")
+    dia_mes = f"{d.day:02d}/{d.month:02d}"
+    aluno = str(row.get("origem_destino", "")).strip()
+    nome_k = _nome_para_chave(aluno, é_aluno=True)
+    return f"{dia_mes}|{row['es']}|{float(row['valor']):.2f}|{nome_k}".replace(".", ",")
 
 
 def make_key_banco(row) -> str:
-    dia_mes = str(row["data_mov"])[:5]        # "DD/MM/YYYY" → "DD/MM"
-    return f"{dia_mes}|{row['deb_cred']}|{float(row['valor']):.2f}".replace(".", ",")
+    dia_mes = str(row["data_mov"])[:5]
+    orig = str(row.get("origem_destino", "")).strip()
+    nome_k = _nome_para_chave(orig, é_aluno=False)
+    return f"{dia_mes}|{row['deb_cred']}|{float(row['valor']):.2f}|{nome_k}".replace(".", ",")
 
 
 # ── Prepara DataFrames ─────────────────────────────────────────────────────────

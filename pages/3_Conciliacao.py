@@ -577,7 +577,7 @@ with aba_pend:
         _SP_COLS_DEF = ["Data", "E/S", "Valor", "Categoria", "Aluno", "Responsável"]
         _BK_COLS_DEF = ["Data", "E/S", "Valor", "Aluno", "Responsável", "Histórico"]
         _SP_SORT_DEF = "Data"
-        _BK_SORT_DEF = "Data"
+        _BK_SORT_DEF = "Aluno"
 
         _sk = f"{mes}_{ano}"   # chave base para session_state
 
@@ -681,9 +681,9 @@ with aba_pend:
             st.markdown('<div class="cpd-sort">', unsafe_allow_html=True)
             _bc1, _bc2 = st.columns([3, 2])
             _bk_sort = _bc1.selectbox(
-                "Ordenar por", ["Data","Valor","Nome","Histórico"],
-                index=["Data","Valor","Nome","Histórico"].index(
-                    st.session_state[f"bk_sort_{_sk}"]
+                "Ordenar por", ["Data","Valor","Aluno","Responsável","Histórico"],
+                index=["Data","Valor","Aluno","Responsável","Histórico"].index(
+                    st.session_state[f"bk_sort_{_sk}"] if st.session_state[f"bk_sort_{_sk}"] in ["Data","Valor","Aluno","Responsável","Histórico"] else "Data"
                 ),
                 key=f"bk_sort_sel_{_sk}", label_visibility="collapsed",
             )

@@ -241,9 +241,18 @@ def parse_caixa_xlsx(file_bytes_or_path) -> pd.DataFrame:
     df = df.rename(columns={v: k for k, v in col_map.items()})
     df = df.dropna(subset=["data_mov", "valor"]).copy()
 
-    df["data_mov"] = pd.to_datetime(
-        df["data_mov"], dayfirst=True, errors="coerce"
-    ).dt.strftime("%d/%m/%Y").fillna(df["data_mov"])
+    def _parse_data_caixa(v):
+        s = str(v).strip()
+        for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+            try:
+                from datetime import datetime as _dt
+                return _dt.strptime(s.split(".")[0], fmt).strftime("%d/%m/%Y")
+            except ValueError:
+                continue
+        return s
+
+    df["data_mov"] = df["data_mov"].apply(_parse_data_caixa)
 
     def _pv(v):
         if isinstance(v, (int, float)):

@@ -66,6 +66,13 @@ def _normalizar_data_caixa(v) -> str:
     except Exception:
         return str(v)
 
+import unicodedata as _ucd
+
+def _norm_nome(s: str) -> str:
+    """Normaliza nome para comparação: minúsculas sem acentos."""
+    s = _ucd.normalize("NFD", str(s).lower().strip())
+    return "".join(c for c in s if _ucd.category(c) != "Mn")
+
 def _adaptar_caixa(df_cx: pd.DataFrame) -> pd.DataFrame:
     """Adapta caixa_df para ter as mesmas colunas que banco_df."""
     df_cx = df_cx.copy()
@@ -120,13 +127,6 @@ if sponte_df.empty or banco_df_full.empty:
     st.stop()
 
 # ── Tabela alunos → mapa aluno → responsável(is) ──────────────────────────────
-import unicodedata as _ucd
-
-def _norm_nome(s: str) -> str:
-    """Normaliza nome para comparação: minúsculas sem acentos."""
-    s = _ucd.normalize("NFD", str(s).lower().strip())
-    return "".join(c for c in s if _ucd.category(c) != "Mn")
-
 try:
     _alunos_df = db.carregar_alunos(ano)
 except Exception:

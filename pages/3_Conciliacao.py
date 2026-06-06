@@ -354,7 +354,8 @@ st.progress(
 st.divider()
 
 # ── Seção: Conciliados ─────────────────────────────────────────────────────────
-n_auto   = sum(chaves_auto_counts.values()) if chaves_auto_counts else 0
+# n_auto = pares realmente matchados (índices em _sp_idx_auto/_bk_idx_auto)
+n_auto   = len(_sp_idx_auto)
 n_manual = int((conc_df["tipo"] == "manual").sum()) if not conc_df.empty else 0
 n_ign    = int(conc_df["tipo"].str.startswith("ignorado", na=False).sum()) if not conc_df.empty else 0
 
@@ -858,10 +859,13 @@ with aba_conc:
     if n_auto > 0:
         st.markdown(f"**🤖 {n_auto} automáticos** — selecione linha(s) e clique em Desvincular")
         auto_rows, auto_actions = [], []
-        for chave, n in sorted(chaves_auto_counts.items()):
-            sp_matches = sponte_df[sponte_df["chave"] == chave].iloc[:n]
-            bk_matches = banco_df_full[banco_df_full["chave"] == chave].iloc[:n]
-            for i in range(n):
+        # Usa apenas os índices realmente matchados (não só chaves_auto_counts)
+        _sp_auto_df = sponte_df[sponte_df.index.isin(_sp_idx_auto)]
+        _bk_auto_df = banco_df_full[banco_df_full.index.isin(_bk_idx_auto)]
+        for chave in sorted(_sp_auto_df["chave"].unique()):
+            sp_matches = _sp_auto_df[_sp_auto_df["chave"] == chave]
+            bk_matches = _bk_auto_df[_bk_auto_df["chave"] == chave]
+            for i in range(min(len(sp_matches), len(bk_matches))):
                 sp_r, bk_r = sp_matches.iloc[i], bk_matches.iloc[i]
                 sp_txt_v = _sp_txt(sp_r["chave"])
                 bk_txt_v = _bk_txt(bk_r["chave"])

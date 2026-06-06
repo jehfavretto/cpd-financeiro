@@ -244,13 +244,47 @@ _raw_auto = {
 chaves_auto_counts = {ch: min(_sp_available[ch], _bk_available[ch]) for ch in _raw_auto}
 
 # Índices já consumidos pelo linkage manual
-sp_manually_used_idx: set = set()
-for _ch, _cnt in sp_manual_cnt.items():
-    sp_manually_used_idx.update(sponte_df[sponte_df["chave"] == _ch].index[:_cnt].tolist())
-
 bk_manually_used_idx: set = set()
 for _ch, _cnt in bk_manual_cnt.items():
     bk_manually_used_idx.update(banco_df[banco_df["chave"] == _ch].index[:_cnt].tolist())
+
+# sp_manually_used_idx: prefere consumir Sponte que NÃO conseguem auto-matchear,
+# preservando os que podem casar com banco disponível
+def _sp_pode_automatch(sp_origem: str, bk_rows_df) -> bool:
+    """Retorna True se este Sponte pode casar com algum banco disponível."""
+    if bk_rows_df.empty:
+        return False
+    sp_norm = _norm_nome(sp_origem)
+    resp_str = _aluno_resp_map.get(sp_norm, "")
+    resps = {_norm_nome(r) for r in resp_str.split(" / ") if r.strip()} if resp_str else set()
+    for _, _bk_r in bk_rows_df.iterrows():
+        bk_orig = str(_bk_r.get("origem_destino", "")).strip()
+        if not bk_orig or not sp_origem:
+            return True   # sem nome = não dá para bloquear
+        if not resps:
+            return True   # sem responsáveis cadastrados = não dá para bloquear
+        bk_norm = _norm_nome(bk_orig)
+        if bk_norm == sp_norm or bk_norm in resps:
+            return True
+    return False
+
+sp_manually_used_idx: set = set()
+for _ch, _cnt in sp_manual_cnt.items():
+    _sp_rows = sponte_df[sponte_df["chave"] == _ch]
+    if len(_sp_rows) <= _cnt:
+        sp_manually_used_idx.update(_sp_rows.index.tolist())
+        continue
+    _bk_disp = banco_df_full[
+        (banco_df_full["chave"] == _ch) & (~banco_df_full.index.isin(bk_manually_used_idx))
+    ]
+    _incompat, _compat = [], []
+    for _idx, _sp_r in _sp_rows.iterrows():
+        sp_orig = str(_sp_r.get("origem_destino", "")).strip()
+        if _sp_pode_automatch(sp_orig, _bk_disp):
+            _compat.append(_idx)
+        else:
+            _incompat.append(_idx)
+    sp_manually_used_idx.update((_incompat + _compat)[:_cnt])
 
 # ── Helpers de verificação de nome para auto-match ────────────────────────────
 def _resps_do_aluno_set(nome_aluno: str) -> set:

@@ -242,7 +242,7 @@ def parse_caixa_xlsx(file_bytes_or_path) -> pd.DataFrame:
     df = df.dropna(subset=["data_mov", "valor"]).copy()
 
     df["data_mov"] = pd.to_datetime(
-        df["data_mov"], format="%d/%m/%Y", errors="coerce"
+        df["data_mov"], dayfirst=True, errors="coerce"
     ).dt.strftime("%d/%m/%Y").fillna(df["data_mov"])
 
     def _pv(v):

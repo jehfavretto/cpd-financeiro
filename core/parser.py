@@ -77,12 +77,14 @@ def _title_br(s: str) -> str:
     )
 
 def _limpar_nome_banco(nome: str) -> str:
-    """Remove prefixo numérico de CNPJ ('52 053 009 NOME...') e aplica Title Case."""
+    """Remove prefixo/sufixo numérico (CNPJ, telefone) e aplica Title Case."""
     nome = str(nome).strip()
     if not nome or nome.lower() == "nan":
         return ""
     # Remove dígitos/espaços do início antes do primeiro caractere alfabético
-    nome = re.sub(r'^[\d\s]+(?=[A-Za-z])', '', nome).strip()
+    nome = re.sub(r'^[\d\s.\-/]+(?=[A-Za-z])', '', nome).strip()
+    # Remove sequência de dígitos no final (telefone, CPF, chave PIX numérica)
+    nome = re.sub(r'[\s\d\-\.]{6,}$', '', nome).strip()
     return _title_br(nome) if nome.isupper() else nome
 
 _DE_PARA_HISTORICO = {
@@ -318,8 +320,9 @@ def _limpar_nome_banco(nome: str) -> str:
     if not nome or nome.lower() in ("nan", "none", ""):
         return ""
     # Remove prefixo de dígitos e espaços antes do primeiro caractere letra
-    # Ex: "52 053 009 MONICA ERTHAL" → "MONICA ERTHAL"
-    nome = re.sub(r'^[\d\s]+(?=[A-Za-zÀ-ÿ])', '', nome).strip()
+    nome = re.sub(r'^[\d\s.\-/]+(?=[A-Za-zÀ-ÿ])', '', nome).strip()
+    # Remove sufixo numérico (telefone, CPF, chave PIX)
+    nome = re.sub(r'[\s\d\-\.]{6,}$', '', nome).strip()
     # Title case se estiver em caixa alta
     if nome.upper() == nome:
         nome = _title_br_nome(nome)

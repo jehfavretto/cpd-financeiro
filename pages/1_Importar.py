@@ -100,6 +100,7 @@ with st.spinner("Lendo arquivos..."):
                 if not nome or nome.lower() == "nan":
                     return ""
                 nome = _re.sub(r'^[\d.\-/\s]+(?=[A-Za-z])', '', nome).strip()
+                nome = _re.sub(r'[\s\d\-\.]{6,}$', '', nome).strip()
                 return _title_br2(nome) if nome.isupper() else nome
 
             def _parse_val2(v):

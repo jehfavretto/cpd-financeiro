@@ -80,7 +80,10 @@ def _adaptar_caixa(df_cx: pd.DataFrame) -> pd.DataFrame:
     df_cx["data_fmt"] = df_cx["data_mov"]
     df_cx["nr_doc"]   = ""
     df_cx["chave"]    = df_cx.apply(
-        lambda r: f"{str(r['data_mov'])[:5]}|{r['deb_cred']}|{float(r['valor']):.2f}".replace(".", ","),
+        lambda r: (
+            f"{str(r['data_mov'])[:5]}|{r['deb_cred']}|{float(r['valor']):.2f}"
+            f"|{_norm_nome(str(r.get('descricao', '') or '').strip())}"
+        ).replace(".", ","),
         axis=1
     )
     return df_cx
@@ -169,13 +172,19 @@ def _html_val(v) -> str:
 
 def make_key_sponte(row) -> str:
     d = row["data"]
-    dia_mes = f"{d.day:02d}/{d.month:02d}"   # DD/MM sem ano
-    return f"{dia_mes}|{row['es']}|{float(row['valor']):.2f}".replace(".", ",")
+    dia_mes = f"{d.day:02d}/{d.month:02d}"
+    aluno = str(row.get("origem_destino", "")).strip()
+    resp_str = _aluno_resp_map.get(_norm_nome(aluno), "")
+    # usa o primeiro responsável; se não cadastrado, usa o próprio nome do aluno
+    resp_norm = _norm_nome(resp_str.split(" / ")[0]) if resp_str else _norm_nome(aluno)
+    return f"{dia_mes}|{row['es']}|{float(row['valor']):.2f}|{resp_norm}".replace(".", ",")
 
 
 def make_key_banco(row) -> str:
     dia_mes = str(row["data_mov"])[:5]        # "DD/MM/YYYY" → "DD/MM"
-    return f"{dia_mes}|{row['deb_cred']}|{float(row['valor']):.2f}".replace(".", ",")
+    nome = str(row.get("origem_destino", "") or "").strip()
+    nome_norm = _norm_nome(nome) if nome else ""
+    return f"{dia_mes}|{row['deb_cred']}|{float(row['valor']):.2f}|{nome_norm}".replace(".", ",")
 
 
 # ── Prepara DataFrames ─────────────────────────────────────────────────────────

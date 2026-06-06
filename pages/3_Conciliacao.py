@@ -1067,9 +1067,12 @@ with st.expander("🗑️ Limpar conciliação do mês", expanded=False):
             f"{n_manual} manuais · {n_ign} ignorados). "
             f"Use antes de reimportar o mês."
         )
-        confirmar = st.checkbox("Sim, quero apagar todas as conciliações deste mês")
+        _ck_key = f"confirmar_limpar_{mes}_{ano}"
+        confirmar = st.checkbox("Sim, quero apagar todas as conciliações deste mês", key=_ck_key)
         if confirmar:
             if st.button("🗑️ Limpar tudo", type="primary", use_container_width=True):
                 db.limpar_conciliacoes_mes(mes, ano)
-                st.success("Conciliações apagadas! Agora você pode reimportar o mês com segurança.")
+                st.cache_data.clear()
+                st.session_state[_ck_key] = False
+                st.success("Conciliações apagadas!")
                 st.rerun()

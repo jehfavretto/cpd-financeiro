@@ -322,6 +322,15 @@ for _chave, _n in chaves_auto_counts.items():
     for _si, _bi in _pares_ok[:_n]:
         _sp_idx_auto.add(_si)
         _bk_idx_auto.add(_bi)
+    # DEBUG — chaves bloqueadas pelo match de nome
+    if not _pares_ok and not _sp_cands.empty and not _bk_cands.empty:
+        for _, _sp_r in _sp_cands.iterrows():
+            for _, _bk_r in _bk_cands.iterrows():
+                _bk_d = str(_bk_r.get("origem_destino","")).strip()
+                _sp_d = str(_sp_r.get("origem_destino","")).strip()
+                _resps_d = _resps_do_aluno_set(_sp_d)
+                import streamlit as _st2
+                _st2.warning(f"🔍 DEBUG bloqueado | chave={_chave} | bk_nome='{_bk_d}' | sp_aluno='{_sp_d}' | resps={_resps_d} | norm_bk='{_norm_nome(_bk_d)}'")
 
 # ── Separa pendentes ───────────────────────────────────────────────────────────
 mask_sp_ok = sponte_df.index.isin(_sp_idx_auto) | sponte_df.index.isin(sp_manually_used_idx)

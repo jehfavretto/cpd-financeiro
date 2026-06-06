@@ -184,12 +184,21 @@ def make_key_banco(row) -> str:
     dia_mes = str(row["data_mov"])[:5]        # "DD/MM/YYYY" → "DD/MM"
     nome = str(row.get("origem_destino", "") or "").strip()
     if nome:
-        # Se o banco trouxe o nome do aluno, normaliza para o responsável (igual ao Sponte)
-        resp_via_aluno = _aluno_resp_map.get(_norm_nome(nome), "")
+        nome_n = _norm_nome(nome)
+        # Caso 1: banco trouxe nome do aluno → pega o primeiro responsável
+        resp_via_aluno = _aluno_resp_map.get(nome_n, "")
         if resp_via_aluno:
             nome_norm = _norm_nome(resp_via_aluno.split(" / ")[0])
         else:
-            nome_norm = _norm_nome(nome)
+            # Caso 2: banco trouxe nome de um responsável (pode ser o 2º, 3º…)
+            # → busca o aluno dele e usa o primeiro responsável canônico
+            aluno_via_resp = _resp_aluno_map.get(nome_n, "")
+            if aluno_via_resp:
+                primeiro_aluno = aluno_via_resp.split(" / ")[0]
+                resp_canonica = _aluno_resp_map.get(_norm_nome(primeiro_aluno), "")
+                nome_norm = _norm_nome(resp_canonica.split(" / ")[0]) if resp_canonica else nome_n
+            else:
+                nome_norm = nome_n
     else:
         nome_norm = ""
     return f"{dia_mes}|{row['deb_cred']}|{float(row['valor']):.2f}|{nome_norm}".replace(".", ",")

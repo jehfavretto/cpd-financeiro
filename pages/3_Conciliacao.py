@@ -1239,32 +1239,42 @@ else:
         _tipo_sel, _mot_sel = _resumo_meta[_ri]
         st.markdown("---")
 
+        _det_rows, _det_ids = [], []
+
         if _tipo_sel == "sponte" and _mot_sel in _sp_por_motivo:
-            st.markdown(f"**Detalhes — {_mot_sel}**")
             for _id, _ch, _txt, _v in _sp_por_motivo[_mot_sel]:
-                _c1, _c2 = st.columns([7, 2])
-                _c1.caption(f"🔵 {_txt}")
-                if _c2.button("↩️ Desconciliar", key=f"desc_sp_{_id}"):
-                    db.deletar_conciliacao(int(_id))
-                    st.rerun()
+                _det_rows.append({"Item": f"🔵 {_txt}"})
+                _det_ids.append(_id)
 
         elif _tipo_sel == "banco" and _mot_sel in _bk_por_motivo:
-            st.markdown(f"**Detalhes — {_mot_sel} (Banco)**")
             for _id, _ch, _txt, _v in _bk_por_motivo[_mot_sel]:
-                _c1, _c2 = st.columns([7, 2])
-                _c1.caption(f"🏦 {_txt}")
-                if _c2.button("↩️ Desconciliar", key=f"desc_bk_{_id}"):
-                    db.deletar_conciliacao(int(_id))
-                    st.rerun()
+                _det_rows.append({"Item": f"🏦 {_txt}"})
+                _det_ids.append(_id)
 
         elif _tipo_sel == "pend_sp":
-            st.markdown("**Detalhes — Sponte pendente**")
             for _, _pr in sponte_pendente.iterrows():
                 _d = pd.to_datetime(_pr["data"]).strftime("%d/%m")
-                st.caption(f"🔵 {_d} · {_pr['categoria']} · {_pr.get('origem_destino','')} · {fmt_br(abs(_pr['valor']))}")
+                _det_rows.append({"Item": f"🔵 {_d} · {_pr['categoria']} · {_pr.get('origem_destino','')} · {fmt_br(abs(_pr['valor']))}"})
 
         elif _tipo_sel == "pend_bk":
-            st.markdown("**Detalhes — Banco/Caixa pendente**")
             for _, _pr in banco_pendente.iterrows():
                 _nome = str(_pr.get("origem_destino","") or _pr.get("historico","")).strip()
-                st.caption(f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}")
+                _det_rows.append({"Item": f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}"})
+
+        if _det_rows:
+            _sel_det = st.dataframe(
+                pd.DataFrame(_det_rows),
+                use_container_width=True,
+                hide_index=True,
+                height=min(400, 38 + 35 * len(_det_rows)),
+                selection_mode="multi-row",
+                on_select="rerun",
+                key=f"df_det_{mes}_{ano}_{_ri}",
+            )
+            _sel_det_rows = _sel_det.selection.rows if hasattr(_sel_det, "selection") else []
+            if _sel_det_rows and _det_ids:
+                if st.button(f"↩️ Desconciliar {len(_sel_det_rows)} selecionado(s)", type="primary"):
+                    for _idx in _sel_det_rows:
+                        if _idx < len(_det_ids):
+                            db.deletar_conciliacao(int(_det_ids[_idx]))
+                    st.rerun()

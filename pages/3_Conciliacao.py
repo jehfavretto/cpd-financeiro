@@ -870,41 +870,48 @@ with aba_pend:
 
             elif n_bk > 0:
                 # ── Só Banco selecionado ──────────────────────────────────────
-                if n_bk == 1:
-                    bk_r = bk_filtrado.loc[bk_sel_rows[0]]
-                    st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(float(bk_r['valor']))}**")
-                    st.caption("*Selecione Sponte para vincular, ou ignore:*")
-                    _MOTIVOS_BANCO = [
-                        "Selecione o motivo…",
-                        "Origem desconhecida",
-                        "Não lançado no Sponte",
-                        "Tarifa/Taxa bancária",
-                        "Estorno/Cancelamento",
-                        "Outro motivo…",
-                    ]
-                    _mot_bk = st.selectbox(
-                        "Motivo:", _MOTIVOS_BANCO,
-                        key=f"motivo_bk_{cnt}",
-                        label_visibility="collapsed",
+                bk_selecionados = [bk_filtrado.loc[i] for i in bk_sel_rows]
+                for r in bk_selecionados:
+                    st.caption(f"🏦 {str(r['historico'])[:22]}  \n**{_md_val(float(r['valor']))}**")
+                if n_bk > 1:
+                    soma_bk = sum(abs(float(r["valor"])) for r in bk_selecionados)
+                    st.markdown(
+                        f"<span style='font-size:0.9rem;color:#888;font-weight:700'>"
+                        f"Total {_html_val(soma_bk)}</span>",
+                        unsafe_allow_html=True,
                     )
-                    _outro_bk = ""
-                    if _mot_bk == "Outro motivo…":
-                        _outro_bk = st.text_input(
-                            "Descreva:", placeholder="ex: depósito identificado depois",
-                            key=f"outro_bk_{cnt}",
-                        )
-                    _bk_invalido = _mot_bk == "Selecione o motivo…"
-                    if st.button("🙈 Ignorar Banco", key=f"btn_ign_bk_{cnt}",
-                                 use_container_width=True,
-                                 disabled=_bk_invalido):
-                        _just_bk = _outro_bk.strip() if _mot_bk == "Outro motivo…" else _mot_bk
+                st.caption("*Selecione Sponte para vincular, ou ignore:*")
+                _MOTIVOS_BANCO = [
+                    "Selecione o motivo…",
+                    "Origem desconhecida",
+                    "Não lançado no Sponte",
+                    "Tarifa/Taxa bancária",
+                    "Estorno/Cancelamento",
+                    "Outro motivo…",
+                ]
+                _mot_bk = st.selectbox(
+                    "Motivo:", _MOTIVOS_BANCO,
+                    key=f"motivo_bk_{cnt}",
+                    label_visibility="collapsed",
+                )
+                _outro_bk = ""
+                if _mot_bk == "Outro motivo…":
+                    _outro_bk = st.text_input(
+                        "Descreva:", placeholder="ex: depósito identificado depois",
+                        key=f"outro_bk_{cnt}",
+                    )
+                _bk_invalido = _mot_bk == "Selecione o motivo…"
+                _lbl_ign_bk = f"🙈 Ignorar {n_bk} itens" if n_bk > 1 else "🙈 Ignorar Banco"
+                if st.button(_lbl_ign_bk, key=f"btn_ign_bk_{cnt}",
+                             use_container_width=True,
+                             disabled=_bk_invalido):
+                    _just_bk = _outro_bk.strip() if _mot_bk == "Outro motivo…" else _mot_bk
+                    for r in bk_selecionados:
                         db.salvar_conciliacao(mes, ano, "ignorado_banco",
-                                              banco_chave=bk_r["chave"],
+                                              banco_chave=r["chave"],
                                               justificativa=_just_bk or None)
-                        st.session_state["conc_cnt"] += 1
-                        st.rerun()
-                else:
-                    st.caption("*Selecione também 1 Sponte para vincular.*")
+                    st.session_state["conc_cnt"] += 1
+                    st.rerun()
 
             else:
                 st.caption(

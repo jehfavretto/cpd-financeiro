@@ -1146,23 +1146,29 @@ with _col2:
     st.metric("Saldo realizado",     fmt_br(_bk_e - _bk_s))
 
 # Diferença explicada pelos ignorados
-st.markdown("**🔍 Diferença explicada** — clique em cada linha para ver os detalhes")
+st.markdown("**🔍 Diferença explicada** — selecione uma linha para ver os detalhes")
 
 _MOTIVO_ICONS = {
-    "Valor Desviado":        "🚨",
-    "Desconto em folha":     "📝",
-    "Pago em caixa físico":  "💵",
-    "Estorno/Cancelamento":  "↩️",
+    "Valor Desviado":           "🚨",
+    "Desconto em folha":        "📝",
+    "Pago em caixa físico":     "💵",
+    "Estorno/Cancelamento":     "↩️",
     "Pagamento não localizado": "❓",
-    "Origem desconhecida":   "❓",
-    "Não lançado no Sponte": "📭",
-    "Tarifa/Taxa bancária":  "🏦",
+    "Origem desconhecida":      "❓",
+    "Não lançado no Sponte":    "📭",
+    "Tarifa/Taxa bancária":     "🏦",
+    "Sem motivo":               "📋",
 }
 
-# ── Ignorados do Sponte agrupados por motivo ──────────────────────────────────
-_sp_ign_rows = conc_df[conc_df["tipo"] == "ignorado_sponte"].copy()
+def _mot_label(v):
+    """Normaliza justificativa nula/nan para 'Sem motivo'."""
+    s = str(v).strip() if v is not None else ""
+    return s if s and s.lower() != "nan" else "Sem motivo"
 
-# Monta {motivo: [(id, chave, texto, valor), ...]}
+# ── Monta estrutura de dados agrupada ────────────────────────────────────────
+_sp_ign_rows = conc_df[conc_df["tipo"] == "ignorado_sponte"].copy()
+_bk_ign_rows = conc_df[conc_df["tipo"] == "ignorado_banco"].copy()
+
 _sp_por_motivo: dict = {}
 for _, _irow in _sp_ign_rows.iterrows():
     _ch = _irow.get("sponte_chave")
@@ -1171,22 +1177,8 @@ for _, _irow in _sp_ign_rows.iterrows():
     _r = sponte_df[sponte_df["chave"] == _ch]
     _v = abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
     _txt = _sp_txt(_ch) if not _r.empty else str(_ch)
-    _mot = str(_irow.get("justificativa") or "Sem motivo")
+    _mot = _mot_label(_irow.get("justificativa"))
     _sp_por_motivo.setdefault(_mot, []).append((_irow["id"], _ch, _txt, _v))
-
-for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
-    _icon = _MOTIVO_ICONS.get(_mot, "🙈")
-    _total_mot = sum(i[3] for i in _itens)
-    with st.expander(f"{_icon} {_mot} — {fmt_br(_total_mot)} ({len(_itens)} item{'s' if len(_itens)>1 else ''})"):
-        for _id, _ch, _txt, _v in _itens:
-            _c1, _c2 = st.columns([7, 2])
-            _c1.markdown(f"🔵 {_txt}")
-            if _c2.button("↩️ Desconciliar", key=f"desc_sp_ign_{_id}"):
-                db.deletar_conciliacao(int(_id))
-                st.rerun()
-
-# ── Ignorados do Banco agrupados por motivo ───────────────────────────────────
-_bk_ign_rows = conc_df[conc_df["tipo"] == "ignorado_banco"].copy()
 
 _bk_por_motivo: dict = {}
 for _, _irow in _bk_ign_rows.iterrows():
@@ -1196,35 +1188,83 @@ for _, _irow in _bk_ign_rows.iterrows():
     _r = banco_df_full[banco_df_full["chave"] == _ch]
     _v = abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
     _txt = _bk_txt(_ch) if not _r.empty else str(_ch)
-    _mot = str(_irow.get("justificativa") or "Sem motivo")
+    _mot = _mot_label(_irow.get("justificativa"))
     _bk_por_motivo.setdefault(_mot, []).append((_irow["id"], _ch, _txt, _v))
 
-for _mot, _itens in sorted(_bk_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
-    _icon = _MOTIVO_ICONS.get(_mot, "🙈")
-    _total_mot = sum(i[3] for i in _itens)
-    with st.expander(f"{_icon} {_mot} — {fmt_br(_total_mot)} ({len(_itens)} item{'s' if len(_itens)>1 else ''})"):
-        for _id, _ch, _txt, _v in _itens:
-            _c1, _c2 = st.columns([7, 2])
-            _c1.markdown(f"🏦 {_txt}")
-            if _c2.button("↩️ Desconciliar", key=f"desc_bk_ign_{_id}"):
-                db.deletar_conciliacao(int(_id))
-                st.rerun()
-
-# ── Pendentes ─────────────────────────────────────────────────────────────────
 _sp_pend_total = sponte_pendente["valor"].abs().sum()
 _bk_pend_total = banco_pendente["valor"].abs().sum() if not banco_pendente.empty else 0.0
 
+# ── Tabela resumo (selecionável) ──────────────────────────────────────────────
+_resumo_rows = []
+_resumo_meta = []   # guarda tipo e motivo para detalhar ao selecionar
+
+for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
+    _icon = _MOTIVO_ICONS.get(_mot, "📋")
+    _total = sum(i[3] for i in _itens)
+    _resumo_rows.append({"Motivo": f"{_icon} {_mot}", "Valor (R$)": fmt_br(_total), "Itens": len(_itens)})
+    _resumo_meta.append(("sponte", _mot))
+
+for _mot, _itens in sorted(_bk_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
+    _icon = _MOTIVO_ICONS.get(_mot, "📋")
+    _total = sum(i[3] for i in _itens)
+    _resumo_rows.append({"Motivo": f"{_icon} {_mot} (Banco)", "Valor (R$)": fmt_br(_total), "Itens": len(_itens)})
+    _resumo_meta.append(("banco", _mot))
+
 if _sp_pend_total > 0:
-    with st.expander(f"⏳ Sponte pendente — {fmt_br(_sp_pend_total)} ({len(sponte_pendente)} itens)"):
-        for _, _pr in sponte_pendente.iterrows():
-            _d = pd.to_datetime(_pr["data"]).strftime("%d/%m")
-            st.caption(f"🔵 {_d} · {_pr['categoria']} · {_pr.get('origem_destino','')} · {fmt_br(abs(_pr['valor']))}")
-
+    _resumo_rows.append({"Motivo": "⏳ Sponte pendente", "Valor (R$)": fmt_br(_sp_pend_total), "Itens": len(sponte_pendente)})
+    _resumo_meta.append(("pend_sp", ""))
 if _bk_pend_total > 0:
-    with st.expander(f"⏳ Banco/Caixa pendente — {fmt_br(_bk_pend_total)} ({len(banco_pendente)} itens)"):
-        for _, _pr in banco_pendente.iterrows():
-            _nome = str(_pr.get("origem_destino","") or _pr.get("historico","")).strip()
-            st.caption(f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}")
+    _resumo_rows.append({"Motivo": "⏳ Banco/Caixa pendente", "Valor (R$)": fmt_br(_bk_pend_total), "Itens": len(banco_pendente)})
+    _resumo_meta.append(("pend_bk", ""))
 
-if not _sp_por_motivo and not _bk_por_motivo and _sp_pend_total == 0 and _bk_pend_total == 0:
+if not _resumo_rows:
     st.caption("Nenhum item ignorado ou pendente.")
+else:
+    _sel_res = st.dataframe(
+        pd.DataFrame(_resumo_rows),
+        use_container_width=True,
+        hide_index=True,
+        height=38 + 35 * len(_resumo_rows),
+        selection_mode="single-row",
+        on_select="rerun",
+        key=f"df_resumo_{mes}_{ano}",
+        column_config={
+            "Itens": st.column_config.NumberColumn("Itens", width=60),
+        },
+    )
+    _sel_res_rows = _sel_res.selection.rows if hasattr(_sel_res, "selection") else []
+
+    if _sel_res_rows:
+        _ri = _sel_res_rows[0]
+        _tipo_sel, _mot_sel = _resumo_meta[_ri]
+        st.markdown("---")
+
+        if _tipo_sel == "sponte" and _mot_sel in _sp_por_motivo:
+            st.markdown(f"**Detalhes — {_mot_sel}**")
+            for _id, _ch, _txt, _v in _sp_por_motivo[_mot_sel]:
+                _c1, _c2 = st.columns([7, 2])
+                _c1.caption(f"🔵 {_txt}")
+                if _c2.button("↩️ Desconciliar", key=f"desc_sp_{_id}"):
+                    db.deletar_conciliacao(int(_id))
+                    st.rerun()
+
+        elif _tipo_sel == "banco" and _mot_sel in _bk_por_motivo:
+            st.markdown(f"**Detalhes — {_mot_sel} (Banco)**")
+            for _id, _ch, _txt, _v in _bk_por_motivo[_mot_sel]:
+                _c1, _c2 = st.columns([7, 2])
+                _c1.caption(f"🏦 {_txt}")
+                if _c2.button("↩️ Desconciliar", key=f"desc_bk_{_id}"):
+                    db.deletar_conciliacao(int(_id))
+                    st.rerun()
+
+        elif _tipo_sel == "pend_sp":
+            st.markdown("**Detalhes — Sponte pendente**")
+            for _, _pr in sponte_pendente.iterrows():
+                _d = pd.to_datetime(_pr["data"]).strftime("%d/%m")
+                st.caption(f"🔵 {_d} · {_pr['categoria']} · {_pr.get('origem_destino','')} · {fmt_br(abs(_pr['valor']))}")
+
+        elif _tipo_sel == "pend_bk":
+            st.markdown("**Detalhes — Banco/Caixa pendente**")
+            for _, _pr in banco_pendente.iterrows():
+                _nome = str(_pr.get("origem_destino","") or _pr.get("historico","")).strip()
+                st.caption(f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}")

@@ -844,6 +844,14 @@ with aba_pend:
                                                   justificativa=_mot)
                             st.session_state["conc_cnt"] += 1
                             st.rerun()
+                    if st.button("🚨 Valor Desviado", key=f"ign_furto_{cnt}",
+                                 use_container_width=True,
+                                 help="Valor desviado — não aparece no banco nem no caixa"):
+                        db.salvar_conciliacao(mes, ano, "ignorado_sponte",
+                                              sponte_chave=sp_r["chave"],
+                                              justificativa="Valor Desviado")
+                        st.session_state["conc_cnt"] += 1
+                        st.rerun()
                     with st.form(key=f"form_isp_{cnt}"):
                         just = st.text_input("Outro motivo:", placeholder="ex: saída em caixa físico")
                         if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
@@ -1084,3 +1092,85 @@ with st.expander("🗑️ Limpar conciliação do mês", expanded=False):
                 st.cache_data.clear()
                 st.success("Conciliações apagadas!")
                 st.rerun()
+
+# ── Resumo Financeiro ─────────────────────────────────────────────────────────
+st.divider()
+st.markdown("### 📊 Resumo Financeiro")
+
+# Totais do Fluxo de Caixa Sponte
+_sp_e = sponte_df[sponte_df["es"] == "E"]["valor"].sum()
+_sp_s = sponte_df[sponte_df["es"] == "S"]["valor"].sum()
+
+# Totais do Banco + Caixa
+_bk_e = banco_df_full[banco_df_full["deb_cred"] == "E"]["valor"].sum() if not banco_df_full.empty else 0.0
+_bk_s = banco_df_full[banco_df_full["deb_cred"] == "S"]["valor"].sum() if not banco_df_full.empty else 0.0
+
+_col1, _col2 = st.columns(2)
+with _col1:
+    st.markdown("**📋 Fluxo de Caixa Sponte**")
+    st.metric("Entradas previstas", fmt_br(_sp_e))
+    st.metric("Saídas previstas",   fmt_br(_sp_s))
+    st.metric("Saldo previsto",     fmt_br(_sp_e - _sp_s))
+
+with _col2:
+    st.markdown(f"**{_titulo_extrato}**")
+    st.metric("Entradas realizadas", fmt_br(_bk_e))
+    st.metric("Saídas realizadas",   fmt_br(_bk_s))
+    st.metric("Saldo realizado",     fmt_br(_bk_e - _bk_s))
+
+# Diferença explicada pelos ignorados
+st.markdown("**🔍 Diferença explicada**")
+
+# Agrupa ignorados do Sponte por justificativa
+_sp_ign_rows = conc_df[conc_df["tipo"] == "ignorado_sponte"]
+_motivo_vals: dict = {}
+for _, _irow in _sp_ign_rows.iterrows():
+    _ch = _irow.get("sponte_chave")
+    if not _ch:
+        continue
+    _r = sponte_df[sponte_df["chave"] == _ch]
+    _v = abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
+    _mot = str(_irow.get("justificativa") or "Sem motivo")
+    _motivo_vals[_mot] = _motivo_vals.get(_mot, 0.0) + _v
+
+# Ignorados do Banco (tarifas etc.)
+_bk_ign_rows = conc_df[conc_df["tipo"] == "ignorado_banco"]
+_bk_ign_total = 0.0
+for _, _irow in _bk_ign_rows.iterrows():
+    _ch = _irow.get("banco_chave")
+    if not _ch:
+        continue
+    _r = banco_df_full[banco_df_full["chave"] == _ch]
+    _bk_ign_total += abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
+
+# Pendentes
+_sp_pend_total = sponte_pendente["valor"].abs().sum()
+_bk_pend_total = banco_pendente["valor"].abs().sum() if not banco_pendente.empty else 0.0
+
+_resumo_rows = []
+_MOTIVO_ICONS = {
+    "Valor Desviado":        "🚨",
+    "Desconto em folha":     "📝",
+    "Pago em caixa físico":  "💵",
+    "Estorno/Cancelamento":  "↩️",
+}
+for _mot, _val in sorted(_motivo_vals.items(), key=lambda x: -x[1]):
+    _icon = _MOTIVO_ICONS.get(_mot, "🙈")
+    _resumo_rows.append({"Motivo": f"{_icon} {_mot}", "Valor (R$)": fmt_br(_val)})
+
+if _bk_ign_total > 0:
+    _resumo_rows.append({"Motivo": "🙈 Banco ignorado (tarifas etc.)", "Valor (R$)": fmt_br(_bk_ign_total)})
+if _sp_pend_total > 0:
+    _resumo_rows.append({"Motivo": "⏳ Sponte pendente", "Valor (R$)": fmt_br(_sp_pend_total)})
+if _bk_pend_total > 0:
+    _resumo_rows.append({"Motivo": "⏳ Banco/Caixa pendente", "Valor (R$)": fmt_br(_bk_pend_total)})
+
+if _resumo_rows:
+    st.dataframe(
+        pd.DataFrame(_resumo_rows),
+        use_container_width=True,
+        hide_index=True,
+        height=38 + 35 * len(_resumo_rows),
+    )
+else:
+    st.caption("Nenhum item ignorado ou pendente.")

@@ -883,6 +883,8 @@ with aba_pend:
                     "Selecione o motivo…",
                     "Origem desconhecida",
                     "Não lançado no Sponte",
+                    "Aplicação Financeira",
+                    "Resgate Financeiro",
                     "Tarifa/Taxa bancária",
                     "Estorno/Cancelamento",
                     "Outro motivo…",
@@ -1161,6 +1163,8 @@ _MOTIVO_ICONS = {
     "Pagamento não localizado": "❓",
     "Origem desconhecida":      "❓",
     "Não lançado no Sponte":    "📭",
+    "Aplicação Financeira":     "💹",
+    "Resgate Financeiro":       "💹",
     "Tarifa/Taxa bancária":     "🏦",
     "Sem motivo":               "📋",
 }

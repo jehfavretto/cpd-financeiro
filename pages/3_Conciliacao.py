@@ -1146,58 +1146,85 @@ with _col2:
     st.metric("Saldo realizado",     fmt_br(_bk_e - _bk_s))
 
 # Diferença explicada pelos ignorados
-st.markdown("**🔍 Diferença explicada**")
+st.markdown("**🔍 Diferença explicada** — clique em cada linha para ver os detalhes")
 
-# Agrupa ignorados do Sponte por justificativa
-_sp_ign_rows = conc_df[conc_df["tipo"] == "ignorado_sponte"]
-_motivo_vals: dict = {}
+_MOTIVO_ICONS = {
+    "Valor Desviado":        "🚨",
+    "Desconto em folha":     "📝",
+    "Pago em caixa físico":  "💵",
+    "Estorno/Cancelamento":  "↩️",
+    "Pagamento não localizado": "❓",
+    "Origem desconhecida":   "❓",
+    "Não lançado no Sponte": "📭",
+    "Tarifa/Taxa bancária":  "🏦",
+}
+
+# ── Ignorados do Sponte agrupados por motivo ──────────────────────────────────
+_sp_ign_rows = conc_df[conc_df["tipo"] == "ignorado_sponte"].copy()
+
+# Monta {motivo: [(id, chave, texto, valor), ...]}
+_sp_por_motivo: dict = {}
 for _, _irow in _sp_ign_rows.iterrows():
     _ch = _irow.get("sponte_chave")
     if not _ch:
         continue
     _r = sponte_df[sponte_df["chave"] == _ch]
     _v = abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
+    _txt = _sp_txt(_ch) if not _r.empty else str(_ch)
     _mot = str(_irow.get("justificativa") or "Sem motivo")
-    _motivo_vals[_mot] = _motivo_vals.get(_mot, 0.0) + _v
+    _sp_por_motivo.setdefault(_mot, []).append((_irow["id"], _ch, _txt, _v))
 
-# Ignorados do Banco (tarifas etc.)
-_bk_ign_rows = conc_df[conc_df["tipo"] == "ignorado_banco"]
-_bk_ign_total = 0.0
+for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
+    _icon = _MOTIVO_ICONS.get(_mot, "🙈")
+    _total_mot = sum(i[3] for i in _itens)
+    with st.expander(f"{_icon} {_mot} — {fmt_br(_total_mot)} ({len(_itens)} item{'s' if len(_itens)>1 else ''})"):
+        for _id, _ch, _txt, _v in _itens:
+            _c1, _c2 = st.columns([7, 2])
+            _c1.markdown(f"🔵 {_txt}")
+            if _c2.button("↩️ Desconciliar", key=f"desc_sp_ign_{_id}"):
+                db.deletar_conciliacao(int(_id))
+                st.rerun()
+
+# ── Ignorados do Banco agrupados por motivo ───────────────────────────────────
+_bk_ign_rows = conc_df[conc_df["tipo"] == "ignorado_banco"].copy()
+
+_bk_por_motivo: dict = {}
 for _, _irow in _bk_ign_rows.iterrows():
     _ch = _irow.get("banco_chave")
     if not _ch:
         continue
     _r = banco_df_full[banco_df_full["chave"] == _ch]
-    _bk_ign_total += abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
+    _v = abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
+    _txt = _bk_txt(_ch) if not _r.empty else str(_ch)
+    _mot = str(_irow.get("justificativa") or "Sem motivo")
+    _bk_por_motivo.setdefault(_mot, []).append((_irow["id"], _ch, _txt, _v))
 
-# Pendentes
+for _mot, _itens in sorted(_bk_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
+    _icon = _MOTIVO_ICONS.get(_mot, "🙈")
+    _total_mot = sum(i[3] for i in _itens)
+    with st.expander(f"{_icon} {_mot} — {fmt_br(_total_mot)} ({len(_itens)} item{'s' if len(_itens)>1 else ''})"):
+        for _id, _ch, _txt, _v in _itens:
+            _c1, _c2 = st.columns([7, 2])
+            _c1.markdown(f"🏦 {_txt}")
+            if _c2.button("↩️ Desconciliar", key=f"desc_bk_ign_{_id}"):
+                db.deletar_conciliacao(int(_id))
+                st.rerun()
+
+# ── Pendentes ─────────────────────────────────────────────────────────────────
 _sp_pend_total = sponte_pendente["valor"].abs().sum()
 _bk_pend_total = banco_pendente["valor"].abs().sum() if not banco_pendente.empty else 0.0
 
-_resumo_rows = []
-_MOTIVO_ICONS = {
-    "Valor Desviado":        "🚨",
-    "Desconto em folha":     "📝",
-    "Pago em caixa físico":  "💵",
-    "Estorno/Cancelamento":  "↩️",
-}
-for _mot, _val in sorted(_motivo_vals.items(), key=lambda x: -x[1]):
-    _icon = _MOTIVO_ICONS.get(_mot, "🙈")
-    _resumo_rows.append({"Motivo": f"{_icon} {_mot}", "Valor (R$)": fmt_br(_val)})
-
-if _bk_ign_total > 0:
-    _resumo_rows.append({"Motivo": "🙈 Banco ignorado (tarifas etc.)", "Valor (R$)": fmt_br(_bk_ign_total)})
 if _sp_pend_total > 0:
-    _resumo_rows.append({"Motivo": "⏳ Sponte pendente", "Valor (R$)": fmt_br(_sp_pend_total)})
-if _bk_pend_total > 0:
-    _resumo_rows.append({"Motivo": "⏳ Banco/Caixa pendente", "Valor (R$)": fmt_br(_bk_pend_total)})
+    with st.expander(f"⏳ Sponte pendente — {fmt_br(_sp_pend_total)} ({len(sponte_pendente)} itens)"):
+        for _, _pr in sponte_pendente.iterrows():
+            _d = pd.to_datetime(_pr["data"]).strftime("%d/%m")
+            st.caption(f"🔵 {_d} · {_pr['categoria']} · {_pr.get('origem_destino','')} · {fmt_br(abs(_pr['valor']))}")
 
-if _resumo_rows:
-    st.dataframe(
-        pd.DataFrame(_resumo_rows),
-        use_container_width=True,
-        hide_index=True,
-        height=38 + 35 * len(_resumo_rows),
-    )
-else:
+if _bk_pend_total > 0:
+    with st.expander(f"⏳ Banco/Caixa pendente — {fmt_br(_bk_pend_total)} ({len(banco_pendente)} itens)"):
+        for _, _pr in banco_pendente.iterrows():
+            _nome = str(_pr.get("origem_destino","") or _pr.get("historico","")).strip()
+            st.caption(f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}")
+
+if not _sp_por_motivo and not _bk_por_motivo and _sp_pend_total == 0 and _bk_pend_total == 0:
     st.caption("Nenhum item ignorado ou pendente.")

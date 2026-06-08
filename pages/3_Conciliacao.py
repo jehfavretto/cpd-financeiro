@@ -524,7 +524,7 @@ with aba_pend:
         _es_cfg   = st.column_config.TextColumn("E/S",             width=45)
         _dat_cfg  = st.column_config.TextColumn("Data",            width=55)
         _cat_cfg  = st.column_config.TextColumn("Categoria",    width=130)
-        _alu_cfg  = st.column_config.TextColumn("Aluno",        width=180)
+        _alu_cfg  = st.column_config.TextColumn("Origem/Destino", width=180)
         _resp_cfg = st.column_config.TextColumn("Responsável",  width=180)
         _his_cfg  = st.column_config.TextColumn("Histórico",    width=130)
 
@@ -534,7 +534,7 @@ with aba_pend:
             "E/S":         sp_filtrado["es"],
             "Valor":       sp_filtrado["valor"].abs(),
             "Categoria":   sp_filtrado["categoria"],
-            "Aluno":       sp_filtrado["origem_destino"],
+            "Origem/Destino":       sp_filtrado["origem_destino"],
             "Responsável": _resp_series,
         })
 
@@ -568,16 +568,16 @@ with aba_pend:
             "Data":        bk_filtrado["data_fmt"].str[:5],
             "E/S":         bk_filtrado["deb_cred"],
             "Valor":       bk_filtrado["valor"].abs(),
-            "Aluno":       _bk_aluno_col,
+            "Origem/Destino":       _bk_aluno_col,
             "Responsável": _bk_resp_col,
             "Histórico":   bk_filtrado["historico"],
         })
 
         # ── Defaults de configuração de tabela ───────────────────────────────
-        _SP_COLS_DEF = ["Data", "E/S", "Valor", "Categoria", "Aluno", "Responsável"]
-        _BK_COLS_DEF = ["Data", "E/S", "Valor", "Aluno", "Responsável", "Histórico"]
+        _SP_COLS_DEF = ["Data", "E/S", "Valor", "Categoria", "Origem/Destino", "Responsável"]
+        _BK_COLS_DEF = ["Data", "E/S", "Valor", "Origem/Destino", "Responsável", "Histórico"]
         _SP_SORT_DEF = "Data"
-        _BK_SORT_DEF = "Aluno"
+        _BK_SORT_DEF = "Origem/Destino"
 
         _sk = f"{mes}_{ano}"   # chave base para session_state
 
@@ -627,9 +627,9 @@ with aba_pend:
             st.markdown('<div class="cpd-sort">', unsafe_allow_html=True)
             _sc1, _sc2 = st.columns([3, 2])
             _sp_sort = _sc1.selectbox(
-                "Ordenar por", ["Data","Valor","Categoria","Aluno","Responsável"],
-                index=["Data","Valor","Categoria","Aluno","Responsável"].index(
-                    st.session_state[f"sp_sort_{_sk}"] if st.session_state[f"sp_sort_{_sk}"] in ["Data","Valor","Categoria","Aluno","Responsável"] else "Data"
+                "Ordenar por", ["Data","Valor","Categoria","Origem/Destino","Responsável"],
+                index=["Data","Valor","Categoria","Origem/Destino","Responsável"].index(
+                    st.session_state[f"sp_sort_{_sk}"] if st.session_state[f"sp_sort_{_sk}"] in ["Data","Valor","Categoria","Origem/Destino","Responsável"] else "Data"
                 ),
                 key=f"sp_sort_sel_{_sk}", label_visibility="collapsed",
             )
@@ -663,7 +663,7 @@ with aba_pend:
             else:
                 _sp_cfg = {c: cfg for c, cfg in {
                     "Data": _dat_cfg, "E/S": _es_cfg, "Valor": _val_cfg,
-                    "Categoria": _cat_cfg, "Aluno": _alu_cfg, "Responsável": _resp_cfg,
+                    "Categoria": _cat_cfg, "Origem/Destino": _alu_cfg, "Responsável": _resp_cfg,
                 }.items() if c in _sp_cols_vis}
                 sel_sp = st.dataframe(
                     sp_show,
@@ -681,9 +681,9 @@ with aba_pend:
             st.markdown('<div class="cpd-sort">', unsafe_allow_html=True)
             _bc1, _bc2 = st.columns([3, 2])
             _bk_sort = _bc1.selectbox(
-                "Ordenar por", ["Data","Valor","Aluno","Responsável","Histórico"],
-                index=["Data","Valor","Aluno","Responsável","Histórico"].index(
-                    st.session_state[f"bk_sort_{_sk}"] if st.session_state[f"bk_sort_{_sk}"] in ["Data","Valor","Aluno","Responsável","Histórico"] else "Data"
+                "Ordenar por", ["Data","Valor","Origem/Destino","Responsável","Histórico"],
+                index=["Data","Valor","Origem/Destino","Responsável","Histórico"].index(
+                    st.session_state[f"bk_sort_{_sk}"] if st.session_state[f"bk_sort_{_sk}"] in ["Data","Valor","Origem/Destino","Responsável","Histórico"] else "Data"
                 ),
                 key=f"bk_sort_sel_{_sk}", label_visibility="collapsed",
             )
@@ -716,7 +716,7 @@ with aba_pend:
             else:
                 _bk_cfg = {c: cfg for c, cfg in {
                     "Data": _dat_cfg, "E/S": _es_cfg, "Valor": _val_cfg,
-                    "Aluno": _alu_cfg, "Responsável": _resp_cfg, "Histórico": _his_cfg,
+                    "Origem/Destino": _alu_cfg, "Responsável": _resp_cfg, "Histórico": _his_cfg,
                 }.items() if c in _bk_cols_vis}
                 sel_bk = st.dataframe(
                     bk_show,

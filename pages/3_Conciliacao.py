@@ -837,10 +837,10 @@ with aba_pend:
                     st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
                     _MOTIVOS_LISTA = [
                         "Selecione o motivo…",
+                        "🚨 Valor Desviado",
                         "Desconto em folha",
                         "Pago em caixa físico",
                         "Estorno/Cancelamento",
-                        "🚨 Valor Desviado",
                         "Pagamento não localizado",
                         "Outro motivo…",
                     ]

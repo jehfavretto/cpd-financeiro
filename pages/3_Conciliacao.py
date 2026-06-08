@@ -835,31 +835,31 @@ with aba_pend:
                 if n_sp == 1:
                     sp_r = sp_filtrado.loc[sp_sel_rows[0]]
                     st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
-                    # Botões de justificativa rápida
-                    _MOTIVOS_RAPIDOS = ["Desconto em folha", "Pago em caixa físico", "Estorno/Cancelamento"]
-                    for _mot in _MOTIVOS_RAPIDOS:
-                        if st.button(_mot, key=f"ign_rapido_{_mot}_{cnt}", use_container_width=True):
-                            db.salvar_conciliacao(mes, ano, "ignorado_sponte",
-                                                  sponte_chave=sp_r["chave"],
-                                                  justificativa=_mot)
-                            st.session_state["conc_cnt"] += 1
-                            st.rerun()
-                    if st.button("🚨 Valor Desviado", key=f"ign_furto_{cnt}",
-                                 use_container_width=True,
-                                 help="Valor desviado — não aparece no banco nem no caixa"):
+                    _MOTIVOS_LISTA = [
+                        "Desconto em folha",
+                        "Pago em caixa físico",
+                        "Estorno/Cancelamento",
+                        "🚨 Valor Desviado",
+                        "Outro motivo…",
+                    ]
+                    _mot_sel = st.selectbox(
+                        "Motivo:", _MOTIVOS_LISTA,
+                        key=f"motivo_ign_{cnt}",
+                        label_visibility="collapsed",
+                    )
+                    _outro_txt = ""
+                    if _mot_sel == "Outro motivo…":
+                        _outro_txt = st.text_input(
+                            "Descreva:", placeholder="ex: negociação direta",
+                            key=f"outro_ign_{cnt}",
+                        )
+                    if st.button("🙈 Ignorar Sponte", key=f"btn_ign_{cnt}", use_container_width=True):
+                        _just = _outro_txt.strip() if _mot_sel == "Outro motivo…" else _mot_sel
                         db.salvar_conciliacao(mes, ano, "ignorado_sponte",
                                               sponte_chave=sp_r["chave"],
-                                              justificativa="Valor Desviado")
+                                              justificativa=_just or None)
                         st.session_state["conc_cnt"] += 1
                         st.rerun()
-                    with st.form(key=f"form_isp_{cnt}"):
-                        just = st.text_input("Outro motivo:", placeholder="ex: saída em caixa físico")
-                        if st.form_submit_button("🙈 Ignorar Sponte", use_container_width=True):
-                            db.salvar_conciliacao(mes, ano, "ignorado_sponte",
-                                                  sponte_chave=sp_r["chave"],
-                                                  justificativa=just or None)
-                            st.session_state["conc_cnt"] += 1
-                            st.rerun()
                 else:
                     st.caption("*Selecione 1 linha do Banco para vincular.*")
 

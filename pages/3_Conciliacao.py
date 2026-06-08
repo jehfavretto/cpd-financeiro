@@ -832,41 +832,39 @@ with aba_pend:
                         unsafe_allow_html=True,
                     )
 
-                if n_sp == 1:
-                    sp_r = sp_filtrado.loc[sp_sel_rows[0]]
-                    st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
-                    _MOTIVOS_LISTA = [
-                        "Selecione o motivo…",
-                        "🚨 Valor Desviado",
-                        "Desconto em folha",
-                        "Pago em caixa físico",
-                        "Estorno/Cancelamento",
-                        "Pagamento não localizado",
-                        "Outro motivo…",
-                    ]
-                    _mot_sel = st.selectbox(
-                        "Motivo:", _MOTIVOS_LISTA,
-                        key=f"motivo_ign_{cnt}",
-                        label_visibility="collapsed",
+                st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
+                _MOTIVOS_LISTA = [
+                    "Selecione o motivo…",
+                    "🚨 Valor Desviado",
+                    "Desconto em folha",
+                    "Pago em caixa físico",
+                    "Estorno/Cancelamento",
+                    "Pagamento não localizado",
+                    "Outro motivo…",
+                ]
+                _mot_sel = st.selectbox(
+                    "Motivo:", _MOTIVOS_LISTA,
+                    key=f"motivo_ign_{cnt}",
+                    label_visibility="collapsed",
+                )
+                _outro_txt = ""
+                if _mot_sel == "Outro motivo…":
+                    _outro_txt = st.text_input(
+                        "Descreva:", placeholder="ex: negociação direta",
+                        key=f"outro_ign_{cnt}",
                     )
-                    _outro_txt = ""
-                    if _mot_sel == "Outro motivo…":
-                        _outro_txt = st.text_input(
-                            "Descreva:", placeholder="ex: negociação direta",
-                            key=f"outro_ign_{cnt}",
-                        )
-                    _mot_invalido = _mot_sel == "Selecione o motivo…"
-                    if st.button("🙈 Ignorar Sponte", key=f"btn_ign_{cnt}",
-                                 use_container_width=True,
-                                 disabled=_mot_invalido):
-                        _just = _outro_txt.strip() if _mot_sel == "Outro motivo…" else _mot_sel
+                _mot_invalido = _mot_sel == "Selecione o motivo…"
+                _lbl_ign_sp = f"🙈 Ignorar {n_sp} itens" if n_sp > 1 else "🙈 Ignorar Sponte"
+                if st.button(_lbl_ign_sp, key=f"btn_ign_{cnt}",
+                             use_container_width=True,
+                             disabled=_mot_invalido):
+                    _just = _outro_txt.strip() if _mot_sel == "Outro motivo…" else _mot_sel
+                    for _sp_r in sp_selecionados:
                         db.salvar_conciliacao(mes, ano, "ignorado_sponte",
-                                              sponte_chave=sp_r["chave"],
+                                              sponte_chave=_sp_r["chave"],
                                               justificativa=_just or None)
-                        st.session_state["conc_cnt"] += 1
-                        st.rerun()
-                else:
-                    st.caption("*Selecione 1 linha do Banco para vincular.*")
+                    st.session_state["conc_cnt"] += 1
+                    st.rerun()
 
             elif n_bk > 0:
                 # ── Só Banco selecionado ──────────────────────────────────────

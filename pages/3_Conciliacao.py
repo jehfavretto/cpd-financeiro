@@ -873,14 +873,36 @@ with aba_pend:
                 if n_bk == 1:
                     bk_r = bk_filtrado.loc[bk_sel_rows[0]]
                     st.caption(f"🏦 {str(bk_r['historico'])[:22]}  \n**{_md_val(float(bk_r['valor']))}**")
-                    with st.form(key=f"form_ibk_{cnt}"):
-                        just = st.text_input("Motivo:", placeholder="ex: tarifa bancária")
-                        if st.form_submit_button("🙈 Ignorar Banco", use_container_width=True):
-                            db.salvar_conciliacao(mes, ano, "ignorado_banco",
-                                                  banco_chave=bk_r["chave"],
-                                                  justificativa=just or None)
-                            st.session_state["conc_cnt"] += 1
-                            st.rerun()
+                    st.caption("*Selecione Sponte para vincular, ou ignore:*")
+                    _MOTIVOS_BANCO = [
+                        "Selecione o motivo…",
+                        "Origem desconhecida",
+                        "Não lançado no Sponte",
+                        "Tarifa/Taxa bancária",
+                        "Estorno/Cancelamento",
+                        "Outro motivo…",
+                    ]
+                    _mot_bk = st.selectbox(
+                        "Motivo:", _MOTIVOS_BANCO,
+                        key=f"motivo_bk_{cnt}",
+                        label_visibility="collapsed",
+                    )
+                    _outro_bk = ""
+                    if _mot_bk == "Outro motivo…":
+                        _outro_bk = st.text_input(
+                            "Descreva:", placeholder="ex: depósito identificado depois",
+                            key=f"outro_bk_{cnt}",
+                        )
+                    _bk_invalido = _mot_bk == "Selecione o motivo…"
+                    if st.button("🙈 Ignorar Banco", key=f"btn_ign_bk_{cnt}",
+                                 use_container_width=True,
+                                 disabled=_bk_invalido):
+                        _just_bk = _outro_bk.strip() if _mot_bk == "Outro motivo…" else _mot_bk
+                        db.salvar_conciliacao(mes, ano, "ignorado_banco",
+                                              banco_chave=bk_r["chave"],
+                                              justificativa=_just_bk or None)
+                        st.session_state["conc_cnt"] += 1
+                        st.rerun()
                 else:
                     st.caption("*Selecione também 1 Sponte para vincular.*")
 

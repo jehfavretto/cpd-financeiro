@@ -841,6 +841,7 @@ with aba_pend:
                         "Pago em caixa físico",
                         "Estorno/Cancelamento",
                         "🚨 Valor Desviado",
+                        "Pagamento não localizado",
                         "Outro motivo…",
                     ]
                     _mot_sel = st.selectbox(

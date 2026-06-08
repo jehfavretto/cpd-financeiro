@@ -836,6 +836,7 @@ with aba_pend:
                     sp_r = sp_filtrado.loc[sp_sel_rows[0]]
                     st.caption("*Selecione Banco(s) para vincular, ou ignore:*")
                     _MOTIVOS_LISTA = [
+                        "Selecione o motivo…",
                         "Desconto em folha",
                         "Pago em caixa físico",
                         "Estorno/Cancelamento",
@@ -853,7 +854,10 @@ with aba_pend:
                             "Descreva:", placeholder="ex: negociação direta",
                             key=f"outro_ign_{cnt}",
                         )
-                    if st.button("🙈 Ignorar Sponte", key=f"btn_ign_{cnt}", use_container_width=True):
+                    _mot_invalido = _mot_sel == "Selecione o motivo…"
+                    if st.button("🙈 Ignorar Sponte", key=f"btn_ign_{cnt}",
+                                 use_container_width=True,
+                                 disabled=_mot_invalido):
                         _just = _outro_txt.strip() if _mot_sel == "Outro motivo…" else _mot_sel
                         db.salvar_conciliacao(mes, ano, "ignorado_sponte",
                                               sponte_chave=sp_r["chave"],

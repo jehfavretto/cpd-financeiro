@@ -1,6 +1,6 @@
 """
 Página: DFC / Resumo
-Demonstração de Fluxo de Caixa — replica a aba Resumo do Book.
+Demonstração de Fluxo de Caixa — DRE Gerencial + DFC Real validado pela conciliação.
 """
 import streamlit as st
 import pandas as pd
@@ -14,7 +14,7 @@ from core.exportar import gerar_excel, gerar_pdf_ceo
 st.title("📊 DFC — Demonstração de Fluxo de Caixa")
 
 # ── Seleção de mês ────────────────────────────────────────────────────────────
-anos_disponiveis = [2026, 2025]  # expandir conforme necessário
+anos_disponiveis = [2026, 2025]
 col1, col2 = st.columns([1, 3])
 with col1:
     ano = st.selectbox("Ano", anos_disponiveis, index=0)
@@ -31,9 +31,9 @@ with col2:
                        index=len(meses_com_dados) - 1)
 
 # ── Carrega dados ─────────────────────────────────────────────────────────────
-plano_df  = db.carregar_plano_contas(mes, ano)
-ajustes   = db.carregar_ajustes(mes, ano)
-saldos    = db.carregar_saldos(mes, ano)
+plano_df = db.carregar_plano_contas(mes, ano)
+ajustes  = db.carregar_ajustes(mes, ano)
+saldos   = db.carregar_saldos(mes, ano)
 
 if plano_df.empty:
     st.warning("PlanoDeContas não encontrado para este mês.")
@@ -52,21 +52,20 @@ dfc = calcular_dfc(
     saldo_caixa=saldos["saldo_caixa"],
 )
 
-# ── KPIs principais ───────────────────────────────────────────────────────────
+# ── Cores dinâmicas conforme o tema ──────────────────────────────────────────
+_dark   = st.session_state.get("tema", "light") == "dark"
+_card   = "#1A2550" if _dark else "#f8f9fb"
+_txt    = "#E8EDF6" if _dark else "#1C2B5F"
+_txt2   = "#8FA0C0" if _dark else "#555555"
+_accent = "#E63A5C" if _dark else "#C4153A"
+_br     = fmt_br_kpi
+
+# ── KPIs principais (comuns às duas abas) ────────────────────────────────────
 st.subheader(f"{MESES_ABREV[mes]}/{ano}")
 
-_br = fmt_br_kpi  # alias para KPI cards (sem centavos)
-
-# ── Cores dinâmicas conforme o tema ──────────────────────────────────────────
-_dark     = st.session_state.get("tema", "light") == "dark"
-_card     = "#1A2550"  if _dark else "#f8f9fb"
-_txt      = "#E8EDF6"  if _dark else "#1C2B5F"
-_txt2     = "#8FA0C0"  if _dark else "#555555"
-_accent   = "#E63A5C"  if _dark else "#C4153A"
-
-resultado = dfc.resultado_liquido
-res_color  = ("#2ed64f"  if _dark else "#1a7f37") if resultado >= 0 else _accent
-res_bg     = ("#0d2a1a"  if _dark else "#eaffea") if resultado >= 0 else ("#2a0d14" if _dark else "#fff0f0")
+resultado  = dfc.resultado_liquido
+res_color  = ("#2ed64f" if _dark else "#1a7f37") if resultado >= 0 else _accent
+res_bg     = ("#0d2a1a" if _dark else "#eaffea") if resultado >= 0 else ("#2a0d14" if _dark else "#fff0f0")
 res_sinal  = "▲" if resultado >= 0 else "▼"
 
 st.markdown(f"""
@@ -136,7 +135,6 @@ with tab_dre:
     _desc_por_codigo = dict(zip(plano_df["codigo"], plano_df["descricao"]))
     _fmt_br = fmt_br
 
-    # Calcula totais por seção
     sec_totals = {}
     for sp, si in SECOES.items():
         t = dfc.total_secao(sp)
@@ -146,7 +144,6 @@ with tab_dre:
             t += dfc.ad
         sec_totals[sp] = t
 
-    # Tabela resumo compacta
     resumo = [
         {"Seção": si["label"], "Valor (R$)": _fmt_br(sec_totals[sp])}
         for sp, si in SECOES.items()
@@ -160,7 +157,6 @@ with tab_dre:
     _altura_resumo = 215 + (26 * ((_rendimento_aplic != 0) + (_resgate_aplic != 0)))
     st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=_altura_resumo)
 
-    # Expanders analíticos por seção
     for sp, si in SECOES.items():
         with st.expander(f"{si['label']}  —  {_fmt_br(sec_totals[sp])}"):
             det = []
@@ -189,89 +185,88 @@ with tab_dre:
     # ── Gráfico Waterfall ─────────────────────────────────────────────────
     st.subheader("📊 Resultado do mês")
 
-fig = go.Figure(go.Waterfall(
-    name="DFC",
-    orientation="v",
-    measure=["absolute", "relative", "relative", "relative", "total"],
-    x=["Receitas", "Custos", "Despesas", "Impostos", "Resultado"],
-    y=[
-        dfc.total_receitas,
-        dfc.total_custos,
-        dfc.total_despesas,
-        dfc.total_impostos,
-        dfc.resultado_liquido,
-    ],
-    connector={"line": {"color": "rgb(63, 63, 63)"}},
-    decreasing={"marker": {"color": "#E63946"}},
-    increasing={"marker": {"color": "#2A9D8F"}},
-    totals={"marker": {"color": "#1E6FBA" if dfc.resultado_liquido >= 0 else "#E63946"}},
-    texttemplate="R$ %{y:,.0f}",
-    textposition="outside",
-))
+    _plot_bg  = "#0F1B35" if _dark else "white"
+    _grid_clr = "#1E3060" if _dark else "#eee"
+    _axis_clr = "#8FA0C0" if _dark else "#444"
 
-_plot_bg  = "#0F1B35" if _dark else "white"
-_grid_clr = "#1E3060" if _dark else "#eee"
-_axis_clr = "#8FA0C0" if _dark else "#444"
+    fig = go.Figure(go.Waterfall(
+        name="DFC",
+        orientation="v",
+        measure=["absolute", "relative", "relative", "relative", "total"],
+        x=["Receitas", "Custos", "Despesas", "Impostos", "Resultado"],
+        y=[
+            dfc.total_receitas,
+            dfc.total_custos,
+            dfc.total_despesas,
+            dfc.total_impostos,
+            dfc.resultado_liquido,
+        ],
+        connector={"line": {"color": "rgb(63, 63, 63)"}},
+        decreasing={"marker": {"color": "#E63946"}},
+        increasing={"marker": {"color": "#2A9D8F"}},
+        totals={"marker": {"color": "#1E6FBA" if dfc.resultado_liquido >= 0 else "#E63946"}},
+        texttemplate="R$ %{y:,.0f}",
+        textposition="outside",
+    ))
 
-fig.update_layout(
-    height=420,
-    margin=dict(t=30, b=10, l=10, r=10),
-    plot_bgcolor=_plot_bg,
-    paper_bgcolor=_plot_bg,
-    yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor=_grid_clr, color=_axis_clr),
-    xaxis=dict(color=_axis_clr),
-    font=dict(color=_axis_clr),
-    showlegend=False,
-)
+    fig.update_layout(
+        height=420,
+        margin=dict(t=30, b=10, l=10, r=10),
+        plot_bgcolor=_plot_bg,
+        paper_bgcolor=_plot_bg,
+        yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor=_grid_clr, color=_axis_clr),
+        xaxis=dict(color=_axis_clr),
+        font=dict(color=_axis_clr),
+        showlegend=False,
+    )
 
     st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
 
-    # ── Exportar ──────────────────────────────────────────────────────────────
-st.subheader("📤 Exportar")
+    # ── Exportar ──────────────────────────────────────────────────────────
+    st.subheader("📤 Exportar")
 
-@st.cache_data(ttl=60)
-def _evolucao_para_export(ano: int, meses: tuple):
-    """Carrega evolução anual para exportação (mesma lógica da página Evolução)."""
-    from core.dfc import calcular_dfc
-    rows = []
-    for m in meses:
-        p = db.carregar_plano_contas(m, ano)
-        a = db.carregar_ajustes(m, ano)
-        s = db.carregar_saldos(m, ano)
-        if p.empty:
-            continue
-        d = calcular_dfc(p, ar=a["AR"], ad=a["AD"], saldo_banco=s["saldo_banco"])
-        rows.append({
-            "mes":       m,
-            "label":     MESES_ABREV[m],
-            "receitas":  d.total_receitas,
-            "custos":    abs(d.total_custos),
-            "despesas":  abs(d.total_despesas),
-            "impostos":  abs(d.total_impostos),
-            "saidas":    abs(d.total_custos) + abs(d.total_despesas) + abs(d.total_impostos),
-            "resultado": d.resultado_liquido,
-        })
-    import pandas as _pd
-    return _pd.DataFrame(rows)
+    @st.cache_data(ttl=60)
+    def _evolucao_para_export(ano: int, meses: tuple):
+        from core.dfc import calcular_dfc
+        rows = []
+        for m in meses:
+            p = db.carregar_plano_contas(m, ano)
+            a = db.carregar_ajustes(m, ano)
+            s = db.carregar_saldos(m, ano)
+            if p.empty:
+                continue
+            d = calcular_dfc(p, ar=a["AR"], ad=a["AD"], saldo_banco=s["saldo_banco"])
+            rows.append({
+                "mes":       m,
+                "label":     MESES_ABREV[m],
+                "receitas":  d.total_receitas,
+                "custos":    abs(d.total_custos),
+                "despesas":  abs(d.total_despesas),
+                "impostos":  abs(d.total_impostos),
+                "saidas":    abs(d.total_custos) + abs(d.total_despesas) + abs(d.total_impostos),
+                "resultado": d.resultado_liquido,
+            })
+        import pandas as _pd
+        return _pd.DataFrame(rows)
 
     col_ex1, col_ex2 = st.columns(2)
 
     with col_ex1:
-    st.markdown("**📊 Excel — DFC + Evolução**")
-    st.caption("Planilha com o DFC do mês selecionado e o comparativo de todos os meses do ano.")
-    if st.button("⬇️ Baixar Excel", use_container_width=True):
-        with st.spinner("Gerando Excel..."):
-            ev_df = _evolucao_para_export(ano, tuple(meses_com_dados))
-            excel_bytes = gerar_excel(mes, ano, dfc, plano_df, ev_df)
-        st.download_button(
-            label="📥 Clique para baixar o arquivo",
-            data=excel_bytes,
-            file_name=f"CPD_DFC_{MESES_ABREV[mes]}{ano}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
-        )
+        st.markdown("**📊 Excel — DFC + Evolução**")
+        st.caption("Planilha com o DFC do mês selecionado e o comparativo de todos os meses do ano.")
+        if st.button("⬇️ Baixar Excel", use_container_width=True):
+            with st.spinner("Gerando Excel..."):
+                ev_df = _evolucao_para_export(ano, tuple(meses_com_dados))
+                excel_bytes = gerar_excel(mes, ano, dfc, plano_df, ev_df)
+            st.download_button(
+                label="📥 Clique para baixar o arquivo",
+                data=excel_bytes,
+                file_name=f"CPD_DFC_{MESES_ABREV[mes]}{ano}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
 
     with col_ex2:
         st.markdown("**📄 PDF Executivo — para os CEOs**")
@@ -295,14 +290,11 @@ with tab_dfc:
     st.caption("Receitas do Sponte ajustadas pelos motivos da conciliação — deve bater com Banco + Caixa.")
 
     # ── Classifica motivos ────────────────────────────────────────────────
-    _DEDUZ = {"Valor Desviado", "Desconto em folha", "Pagamento não localizado",
-              "Estorno/Cancelamento"}
+    _DEDUZ  = {"Valor Desviado", "Desconto em folha", "Pagamento não localizado", "Estorno/Cancelamento"}
     _MANTEM = {"Pago em caixa físico"}
 
     def _normalizar_motivo(just):
-        """Remove emoji do início para comparar com os sets."""
         s = str(just or "").strip()
-        # remove emoji inicial se houver
         for emoji in ["🚨 ", "📝 ", "💵 ", "❓ ", "↩️ "]:
             if s.startswith(emoji):
                 s = s[len(emoji):]
@@ -321,9 +313,8 @@ with tab_dfc:
     conciliacoes = db.carregar_conciliacoes(mes, ano)
     ignorados_sp = [c for c in conciliacoes if c["tipo"] == "ignorado_sponte"]
 
-    # Agrupa deduções por motivo
-    _deducoes = {}   # motivo → valor total
-    _mantem   = {}   # motivo → valor total
+    _deducoes = {}
+    _mantem   = {}
     for c in ignorados_sp:
         mot = _normalizar_motivo(c.get("justificativa", ""))
         val = _valor_da_chave(c.get("sponte_chave", ""))
@@ -332,13 +323,11 @@ with tab_dfc:
         elif mot in _MANTEM:
             _mantem[mot] = _mantem.get(mot, 0.0) + val
 
-    _total_deducoes = sum(_deducoes.values())
-
-    # ── Cálculo DFC ───────────────────────────────────────────────────────
-    _receitas_sponte  = dfc.total_receitas   # positivo
-    _saidas_sponte    = dfc.total_custos + dfc.total_despesas + dfc.total_impostos  # negativo
-    _receitas_reais   = _receitas_sponte - _total_deducoes
-    _resultado_caixa  = _receitas_reais + _saidas_sponte
+    _total_deducoes  = sum(_deducoes.values())
+    _receitas_sponte = dfc.total_receitas
+    _saidas_sponte   = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
+    _receitas_reais  = _receitas_sponte - _total_deducoes
+    _resultado_caixa = _receitas_reais + _saidas_sponte
 
     # ── KPIs DFC ──────────────────────────────────────────────────────────
     _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
@@ -374,17 +363,16 @@ with tab_dfc:
     # ── Tabela detalhada ──────────────────────────────────────────────────
     st.subheader("Demonstração")
     _linhas = []
-    _linhas.append({"Descrição": "📈 Receitas (Sponte)",          "Valor (R$)": fmt_br(_receitas_sponte)})
+    _linhas.append({"Descrição": "📈 Receitas (Sponte)",           "Valor (R$)": fmt_br(_receitas_sponte)})
     for mot, val in _deducoes.items():
-        _linhas.append({"Descrição": f"    ➖ {mot}",             "Valor (R$)": fmt_br(-val)})
-    if _mantem:
-        for mot, val in _mantem.items():
-            _linhas.append({"Descrição": f"    ✅ {mot} (mantido)", "Valor (R$)": fmt_br(val)})
-    _linhas.append({"Descrição": "= Receitas Reais de Caixa",    "Valor (R$)": fmt_br(_receitas_reais)})
-    _linhas.append({"Descrição": "🏭 Custos",                     "Valor (R$)": fmt_br(dfc.total_custos)})
-    _linhas.append({"Descrição": "🏢 Despesas",                   "Valor (R$)": fmt_br(dfc.total_despesas)})
-    _linhas.append({"Descrição": "🏛️ Impostos",                   "Valor (R$)": fmt_br(dfc.total_impostos)})
-    _linhas.append({"Descrição": "= RESULTADO DE CAIXA",          "Valor (R$)": fmt_br(_resultado_caixa)})
+        _linhas.append({"Descrição": f"    ➖ {mot}",              "Valor (R$)": fmt_br(-val)})
+    for mot, val in _mantem.items():
+        _linhas.append({"Descrição": f"    ✅ {mot} (mantido)",    "Valor (R$)": fmt_br(val)})
+    _linhas.append({"Descrição": "= Receitas Reais de Caixa",     "Valor (R$)": fmt_br(_receitas_reais)})
+    _linhas.append({"Descrição": "🏭 Custos",                      "Valor (R$)": fmt_br(dfc.total_custos)})
+    _linhas.append({"Descrição": "🏢 Despesas",                    "Valor (R$)": fmt_br(dfc.total_despesas)})
+    _linhas.append({"Descrição": "🏛️ Impostos",                    "Valor (R$)": fmt_br(dfc.total_impostos)})
+    _linhas.append({"Descrição": "= RESULTADO DE CAIXA",           "Valor (R$)": fmt_br(_resultado_caixa)})
     st.dataframe(pd.DataFrame(_linhas), hide_index=True, use_container_width=True,
                  height=80 + len(_linhas) * 35)
 
@@ -392,27 +380,27 @@ with tab_dfc:
 
     # ── Conferência com Banco + Caixa ─────────────────────────────────────
     st.subheader("📋 Conferência")
+
     _saldo_banco_final = float(saldos.get("saldo_banco") or 0.0)
     _saldo_caixa_final = float(saldos.get("saldo_caixa") or 0.0)
     _saldo_real        = _saldo_banco_final + _saldo_caixa_final
 
-    # saldo anterior = banco+caixa do mês anterior
-    _mes_anterior = mes - 1
-    _ano_anterior = ano
-    if _mes_anterior == 0:
-        _mes_anterior = 12
-        _ano_anterior = ano - 1
-    _saldos_ant   = db.carregar_saldos(_mes_anterior, _ano_anterior)
-    _saldo_ant    = float(_saldos_ant.get("saldo_banco") or 0.0) + float(_saldos_ant.get("saldo_caixa") or 0.0)
-    _saldo_calc   = _saldo_ant + _resultado_caixa
-    _diferenca    = _saldo_real - _saldo_calc
+    _mes_ant = mes - 1
+    _ano_ant = ano
+    if _mes_ant == 0:
+        _mes_ant = 12
+        _ano_ant = ano - 1
+    _saldos_ant = db.carregar_saldos(_mes_ant, _ano_ant)
+    _saldo_ant  = float(_saldos_ant.get("saldo_banco") or 0.0) + float(_saldos_ant.get("saldo_caixa") or 0.0)
+    _saldo_calc = _saldo_ant + _resultado_caixa
+    _diferenca  = _saldo_real - _saldo_calc
 
     _conf = [
-        {"": "Saldo banco + caixa anterior",       "Valor (R$)": fmt_br(_saldo_ant)},
-        {"": "+ Resultado de caixa do mês",         "Valor (R$)": fmt_br(_resultado_caixa)},
-        {"": "= Saldo calculado",                   "Valor (R$)": fmt_br(_saldo_calc)},
-        {"": "Saldo real (banco + caixa)",          "Valor (R$)": fmt_br(_saldo_real)},
-        {"": "Diferença",                           "Valor (R$)": fmt_br(_diferenca)},
+        {"":  "Saldo banco + caixa anterior",  "Valor (R$)": fmt_br(_saldo_ant)},
+        {"":  "+ Resultado de caixa do mês",    "Valor (R$)": fmt_br(_resultado_caixa)},
+        {"":  "= Saldo calculado",              "Valor (R$)": fmt_br(_saldo_calc)},
+        {"":  "Saldo real (banco + caixa)",     "Valor (R$)": fmt_br(_saldo_real)},
+        {"":  "Diferença",                      "Valor (R$)": fmt_br(_diferenca)},
     ]
     st.dataframe(pd.DataFrame(_conf), hide_index=True, use_container_width=True, height=215)
 

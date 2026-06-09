@@ -79,58 +79,65 @@ st.markdown(f"""
 st.divider()
 
 # ── Editar saldos de um mês ────────────────────────────────────────────────────
-with st.expander("✏️ Editar saldos de um mês", expanded=st.session_state.get("edit_saldos_open", False)):
-    mes_edit = st.selectbox(
-        "Mês para editar", meses_com_dados,
-        format_func=lambda m: f"{MESES_ABREV[m]}/{ano}",
-        key="mes_edit",
-    )
-    saldo_atual = db.carregar_saldos(mes_edit, ano)
+if "mostrar_edicao" not in st.session_state:
+    st.session_state["mostrar_edicao"] = False
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        novo_banco = st.number_input(
-            "🏦 Saldo Banco (R$)", value=float(saldo_atual["saldo_banco"]),
-            format="%.2f", step=100.0, key="edit_banco"
-        )
-    with c2:
-        novo_aplic = st.number_input(
-            "📈 Saldo Aplicação (R$)", value=float(saldo_atual["saldo_aplicacao"]),
-            format="%.2f", step=100.0, key="edit_aplic"
-        )
-    with c3:
-        novo_caixa = st.number_input(
-            "💵 Saldo Caixa (R$)", value=float(saldo_atual["saldo_caixa"]),
-            format="%.2f", step=10.0, key="edit_caixa"
-        )
+if st.button("✏️ Editar saldos de um mês", use_container_width=False):
+    st.session_state["mostrar_edicao"] = not st.session_state["mostrar_edicao"]
 
-    st.caption("Rendimentos e resgates do fundo de investimento — conforme Extrato de Fundos")
-    c4, c5 = st.columns(2)
-    with c4:
-        novo_rendimento = st.number_input(
-            "💹 Rendimento da Aplicação no mês (R$)",
-            value=float(saldo_atual.get("rendimento_aplicacao") or 0.0),
-            format="%.2f", step=10.0, key="edit_rendimento",
-            help="Rendimento Bruto no Mês — conforme Extrato de Fundos CEF"
+if st.session_state["mostrar_edicao"]:
+    with st.container(border=True):
+        mes_edit = st.selectbox(
+            "Mês para editar", meses_com_dados,
+            format_func=lambda m: f"{MESES_ABREV[m]}/{ano}",
+            key="mes_edit",
         )
-    with c5:
-        novo_resgate = st.number_input(
-            "↩️ Resgate da Aplicação no mês (R$)",
-            value=float(saldo_atual.get("resgate_aplicacao") or 0.0),
-            format="%.2f", step=100.0, key="edit_resgate",
-            help="Resgates realizados no mês — conforme Extrato de Fundos CEF"
-        )
+        saldo_atual = db.carregar_saldos(mes_edit, ano)
 
-    if st.button("Salvar saldos", type="primary"):
-        db.salvar_saldos(
-            mes_edit, ano,
-            novo_banco, novo_aplic, novo_caixa,
-            rendimento_aplicacao=novo_rendimento,
-            resgate_aplicacao=novo_resgate,
-        )
-        st.session_state["edit_saldos_open"] = False
-        st.toast("✅ Saldos atualizados!", icon="✅")
-        st.rerun()
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            novo_banco = st.number_input(
+                "🏦 Saldo Banco (R$)", value=float(saldo_atual["saldo_banco"]),
+                format="%.2f", step=100.0, key="edit_banco"
+            )
+        with c2:
+            novo_aplic = st.number_input(
+                "📈 Saldo Aplicação (R$)", value=float(saldo_atual["saldo_aplicacao"]),
+                format="%.2f", step=100.0, key="edit_aplic"
+            )
+        with c3:
+            novo_caixa = st.number_input(
+                "💵 Saldo Caixa (R$)", value=float(saldo_atual["saldo_caixa"]),
+                format="%.2f", step=10.0, key="edit_caixa"
+            )
+
+        st.caption("Rendimentos e resgates do fundo de investimento — conforme Extrato de Fundos")
+        c4, c5 = st.columns(2)
+        with c4:
+            novo_rendimento = st.number_input(
+                "💹 Rendimento da Aplicação no mês (R$)",
+                value=float(saldo_atual.get("rendimento_aplicacao") or 0.0),
+                format="%.2f", step=10.0, key="edit_rendimento",
+                help="Rendimento Bruto no Mês — conforme Extrato de Fundos CEF"
+            )
+        with c5:
+            novo_resgate = st.number_input(
+                "↩️ Resgate da Aplicação no mês (R$)",
+                value=float(saldo_atual.get("resgate_aplicacao") or 0.0),
+                format="%.2f", step=100.0, key="edit_resgate",
+                help="Resgates realizados no mês — conforme Extrato de Fundos CEF"
+            )
+
+        if st.button("✅ Salvar saldos", type="primary"):
+            db.salvar_saldos(
+                mes_edit, ano,
+                novo_banco, novo_aplic, novo_caixa,
+                rendimento_aplicacao=novo_rendimento,
+                resgate_aplicacao=novo_resgate,
+            )
+            st.session_state["mostrar_edicao"] = False
+            st.toast("✅ Saldos atualizados!")
+            st.rerun()
 
 st.divider()
 

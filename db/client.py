@@ -177,11 +177,22 @@ def carregar_transacoes_banco(mes: int, ano: int) -> pd.DataFrame:
 
 # ── Saldos ────────────────────────────────────────────────────────────────────
 
-def salvar_saldos(mes: int, ano: int, banco: float, aplicacao: float, caixa: float):
+def salvar_saldos(
+    mes: int, ano: int,
+    banco: float, aplicacao: float, caixa: float,
+    rendimento_aplicacao: float = 0.0,
+    resgate_aplicacao: float = 0.0,
+):
     client = get_client()
     client.table("saldos").upsert(
-        {"mes": mes, "ano": ano,
-         "saldo_banco": banco, "saldo_aplicacao": aplicacao, "saldo_caixa": caixa},
+        {
+            "mes": mes, "ano": ano,
+            "saldo_banco": banco,
+            "saldo_aplicacao": aplicacao,
+            "saldo_caixa": caixa,
+            "rendimento_aplicacao": rendimento_aplicacao,
+            "resgate_aplicacao": resgate_aplicacao,
+        },
         on_conflict="mes,ano",
     ).execute()
     carregar_saldos.clear()
@@ -200,7 +211,10 @@ def carregar_saldos(mes: int, ano: int) -> dict:
     )
     if res.data:
         return res.data[0]
-    return {"saldo_banco": 0.0, "saldo_aplicacao": 0.0, "saldo_caixa": 0.0}
+    return {
+        "saldo_banco": 0.0, "saldo_aplicacao": 0.0, "saldo_caixa": 0.0,
+        "rendimento_aplicacao": 0.0, "resgate_aplicacao": 0.0,
+    }
 
 
 @st.cache_data(ttl=300)

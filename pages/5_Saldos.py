@@ -90,22 +90,44 @@ with st.expander("✏️ Editar saldos de um mês", expanded=False):
     c1, c2, c3 = st.columns(3)
     with c1:
         novo_banco = st.number_input(
-            "Banco (R$)", value=float(saldo_atual["saldo_banco"]),
+            "🏦 Saldo Banco (R$)", value=float(saldo_atual["saldo_banco"]),
             format="%.2f", step=100.0, key="edit_banco"
         )
     with c2:
         novo_aplic = st.number_input(
-            "Aplicação (R$)", value=float(saldo_atual["saldo_aplicacao"]),
+            "📈 Saldo Aplicação (R$)", value=float(saldo_atual["saldo_aplicacao"]),
             format="%.2f", step=100.0, key="edit_aplic"
         )
     with c3:
         novo_caixa = st.number_input(
-            "Caixa — dinheiro físico (R$)", value=float(saldo_atual["saldo_caixa"]),
+            "💵 Saldo Caixa (R$)", value=float(saldo_atual["saldo_caixa"]),
             format="%.2f", step=10.0, key="edit_caixa"
         )
 
+    st.caption("Rendimentos e resgates do fundo de investimento — conforme Extrato de Fundos")
+    c4, c5 = st.columns(2)
+    with c4:
+        novo_rendimento = st.number_input(
+            "💹 Rendimento da Aplicação no mês (R$)",
+            value=float(saldo_atual.get("rendimento_aplicacao", 0.0)),
+            format="%.2f", step=10.0, key="edit_rendimento",
+            help="Rendimento Bruto no Mês — conforme Extrato de Fundos CEF"
+        )
+    with c5:
+        novo_resgate = st.number_input(
+            "↩️ Resgate da Aplicação no mês (R$)",
+            value=float(saldo_atual.get("resgate_aplicacao", 0.0)),
+            format="%.2f", step=100.0, key="edit_resgate",
+            help="Resgates realizados no mês — conforme Extrato de Fundos CEF"
+        )
+
     if st.button("Salvar saldos", type="primary"):
-        db.salvar_saldos(mes_edit, ano, novo_banco, novo_aplic, novo_caixa)
+        db.salvar_saldos(
+            mes_edit, ano,
+            novo_banco, novo_aplic, novo_caixa,
+            rendimento_aplicacao=novo_rendimento,
+            resgate_aplicacao=novo_resgate,
+        )
         st.success("Saldos atualizados!")
         st.rerun()
 

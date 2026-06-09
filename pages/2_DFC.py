@@ -39,6 +39,9 @@ if plano_df.empty:
     st.warning("PlanoDeContas não encontrado para este mês.")
     st.stop()
 
+_rendimento_aplic = float(saldos.get("rendimento_aplicacao", 0.0))
+_resgate_aplic    = float(saldos.get("resgate_aplicacao", 0.0))
+
 dfc = calcular_dfc(
     plano_df,
     ar=ajustes["AR"],
@@ -141,8 +144,14 @@ resumo = [
     {"Seção": si["label"], "Valor (R$)": _fmt_br(sec_totals[sp])}
     for sp, si in SECOES.items()
 ]
-resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": _fmt_br(dfc.resultado_liquido)})
-st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=215)
+if _rendimento_aplic:
+    resumo.append({"Seção": "💹 Rendimento da Aplicação", "Valor (R$)": _fmt_br(_rendimento_aplic)})
+if _resgate_aplic:
+    resumo.append({"Seção": "↩️ Resgate da Aplicação", "Valor (R$)": _fmt_br(_resgate_aplic)})
+_resultado_total = dfc.resultado_liquido + _rendimento_aplic + _resgate_aplic
+resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": _fmt_br(_resultado_total)})
+_altura_resumo = 215 + (26 * ((_rendimento_aplic != 0) + (_resgate_aplic != 0)))
+st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=_altura_resumo)
 
 # Expanders analíticos por seção
 for sp, si in SECOES.items():

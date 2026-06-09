@@ -101,89 +101,93 @@ st.markdown(f"""
 
 st.divider()
 
-# ── Ajustes manuais (AR / AD) ─────────────────────────────────────────────────
-with st.expander("✏️ Ajustes manuais (AR / AD)", expanded=False):
-    st.markdown(
-        "Preenchidos manualmente, como no Book Excel. "
-        "**AR** reduz Receitas, **AD** reduz Despesas."
-    )
-    c1, c2 = st.columns(2)
-    with c1:
-        novo_ar = st.number_input("AR — Ajuste Receita (R$)",
-                                  value=float(ajustes["AR"]), format="%.2f", step=100.0)
-    with c2:
-        novo_ad = st.number_input("AD — Ajuste Despesa (R$)",
-                                  value=float(ajustes["AD"]), format="%.2f", step=100.0)
-    if st.button("Salvar ajustes", type="secondary"):
-        db.salvar_ajuste(mes, ano, "AR", novo_ar)
-        db.salvar_ajuste(mes, ano, "AD", novo_ad)
-        st.success("Ajustes salvos!")
-        st.rerun()
+# ── Abas DRE / DFC ───────────────────────────────────────────────────────────
+tab_dre, tab_dfc = st.tabs(["📊 DRE — Resultado Gerencial", "💰 DFC — Fluxo de Caixa Real"])
 
-st.divider()
+# ════════════════════════════════════════════════════════════════════════════
+# ABA DRE
+# ════════════════════════════════════════════════════════════════════════════
+with tab_dre:
 
-# ── Demonstração: resumo compacto + analítico retrátil ────────────────────────
-st.subheader("Demonstração")
+    # ── Ajustes manuais (AR / AD) ─────────────────────────────────────────
+    with st.expander("✏️ Ajustes manuais (AR / AD)", expanded=False):
+        st.markdown(
+            "Preenchidos manualmente, como no Book Excel. "
+            "**AR** reduz Receitas, **AD** reduz Despesas."
+        )
+        c1, c2 = st.columns(2)
+        with c1:
+            novo_ar = st.number_input("AR — Ajuste Receita (R$)",
+                                      value=float(ajustes["AR"]), format="%.2f", step=100.0)
+        with c2:
+            novo_ad = st.number_input("AD — Ajuste Despesa (R$)",
+                                      value=float(ajustes["AD"]), format="%.2f", step=100.0)
+        if st.button("Salvar ajustes", type="secondary"):
+            db.salvar_ajuste(mes, ano, "AR", novo_ar)
+            db.salvar_ajuste(mes, ano, "AD", novo_ad)
+            st.success("Ajustes salvos!")
+            st.rerun()
 
-_desc_por_codigo = dict(zip(plano_df["codigo"], plano_df["descricao"]))
+    st.divider()
 
-_fmt_br = fmt_br  # alias para tabelas (com centavos)
+    # ── Demonstração: resumo compacto + analítico retrátil ────────────────
+    st.subheader("Demonstração")
 
-# Calcula totais por seção
-sec_totals = {}
-for sp, si in SECOES.items():
-    t = dfc.total_secao(sp)
-    if sp == "1.":
-        t += dfc.ar
-    if sp == "3.":
-        t += dfc.ad
-    sec_totals[sp] = t
+    _desc_por_codigo = dict(zip(plano_df["codigo"], plano_df["descricao"]))
+    _fmt_br = fmt_br
 
-# Tabela resumo compacta (sempre visível)
-resumo = [
-    {"Seção": si["label"], "Valor (R$)": _fmt_br(sec_totals[sp])}
-    for sp, si in SECOES.items()
-]
-if _rendimento_aplic:
-    resumo.append({"Seção": "💹 Rendimento da Aplicação", "Valor (R$)": _fmt_br(_rendimento_aplic)})
-if _resgate_aplic:
-    resumo.append({"Seção": "↩️ Resgate da Aplicação", "Valor (R$)": _fmt_br(_resgate_aplic)})
-_resultado_total = dfc.resultado_liquido + _rendimento_aplic + _resgate_aplic
-resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": _fmt_br(_resultado_total)})
-_altura_resumo = 215 + (26 * ((_rendimento_aplic != 0) + (_resgate_aplic != 0)))
-st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=_altura_resumo)
+    # Calcula totais por seção
+    sec_totals = {}
+    for sp, si in SECOES.items():
+        t = dfc.total_secao(sp)
+        if sp == "1.":
+            t += dfc.ar
+        if sp == "3.":
+            t += dfc.ad
+        sec_totals[sp] = t
 
-# Expanders analíticos por seção
-for sp, si in SECOES.items():
-    with st.expander(f"{si['label']}  —  {_fmt_br(sec_totals[sp])}"):
-        det = []
-        for grp_prefix, grp_label in {k: v for k, v in GRUPOS.items() if k.startswith(sp[0])}.items():
-            contas = dfc.dados.get(sp, {}).get(grp_prefix, {})
-            grp_total = sum(contas.values())
-            if not contas:
-                continue
-            det.append({"Descrição": grp_label,
-                        "Valor (R$)": _fmt_br(grp_total)})
-            for cod, val in sorted(contas.items()):
-                if val == 0:
+    # Tabela resumo compacta
+    resumo = [
+        {"Seção": si["label"], "Valor (R$)": _fmt_br(sec_totals[sp])}
+        for sp, si in SECOES.items()
+    ]
+    if _rendimento_aplic:
+        resumo.append({"Seção": "💹 Rendimento da Aplicação", "Valor (R$)": _fmt_br(_rendimento_aplic)})
+    if _resgate_aplic:
+        resumo.append({"Seção": "↩️ Resgate da Aplicação", "Valor (R$)": _fmt_br(_resgate_aplic)})
+    _resultado_total = dfc.resultado_liquido + _rendimento_aplic + _resgate_aplic
+    resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": _fmt_br(_resultado_total)})
+    _altura_resumo = 215 + (26 * ((_rendimento_aplic != 0) + (_resgate_aplic != 0)))
+    st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=_altura_resumo)
+
+    # Expanders analíticos por seção
+    for sp, si in SECOES.items():
+        with st.expander(f"{si['label']}  —  {_fmt_br(sec_totals[sp])}"):
+            det = []
+            for grp_prefix, grp_label in {k: v for k, v in GRUPOS.items() if k.startswith(sp[0])}.items():
+                contas = dfc.dados.get(sp, {}).get(grp_prefix, {})
+                grp_total = sum(contas.values())
+                if not contas:
                     continue
-                det.append({"Descrição": f"    {_desc_por_codigo.get(cod, cod)}",
-                            "Valor (R$)": _fmt_br(val)})
-        if sp == "1." and dfc.ar != 0:
-            det.append({"Descrição": "    Ajuste Receita (AR)",
-                        "Valor (R$)": _fmt_br(dfc.ar)})
-        if sp == "3." and dfc.ad != 0:
-            det.append({"Descrição": "    Ajuste Despesa (AD)",
-                        "Valor (R$)": _fmt_br(dfc.ad)})
-        if det:
-            st.dataframe(pd.DataFrame(det), hide_index=True, use_container_width=True)
-        else:
-            st.caption("Sem lançamentos nesta seção.")
+                det.append({"Descrição": grp_label, "Valor (R$)": _fmt_br(grp_total)})
+                for cod, val in sorted(contas.items()):
+                    if val == 0:
+                        continue
+                    det.append({"Descrição": f"    {_desc_por_codigo.get(cod, cod)}",
+                                "Valor (R$)": _fmt_br(val)})
+            if sp == "1." and dfc.ar != 0:
+                det.append({"Descrição": "    Ajuste Receita (AR)", "Valor (R$)": _fmt_br(dfc.ar)})
+            if sp == "3." and dfc.ad != 0:
+                det.append({"Descrição": "    Ajuste Despesa (AD)", "Valor (R$)": _fmt_br(dfc.ad)})
+            if det:
+                st.dataframe(pd.DataFrame(det), hide_index=True, use_container_width=True)
+            else:
+                st.caption("Sem lançamentos nesta seção.")
 
-st.divider()
+    st.divider()
 
-# ── Gráfico Waterfall ─────────────────────────────────────────────────────────
-st.subheader("📊 Resultado do mês")
+    # ── Gráfico Waterfall ─────────────────────────────────────────────────
+    st.subheader("📊 Resultado do mês")
 
 fig = go.Figure(go.Waterfall(
     name="DFC",
@@ -220,11 +224,11 @@ fig.update_layout(
     showlegend=False,
 )
 
-st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
-st.divider()
+    st.divider()
 
-# ── Exportar ──────────────────────────────────────────────────────────────────
+    # ── Exportar ──────────────────────────────────────────────────────────────
 st.subheader("📤 Exportar")
 
 @st.cache_data(ttl=60)
@@ -252,9 +256,9 @@ def _evolucao_para_export(ano: int, meses: tuple):
     import pandas as _pd
     return _pd.DataFrame(rows)
 
-col_ex1, col_ex2 = st.columns(2)
+    col_ex1, col_ex2 = st.columns(2)
 
-with col_ex1:
+    with col_ex1:
     st.markdown("**📊 Excel — DFC + Evolução**")
     st.caption("Planilha com o DFC do mês selecionado e o comparativo de todos os meses do ano.")
     if st.button("⬇️ Baixar Excel", use_container_width=True):
@@ -269,17 +273,150 @@ with col_ex1:
             use_container_width=True,
         )
 
-with col_ex2:
-    st.markdown("**📄 PDF Executivo — para os CEOs**")
-    st.caption("Relatório com KPIs acumulados, gráficos de desempenho e análise de custos de eventos.")
-    if st.button("⬇️ Gerar PDF", use_container_width=True):
-        with st.spinner("Gerando PDF..."):
-            ev_df = _evolucao_para_export(ano, tuple(meses_com_dados))
-            pdf_bytes = gerar_pdf_ceo(ano, ev_df, dfc, mes)
-        st.download_button(
-            label="📥 Clique para baixar o PDF",
-            data=pdf_bytes,
-            file_name=f"CPD_Relatorio_Executivo_{ano}.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-        )
+    with col_ex2:
+        st.markdown("**📄 PDF Executivo — para os CEOs**")
+        st.caption("Relatório com KPIs acumulados, gráficos de desempenho e análise de custos de eventos.")
+        if st.button("⬇️ Gerar PDF", use_container_width=True):
+            with st.spinner("Gerando PDF..."):
+                ev_df = _evolucao_para_export(ano, tuple(meses_com_dados))
+                pdf_bytes = gerar_pdf_ceo(ano, ev_df, dfc, mes)
+            st.download_button(
+                label="📥 Clique para baixar o PDF",
+                data=pdf_bytes,
+                file_name=f"CPD_Relatorio_Executivo_{ano}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+
+# ════════════════════════════════════════════════════════════════════════════
+# ABA DFC
+# ════════════════════════════════════════════════════════════════════════════
+with tab_dfc:
+    st.caption("Receitas do Sponte ajustadas pelos motivos da conciliação — deve bater com Banco + Caixa.")
+
+    # ── Classifica motivos ────────────────────────────────────────────────
+    _DEDUZ = {"Valor Desviado", "Desconto em folha", "Pagamento não localizado",
+              "Estorno/Cancelamento"}
+    _MANTEM = {"Pago em caixa físico"}
+
+    def _normalizar_motivo(just):
+        """Remove emoji do início para comparar com os sets."""
+        s = str(just or "").strip()
+        # remove emoji inicial se houver
+        for emoji in ["🚨 ", "📝 ", "💵 ", "❓ ", "↩️ "]:
+            if s.startswith(emoji):
+                s = s[len(emoji):]
+        return s
+
+    def _valor_da_chave(chave):
+        try:
+            parts = str(chave).split("|")
+            if len(parts) >= 3:
+                return float(parts[2].replace(",", "."))
+        except:
+            pass
+        return 0.0
+
+    # ── Carrega conciliações do mês ───────────────────────────────────────
+    conciliacoes = db.carregar_conciliacoes(mes, ano)
+    ignorados_sp = [c for c in conciliacoes if c["tipo"] == "ignorado_sponte"]
+
+    # Agrupa deduções por motivo
+    _deducoes = {}   # motivo → valor total
+    _mantem   = {}   # motivo → valor total
+    for c in ignorados_sp:
+        mot = _normalizar_motivo(c.get("justificativa", ""))
+        val = _valor_da_chave(c.get("sponte_chave", ""))
+        if mot in _DEDUZ:
+            _deducoes[mot] = _deducoes.get(mot, 0.0) + val
+        elif mot in _MANTEM:
+            _mantem[mot] = _mantem.get(mot, 0.0) + val
+
+    _total_deducoes = sum(_deducoes.values())
+
+    # ── Cálculo DFC ───────────────────────────────────────────────────────
+    _receitas_sponte  = dfc.total_receitas   # positivo
+    _saidas_sponte    = dfc.total_custos + dfc.total_despesas + dfc.total_impostos  # negativo
+    _receitas_reais   = _receitas_sponte - _total_deducoes
+    _resultado_caixa  = _receitas_reais + _saidas_sponte
+
+    # ── KPIs DFC ──────────────────────────────────────────────────────────
+    _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
+    _rc_bg    = ("#0d2a1a" if _dark else "#eaffea") if _resultado_caixa >= 0 else ("#2a0d14" if _dark else "#fff0f0")
+
+    st.markdown(f"""
+<div style="display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
+  <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_txt};
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">📈 Receitas Sponte</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{_txt};">{_br(_receitas_sponte)}</div>
+  </div>
+  <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_accent};
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">➖ Deduções</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{_accent};">{_br(_total_deducoes)}</div>
+  </div>
+  <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid #2A9D8F;
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">✅ Receitas Reais</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#2A9D8F;">{_br(_receitas_reais)}</div>
+  </div>
+  <div style="flex:1.2; min-width:160px; background:{_rc_bg}; border-left:4px solid {_rc_color};
+              border-radius:6px; padding:14px 16px;">
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💰 Resultado de Caixa</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{_rc_color};">{_br(_resultado_caixa)}</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.divider()
+
+    # ── Tabela detalhada ──────────────────────────────────────────────────
+    st.subheader("Demonstração")
+    _linhas = []
+    _linhas.append({"Descrição": "📈 Receitas (Sponte)",          "Valor (R$)": fmt_br(_receitas_sponte)})
+    for mot, val in _deducoes.items():
+        _linhas.append({"Descrição": f"    ➖ {mot}",             "Valor (R$)": fmt_br(-val)})
+    if _mantem:
+        for mot, val in _mantem.items():
+            _linhas.append({"Descrição": f"    ✅ {mot} (mantido)", "Valor (R$)": fmt_br(val)})
+    _linhas.append({"Descrição": "= Receitas Reais de Caixa",    "Valor (R$)": fmt_br(_receitas_reais)})
+    _linhas.append({"Descrição": "🏭 Custos",                     "Valor (R$)": fmt_br(dfc.total_custos)})
+    _linhas.append({"Descrição": "🏢 Despesas",                   "Valor (R$)": fmt_br(dfc.total_despesas)})
+    _linhas.append({"Descrição": "🏛️ Impostos",                   "Valor (R$)": fmt_br(dfc.total_impostos)})
+    _linhas.append({"Descrição": "= RESULTADO DE CAIXA",          "Valor (R$)": fmt_br(_resultado_caixa)})
+    st.dataframe(pd.DataFrame(_linhas), hide_index=True, use_container_width=True,
+                 height=80 + len(_linhas) * 35)
+
+    st.divider()
+
+    # ── Conferência com Banco + Caixa ─────────────────────────────────────
+    st.subheader("📋 Conferência")
+    _saldo_banco_final = float(saldos.get("saldo_banco") or 0.0)
+    _saldo_caixa_final = float(saldos.get("saldo_caixa") or 0.0)
+    _saldo_real        = _saldo_banco_final + _saldo_caixa_final
+
+    # saldo anterior = banco+caixa do mês anterior
+    _mes_anterior = mes - 1
+    _ano_anterior = ano
+    if _mes_anterior == 0:
+        _mes_anterior = 12
+        _ano_anterior = ano - 1
+    _saldos_ant   = db.carregar_saldos(_mes_anterior, _ano_anterior)
+    _saldo_ant    = float(_saldos_ant.get("saldo_banco") or 0.0) + float(_saldos_ant.get("saldo_caixa") or 0.0)
+    _saldo_calc   = _saldo_ant + _resultado_caixa
+    _diferenca    = _saldo_real - _saldo_calc
+
+    _conf = [
+        {"": "Saldo banco + caixa anterior",       "Valor (R$)": fmt_br(_saldo_ant)},
+        {"": "+ Resultado de caixa do mês",         "Valor (R$)": fmt_br(_resultado_caixa)},
+        {"": "= Saldo calculado",                   "Valor (R$)": fmt_br(_saldo_calc)},
+        {"": "Saldo real (banco + caixa)",          "Valor (R$)": fmt_br(_saldo_real)},
+        {"": "Diferença",                           "Valor (R$)": fmt_br(_diferenca)},
+    ]
+    st.dataframe(pd.DataFrame(_conf), hide_index=True, use_container_width=True, height=215)
+
+    if abs(_diferenca) < 0.01:
+        st.success("✅ DFC confere com o saldo real de banco + caixa!")
+    else:
+        st.warning(f"⚠️ Diferença de {fmt_br(abs(_diferenca))} — verifique se há itens não conciliados ou saldos incorretos.")

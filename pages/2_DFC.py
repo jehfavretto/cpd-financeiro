@@ -39,8 +39,8 @@ if plano_df.empty:
     st.warning("PlanoDeContas não encontrado para este mês.")
     st.stop()
 
-_rendimento_aplic = float(saldos.get("rendimento_aplicacao", 0.0))
-_resgate_aplic    = float(saldos.get("resgate_aplicacao", 0.0))
+_rendimento_aplic = float(saldos.get("rendimento_aplicacao") or 0.0)
+_resgate_aplic    = float(saldos.get("resgate_aplicacao") or 0.0)
 
 dfc = calcular_dfc(
     plano_df,

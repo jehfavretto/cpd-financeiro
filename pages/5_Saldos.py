@@ -109,14 +109,14 @@ with st.expander("✏️ Editar saldos de um mês", expanded=False):
     with c4:
         novo_rendimento = st.number_input(
             "💹 Rendimento da Aplicação no mês (R$)",
-            value=float(saldo_atual.get("rendimento_aplicacao", 0.0)),
+            value=float(saldo_atual.get("rendimento_aplicacao") or 0.0),
             format="%.2f", step=10.0, key="edit_rendimento",
             help="Rendimento Bruto no Mês — conforme Extrato de Fundos CEF"
         )
     with c5:
         novo_resgate = st.number_input(
             "↩️ Resgate da Aplicação no mês (R$)",
-            value=float(saldo_atual.get("resgate_aplicacao", 0.0)),
+            value=float(saldo_atual.get("resgate_aplicacao") or 0.0),
             format="%.2f", step=100.0, key="edit_resgate",
             help="Resgates realizados no mês — conforme Extrato de Fundos CEF"
         )

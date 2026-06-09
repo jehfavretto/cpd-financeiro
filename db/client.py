@@ -217,6 +217,7 @@ def carregar_saldos(mes: int, ano: int) -> dict:
     }
 
 
+
 @st.cache_data(ttl=300)
 def carregar_saldos_ano(ano: int) -> pd.DataFrame:
     client = get_client()

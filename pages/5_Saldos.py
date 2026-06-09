@@ -79,7 +79,7 @@ st.markdown(f"""
 st.divider()
 
 # ── Editar saldos de um mês ────────────────────────────────────────────────────
-with st.expander("✏️ Editar saldos de um mês", expanded=False):
+with st.expander("✏️ Editar saldos de um mês", expanded=st.session_state.get("edit_saldos_open", False)):
     mes_edit = st.selectbox(
         "Mês para editar", meses_com_dados,
         format_func=lambda m: f"{MESES_ABREV[m]}/{ano}",
@@ -128,7 +128,8 @@ with st.expander("✏️ Editar saldos de um mês", expanded=False):
             rendimento_aplicacao=novo_rendimento,
             resgate_aplicacao=novo_resgate,
         )
-        st.success("Saldos atualizados!")
+        st.session_state["edit_saldos_open"] = False
+        st.toast("✅ Saldos atualizados!", icon="✅")
         st.rerun()
 
 st.divider()

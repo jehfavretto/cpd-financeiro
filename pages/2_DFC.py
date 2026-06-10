@@ -428,11 +428,19 @@ with tab_dfc:
                 st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
                 if st.button("✔ ok", key=f"btn_{_chave_ant}", help="Aplicar valor"):
                     try:
-                        _val_parsed = float(_txt_ant.replace(".", "").replace(",", "."))
+                        _v = _txt_ant.strip().replace(" ", "")
+                        # aceita: 11728,30 / 11.728,30 / 11728.30
+                        if "," in _v and "." in _v:
+                            # formato 11.728,30 → remove ponto, troca vírgula
+                            _v = _v.replace(".", "").replace(",", ".")
+                        elif "," in _v:
+                            # formato 11728,30 → troca vírgula
+                            _v = _v.replace(",", ".")
+                        _val_parsed = float(_v)
                         st.session_state[_chave_ant] = _val_parsed
                         st.rerun()
                     except:
-                        st.error("Valor inválido. Use o formato: 11.728,30")
+                        st.warning("Não foi possível ler o valor. Tente novamente.")
         _saldo_ant = st.session_state.get(_chave_ant, 0.0)
     else:
         _saldo_ant = _saldo_ant_auto

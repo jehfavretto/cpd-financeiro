@@ -385,18 +385,32 @@ with tab_dfc:
     _saldo_caixa_final = float(saldos.get("saldo_caixa") or 0.0)
     _saldo_real        = _saldo_banco_final + _saldo_caixa_final
 
+    # Tenta buscar saldo anterior do mês anterior
     _mes_ant = mes - 1
     _ano_ant = ano
     if _mes_ant == 0:
         _mes_ant = 12
         _ano_ant = ano - 1
     _saldos_ant = db.carregar_saldos(_mes_ant, _ano_ant)
-    _saldo_ant  = float(_saldos_ant.get("saldo_banco") or 0.0) + float(_saldos_ant.get("saldo_caixa") or 0.0)
+    _saldo_ant_auto = float(_saldos_ant.get("saldo_banco") or 0.0) + float(_saldos_ant.get("saldo_caixa") or 0.0)
+
+    # Se não encontrou saldo anterior, permite informar manualmente
+    _chave_ant = f"saldo_ant_{mes}_{ano}"
+    if _saldo_ant_auto == 0.0:
+        st.caption(f"⚠️ Saldo de {MESES_ABREV[_mes_ant]}/{_ano_ant} não encontrado — informe manualmente:")
+        _saldo_ant = st.number_input(
+            f"Saldo banco + caixa em {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
+            value=st.session_state.get(_chave_ant, 0.0),
+            format="%.2f", step=100.0, key=_chave_ant,
+        )
+    else:
+        _saldo_ant = _saldo_ant_auto
+
     _saldo_calc = _saldo_ant + _resultado_caixa
     _diferenca  = _saldo_real - _saldo_calc
 
     _conf = [
-        {"":  "Saldo banco + caixa anterior",  "Valor (R$)": fmt_br(_saldo_ant)},
+        {"":  f"Saldo banco + caixa anterior ({MESES_ABREV[_mes_ant]}/{_ano_ant})", "Valor (R$)": fmt_br(_saldo_ant)},
         {"":  "+ Resultado de caixa do mês",    "Valor (R$)": fmt_br(_resultado_caixa)},
         {"":  "= Saldo calculado",              "Valor (R$)": fmt_br(_saldo_calc)},
         {"":  "Saldo real (banco + caixa)",     "Valor (R$)": fmt_br(_saldo_real)},

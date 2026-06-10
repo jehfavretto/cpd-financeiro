@@ -352,7 +352,7 @@ with tab_dfc:
   </div>
   <div style="flex:1.2; min-width:160px; background:{_rc_bg}; border-left:4px solid {_rc_color};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💰 Resultado de Caixa</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💰 Resultado do Mês</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_rc_color};">{_br(_resultado_caixa)}</div>
   </div>
 </div>
@@ -372,7 +372,7 @@ with tab_dfc:
     _linhas.append({"Descrição": "🏭 Custos",                      "Valor (R$)": fmt_br(dfc.total_custos)})
     _linhas.append({"Descrição": "🏢 Despesas",                    "Valor (R$)": fmt_br(dfc.total_despesas)})
     _linhas.append({"Descrição": "🏛️ Impostos",                    "Valor (R$)": fmt_br(dfc.total_impostos)})
-    _linhas.append({"Descrição": "= RESULTADO DE CAIXA",           "Valor (R$)": fmt_br(_resultado_caixa)})
+    _linhas.append({"Descrição": "= RESULTADO DO MÊS",              "Valor (R$)": fmt_br(_resultado_caixa)})
     st.dataframe(pd.DataFrame(_linhas), hide_index=True, use_container_width=True,
                  height=80 + len(_linhas) * 35)
 
@@ -442,7 +442,7 @@ with tab_dfc:
 
     _conf = [
         {"":  f"Saldo banco + caixa anterior ({MESES_ABREV[_mes_ant]}/{_ano_ant})", "Valor (R$)": fmt_br(_saldo_ant)},
-        {"":  "+ Resultado de caixa do mês",    "Valor (R$)": fmt_br(_resultado_caixa)},
+        {"":  "+ Resultado do mês",              "Valor (R$)": fmt_br(_resultado_caixa)},
         {"":  "= Saldo calculado",              "Valor (R$)": fmt_br(_saldo_calc)},
         {"":  "Saldo real (banco + caixa)",     "Valor (R$)": fmt_br(_saldo_real)},
         {"":  "Diferença",                      "Valor (R$)": fmt_br(_diferenca)},

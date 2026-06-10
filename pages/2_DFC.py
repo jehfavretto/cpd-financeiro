@@ -448,20 +448,22 @@ with tab_dfc:
             with _col_btn:
                 st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
                 if st.button("✔ ok", key=f"btn_{_chave_ant}", help="Aplicar valor"):
+                    _raw = st.session_state.get(f"txt_{_chave_ant}", "") or ""
                     try:
-                        _v = _txt_ant.strip().replace(" ", "")
-                        # aceita: 11728,30 / 11.728,30 / 11728.30
-                        if "," in _v and "." in _v:
-                            # formato 11.728,30 → remove ponto, troca vírgula
-                            _v = _v.replace(".", "").replace(",", ".")
-                        elif "," in _v:
-                            # formato 11728,30 → troca vírgula
-                            _v = _v.replace(",", ".")
-                        _val_parsed = float(_v)
-                        st.session_state[_chave_ant] = _val_parsed
-                        st.rerun()
-                    except:
-                        st.warning("Não foi possível ler o valor. Tente novamente.")
+                        _v = _raw.strip().replace(" ", "").replace("R$", "").replace("\xa0", "")
+                        if not _v:
+                            st.warning("Digite um valor antes de aplicar.")
+                        else:
+                            # aceita: 11728,30 / 11.728,30 / 11728.30
+                            if "," in _v and "." in _v:
+                                _v = _v.replace(".", "").replace(",", ".")
+                            elif "," in _v:
+                                _v = _v.replace(",", ".")
+                            _val_parsed = float(_v)
+                            st.session_state[_chave_ant] = _val_parsed
+                            st.rerun()
+                    except Exception as _e:
+                        st.warning(f"Valor inválido: '{_raw}'. Use formato 11728,30 ou 11.728,30")
         _saldo_ant = st.session_state.get(_chave_ant, 0.0)
     else:
         _saldo_ant = _saldo_ant_auto

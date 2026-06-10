@@ -323,11 +323,21 @@ with tab_dfc:
         elif mot in _MANTEM:
             _mantem[mot] = _mantem.get(mot, 0.0) + val
 
+    # Itens ignorados do banco (entradas extras não lançadas no Sponte)
+    ignorados_bk = [c for c in conciliacoes if c["tipo"] == "ignorado_banco"]
+    _extras_banco = {}
+    for c in ignorados_bk:
+        mot = _normalizar_motivo(c.get("justificativa", ""))
+        val = _valor_da_chave(c.get("banco_chave", ""))
+        if val > 0:
+            _extras_banco[mot] = _extras_banco.get(mot, 0.0) + val
+
+    _total_extras   = sum(_extras_banco.values())
     _total_deducoes  = sum(_deducoes.values())
     _receitas_sponte = dfc.total_receitas
     _saidas_sponte   = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
     _receitas_reais  = _receitas_sponte - _total_deducoes
-    _resultado_caixa = _receitas_reais + _saidas_sponte
+    _resultado_caixa = _receitas_reais + _total_extras + _resgate_aplic + _saidas_sponte
 
     # ── KPIs DFC ──────────────────────────────────────────────────────────
     _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
@@ -342,13 +352,13 @@ with tab_dfc:
   </div>
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_accent};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">➖ Deduções</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">➖ Deduções Sponte</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_accent};">{_br(_total_deducoes)}</div>
   </div>
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid #2A9D8F;
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">✅ Receitas Reais</div>
-    <div style="font-size:1.35rem; font-weight:700; color:#2A9D8F;">{_br(_receitas_reais)}</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">➕ Extras Banco</div>
+    <div style="font-size:1.35rem; font-weight:700; color:#2A9D8F;">{_br(_total_extras + _resgate_aplic)}</div>
   </div>
   <div style="flex:1.2; min-width:160px; background:{_rc_bg}; border-left:4px solid {_rc_color};
               border-radius:6px; padding:14px 16px;">
@@ -368,7 +378,12 @@ with tab_dfc:
         _linhas.append({"Descrição": f"    ➖ {mot}",              "Valor (R$)": fmt_br(-val)})
     for mot, val in _mantem.items():
         _linhas.append({"Descrição": f"    ✅ {mot} (mantido)",    "Valor (R$)": fmt_br(val)})
-    _linhas.append({"Descrição": "= Receitas Reais de Caixa",     "Valor (R$)": fmt_br(_receitas_reais)})
+    _linhas.append({"Descrição": "= Receitas Reais",               "Valor (R$)": fmt_br(_receitas_reais)})
+    if _extras_banco:
+        for mot, val in _extras_banco.items():
+            _linhas.append({"Descrição": f"    ➕ {mot} (Banco)", "Valor (R$)": fmt_br(val)})
+    if _resgate_aplic:
+        _linhas.append({"Descrição": "    ➕ Resgate da Aplicação","Valor (R$)": fmt_br(_resgate_aplic)})
     _linhas.append({"Descrição": "🏭 Custos",                      "Valor (R$)": fmt_br(dfc.total_custos)})
     _linhas.append({"Descrição": "🏢 Despesas",                    "Valor (R$)": fmt_br(dfc.total_despesas)})
     _linhas.append({"Descrição": "🏛️ Impostos",                    "Valor (R$)": fmt_br(dfc.total_impostos)})

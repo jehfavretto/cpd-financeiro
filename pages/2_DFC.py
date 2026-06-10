@@ -323,16 +323,21 @@ with tab_dfc:
         elif mot in _MANTEM:
             _mantem[mot] = _mantem.get(mot, 0.0) + val
 
-    # Itens ignorados do banco (entradas extras não lançadas no Sponte)
-    ignorados_bk = [c for c in conciliacoes if c["tipo"] == "ignorado_banco"]
-    _extras_banco = {}
+    # Itens ignorados do banco — separados entre saídas (aplicação) e entradas extras
+    _BANCO_SAIDA  = {"Aplicação Financeira"}
+    ignorados_bk  = [c for c in conciliacoes if c["tipo"] == "ignorado_banco"]
+    _extras_banco = {}   # entradas (positivo no resultado)
+    _saidas_banco = {}   # saídas (negativo no resultado)
     for c in ignorados_bk:
         mot = _normalizar_motivo(c.get("justificativa", ""))
         val = _valor_da_chave(c.get("banco_chave", ""))
         if val > 0:
-            _extras_banco[mot] = _extras_banco.get(mot, 0.0) + val
+            if mot in _BANCO_SAIDA:
+                _saidas_banco[mot] = _saidas_banco.get(mot, 0.0) + val
+            else:
+                _extras_banco[mot] = _extras_banco.get(mot, 0.0) + val
 
-    _total_extras   = sum(_extras_banco.values())
+    _total_extras   = sum(_extras_banco.values()) - sum(_saidas_banco.values())
     _total_deducoes  = sum(_deducoes.values())
     _receitas_sponte = dfc.total_receitas
     _saidas_sponte   = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
@@ -379,9 +384,10 @@ with tab_dfc:
     for mot, val in _mantem.items():
         _linhas.append({"Descrição": f"    ✅ {mot} (mantido)",    "Valor (R$)": fmt_br(val)})
     _linhas.append({"Descrição": "= Receitas Reais",               "Valor (R$)": fmt_br(_receitas_reais)})
-    if _extras_banco:
-        for mot, val in _extras_banco.items():
-            _linhas.append({"Descrição": f"    ➕ {mot} (Banco)", "Valor (R$)": fmt_br(val)})
+    for mot, val in _extras_banco.items():
+        _linhas.append({"Descrição": f"    ➕ {mot} (Banco)",     "Valor (R$)": fmt_br(val)})
+    for mot, val in _saidas_banco.items():
+        _linhas.append({"Descrição": f"    ➖ {mot} (Banco)",     "Valor (R$)": fmt_br(-val)})
     if _resgate_aplic:
         _linhas.append({"Descrição": "    ➕ Resgate da Aplicação","Valor (R$)": fmt_br(_resgate_aplic)})
     _linhas.append({"Descrição": "🏭 Custos",                      "Valor (R$)": fmt_br(dfc.total_custos)})

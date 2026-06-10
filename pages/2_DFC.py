@@ -398,22 +398,41 @@ with tab_dfc:
     _chave_ant = f"saldo_ant_{mes}_{ano}"
     if _saldo_ant_auto == 0.0:
         st.caption(f"⚠️ Saldo de {MESES_ABREV[_mes_ant]}/{_ano_ant} não encontrado — informe manualmente:")
-        _col_inp, _col_btn = st.columns([3, 1])
-        with _col_inp:
-            _txt_ant = st.text_input(
+        _ja_salvo = _chave_ant in st.session_state and st.session_state[_chave_ant] > 0
+
+        if _ja_salvo:
+            # Mostra valor travado com botão de editar
+            _col_val, _col_btn = st.columns([3, 1])
+            _col_val.text_input(
                 f"Saldo banco + caixa em {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
                 value=st.session_state.get(f"txt_{_chave_ant}", ""),
-                placeholder="ex: 11.728,30",
-                key=f"txt_{_chave_ant}",
+                disabled=True,
+                key=f"txt_dis_{_chave_ant}",
             )
-        with _col_btn:
-            st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            if st.button("✅ Aplicar", key=f"btn_{_chave_ant}", use_container_width=True):
-                try:
-                    _val_parsed = float(_txt_ant.replace(".", "").replace(",", "."))
-                    st.session_state[_chave_ant] = _val_parsed
-                except:
-                    st.error("Valor inválido. Use o formato: 11.728,30")
+            with _col_btn:
+                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+                if st.button("✏️", key=f"btn_edit_{_chave_ant}", help="Editar valor"):
+                    del st.session_state[_chave_ant]
+                    st.rerun()
+        else:
+            # Mostra campo editável + botão Aplicar
+            _col_inp, _col_btn = st.columns([3, 1])
+            with _col_inp:
+                _txt_ant = st.text_input(
+                    f"Saldo banco + caixa em {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
+                    value=st.session_state.get(f"txt_{_chave_ant}", ""),
+                    placeholder="ex: 11.728,30",
+                    key=f"txt_{_chave_ant}",
+                )
+            with _col_btn:
+                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+                if st.button("✔ ok", key=f"btn_{_chave_ant}", help="Aplicar valor"):
+                    try:
+                        _val_parsed = float(_txt_ant.replace(".", "").replace(",", "."))
+                        st.session_state[_chave_ant] = _val_parsed
+                        st.rerun()
+                    except:
+                        st.error("Valor inválido. Use o formato: 11.728,30")
         _saldo_ant = st.session_state.get(_chave_ant, 0.0)
     else:
         _saldo_ant = _saldo_ant_auto

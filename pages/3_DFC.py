@@ -411,21 +411,21 @@ with tab_dfc:
     # ── Tabela detalhada ──────────────────────────────────────────────────
     st.subheader("Demonstração")
     _linhas = []
-    _linhas.append({"Descrição": "📈 Receitas (Sponte)",              "Valor (R$)": fmt_br(_receitas_sponte)})
+    _linhas.append({"Descrição": "+ Receitas (Sponte)",               "Valor (R$)": fmt_br(_receitas_sponte)})
     for mot, val in _deducoes.items():
-        _linhas.append({"Descrição": f"    ➖ {mot}",                 "Valor (R$)": fmt_br(-val)})
+        _linhas.append({"Descrição": f"    − {mot}",                  "Valor (R$)": fmt_br(-val)})
     _linhas.append({"Descrição": "= Receitas Reais",                  "Valor (R$)": fmt_br(_receitas_reais)})
     for mot, val in _extras_banco.items():
-        _linhas.append({"Descrição": f"    ➕ {mot} (Banco)",          "Valor (R$)": fmt_br(val)})
+        _linhas.append({"Descrição": f"    + {mot} (Banco)",          "Valor (R$)": fmt_br(val)})
     for mot, val in _saidas_banco.items():
-        _linhas.append({"Descrição": f"    ➖ {mot} (Banco)",          "Valor (R$)": fmt_br(-val)})
+        _linhas.append({"Descrição": f"    − {mot} (Banco)",          "Valor (R$)": fmt_br(-val)})
     if _resgate_aplic:
-        _linhas.append({"Descrição": "    ➕ Resgate da Aplicação",    "Valor (R$)": fmt_br(_resgate_aplic)})
+        _linhas.append({"Descrição": "    + Resgate da Aplicação",    "Valor (R$)": fmt_br(_resgate_aplic)})
     if _diferenca_caixa != 0:
-        _linhas.append({"Descrição": "    ⚖️ Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
-    _linhas.append({"Descrição": "🏭 Custos",                         "Valor (R$)": fmt_br(dfc.total_custos)})
-    _linhas.append({"Descrição": "🏢 Despesas",                       "Valor (R$)": fmt_br(dfc.total_despesas)})
-    _linhas.append({"Descrição": "🏛️ Impostos",                       "Valor (R$)": fmt_br(dfc.total_impostos)})
+        _linhas.append({"Descrição": "    ± Diferença Sponte/Caixa",  "Valor (R$)": fmt_br(-_diferenca_caixa)})
+    _linhas.append({"Descrição": "− Custos",                          "Valor (R$)": fmt_br(dfc.total_custos)})
+    _linhas.append({"Descrição": "− Despesas",                        "Valor (R$)": fmt_br(dfc.total_despesas)})
+    _linhas.append({"Descrição": "− Impostos",                        "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
     _th_bg  = "transparent" if _dark else "#f3f4f6"
     _rows_html = ""

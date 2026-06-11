@@ -402,7 +402,7 @@ with tab_dfc:
     _linhas.append({"Descrição": "🏛️ Impostos",                       "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
     st.dataframe(pd.DataFrame(_linhas), hide_index=True, use_container_width=True,
-                 height=80 + len(_linhas) * 35)
+                 height=38 + len(_linhas) * 35)
 
     st.divider()
 

@@ -18,6 +18,14 @@ import db.client as db
 from core.parser import MESES_ABREV
 from core.utils import fmt_br
 
+st.markdown("""
+<style>
+[data-testid="stSelectbox"] div[data-baseweb="select"] *,
+[data-testid="stRadio"] label p,
+[data-testid="stExpander"] summary p { font-size: 0.8rem !important; }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🔍 Conciliação")
 st.markdown("Vincule os lançamentos do Sponte com o extrato bancário.")
 
@@ -739,14 +747,7 @@ with aba_pend:
 
         with col_mid:
             # empurra para baixo para alinhar com as tabelas
-            st.markdown("""
-            <style>
-            [data-testid="stSelectbox"] div[data-baseweb="select"] *,
-            [data-testid="stRadio"] label p,
-            [data-testid="stExpander"] summary p { font-size: 0.8rem !important; }
-            </style>
-            <div style="height:188px"></div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div style="height:188px"></div>', unsafe_allow_html=True)
             st.markdown("<p style='text-align:center;font-weight:600;color:#555;margin-bottom:4px'>Ações</p><hr style='margin:0 0 8px 0'>", unsafe_allow_html=True)
 
             if n_sp > 0 and n_bk > 0:

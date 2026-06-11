@@ -353,6 +353,16 @@ else:
     _resgate_calc     = float(_saldos_atual.get("resgate_aplicacao") or 0.0)
     _aplic_origem     = "valor salvo anteriormente"
 
+# Força os campos a refletirem os valores calculados quando arquivos são enviados
+if banco_df is not None:
+    st.session_state["inp_banco"] = _saldo_banco_calc
+if fundos_dat and fundos_dat.get("saldo_bruto"):
+    st.session_state["inp_aplic"]      = _saldo_aplic_calc
+    st.session_state["inp_rendimento"] = _rendimento_calc
+    st.session_state["inp_resgate"]    = _resgate_calc
+if caixa_df is not None:
+    st.session_state["inp_caixa"] = _saldo_caixa_calc
+
 c1, c2, c3 = st.columns(3)
 with c1:
     st.caption(f"🏦 {_banco_origem}")

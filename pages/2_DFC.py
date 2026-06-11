@@ -461,6 +461,16 @@ with tab_dfc:
                                 _v = _v.replace(",", ".")
                             _val_parsed = float(_v)
                             st.session_state[_chave_ant] = _val_parsed
+                            # salva no banco para persistir entre sessões
+                            _sa = db.carregar_saldos(_mes_ant, _ano_ant)
+                            db.salvar_saldos(
+                                _mes_ant, _ano_ant,
+                                _val_parsed,
+                                float(_sa.get("saldo_aplicacao") or 0.0),
+                                float(_sa.get("saldo_caixa") or 0.0),
+                                rendimento_aplicacao=float(_sa.get("rendimento_aplicacao") or 0.0),
+                                resgate_aplicacao=float(_sa.get("resgate_aplicacao") or 0.0),
+                            )
                             st.rerun()
                     except Exception as _e:
                         st.warning(f"Valor inválido: '{_raw}'. Use formato 11728,30 ou 11.728,30")

@@ -133,9 +133,9 @@ with tab_dre:
         for sp, si in SECOES.items()
     ]
     if _rendimento_aplic:
-        resumo.append({"Seção": "💹 Rendimento da Aplicação", "Valor (R$)": _fmt_br(_rendimento_aplic)})
+        resumo.append({"Seção": "+ Rendimento da Aplicação", "Valor (R$)": _fmt_br(_rendimento_aplic)})
     if _resgate_aplic:
-        resumo.append({"Seção": "↩️ Resgate da Aplicação", "Valor (R$)": _fmt_br(_resgate_aplic)})
+        resumo.append({"Seção": "− Resgate da Aplicação", "Valor (R$)": _fmt_br(_resgate_aplic)})
     _resultado_total = dfc.resultado_liquido + _rendimento_aplic + _resgate_aplic
     resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": _fmt_br(_resultado_total)})
     _dre_rows = ""

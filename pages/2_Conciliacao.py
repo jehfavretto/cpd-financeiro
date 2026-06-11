@@ -18,13 +18,6 @@ import db.client as db
 from core.parser import MESES_ABREV
 from core.utils import fmt_br
 
-st.markdown("""
-<style>
-[data-testid="stSelectbox"] div[data-baseweb="select"] *,
-[data-testid="stRadio"] label p,
-[data-testid="stExpander"] summary p { font-size: 0.8rem !important; }
-</style>
-""", unsafe_allow_html=True)
 
 st.title("🔍 Conciliação")
 st.markdown("Vincule os lançamentos do Sponte com o extrato bancário.")

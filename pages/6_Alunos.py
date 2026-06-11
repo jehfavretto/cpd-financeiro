@@ -14,6 +14,7 @@ ORDEM_TURMAS = [
     "Berçário", "Maternal",
     "I período", "II Período", "III Período", "Pré",
     "1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano",
+    "Turma 2025",
 ]
 
 def _sort_turma(t: str) -> int:

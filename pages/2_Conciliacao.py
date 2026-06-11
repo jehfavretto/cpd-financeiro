@@ -567,16 +567,32 @@ with aba_pend:
             """Dado um nome do banco, retorna (aluno, responsável).
             Se o nome é responsável → (aluno lookup, nome).
             Se o nome é aluno      → (nome, responsável lookup).
+            Se múltiplos alunos separados por vírgula → junta responsáveis comuns.
             Se nenhum dos dois     → ('', nome).
             """
             if not nome or nome.lower() == "nan":
                 return "", ""
+            # Tenta lookup direto primeiro
             aluno = _aluno_do_responsavel(nome)
             if aluno:
-                return aluno, nome          # nome é responsável
+                return aluno, nome
             resp = _responsavel_do_aluno(nome)
             if resp:
-                return nome, resp           # nome é aluno
+                return nome, resp
+            # Múltiplos alunos separados por vírgula (ex: "Bernardo Rosa, Julio Rosa")
+            partes = [p.strip() for p in nome.split(",") if p.strip()]
+            if len(partes) > 1:
+                resps_encontrados = []
+                alunos_encontrados = []
+                for parte in partes:
+                    r = _responsavel_do_aluno(parte)
+                    if r:
+                        alunos_encontrados.append(parte)
+                        for rr in r.split(" / "):
+                            if rr not in resps_encontrados:
+                                resps_encontrados.append(rr)
+                if alunos_encontrados:
+                    return " / ".join(alunos_encontrados), " / ".join(resps_encontrados)
             return "", nome                 # desconhecido → só responsável
 
         _bk_aluno_col  = _bk_nome.apply(lambda n: _bk_aluno_resp(n)[0])

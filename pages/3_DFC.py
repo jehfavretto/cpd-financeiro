@@ -453,7 +453,7 @@ with tab_dfc:
 
         if _ja_salvo:
             # Mostra valor travado com botão de editar
-            _col_val, _col_btn, _col_rest = st.columns([1, 1, 4])
+            _col_val, _col_btn, _col_rest = st.columns([2, 1, 6])
             _col_val.text_input(
                 f"Saldo {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
                 value=st.session_state.get(f"txt_{_chave_ant}", ""),
@@ -462,12 +462,12 @@ with tab_dfc:
             )
             with _col_btn:
                 st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-                if st.button("✏️", key=f"btn_edit_{_chave_ant}", help="Editar valor"):
+                if st.button("✏️ Editar", key=f"btn_edit_{_chave_ant}"):
                     del st.session_state[_chave_ant]
                     st.rerun()
         else:
             # Mostra campo editável + botão Aplicar
-            _col_inp, _col_btn, _col_rest = st.columns([1, 1, 4])
+            _col_inp, _col_btn, _col_rest = st.columns([2, 1, 6])
             with _col_inp:
                 _txt_ant = st.text_input(
                     f"Saldo {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
@@ -477,7 +477,7 @@ with tab_dfc:
                 )
             with _col_btn:
                 st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-                if st.button("✔ ok", key=f"btn_{_chave_ant}", help="Aplicar valor"):
+                if st.button("✔ Aplicar", key=f"btn_{_chave_ant}", type="primary"):
                     _raw = st.session_state.get(f"txt_{_chave_ant}", "") or ""
                     try:
                         _v = _raw.strip().replace(" ", "").replace("R$", "").replace("\xa0", "")

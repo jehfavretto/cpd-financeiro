@@ -246,7 +246,7 @@ with tab_dre:
         showlegend=False,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key=f"waterfall_{_dark}")
 
     st.divider()
 

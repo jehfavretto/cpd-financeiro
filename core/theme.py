@@ -183,14 +183,18 @@ small {{ color: {txt2} !important; }}
     color: {txt} !important;
 }}
 
-.stButton > button:not([kind="primary"]) {{
+.stButton > button:not([kind="primary"]),
+.stButton > button[kind="secondary"],
+.stButton > button:not([kind]) {{
     background-color: {card} !important;
     border: 1.5px solid {accent} !important;
     color: {accent} !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
 }}
-.stButton > button:not([kind="primary"]):hover {{
+.stButton > button:not([kind="primary"]):hover,
+.stButton > button[kind="secondary"]:hover,
+.stButton > button:not([kind]):hover {{
     background-color: {"rgba(196,21,58,0.15)" if dark else "rgba(196,21,58,0.08)"} !important;
 }}
 

@@ -401,24 +401,29 @@ with tab_dfc:
     _linhas.append({"Descrição": "🏢 Despesas",                       "Valor (R$)": fmt_br(dfc.total_despesas)})
     _linhas.append({"Descrição": "🏛️ Impostos",                       "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
+    _th_bg  = "#1E3060" if _dark else "#f3f4f6"
+    _border_c = "rgba(232,237,246,0.12)" if _dark else "#e5e7eb"
+    _th_border = "rgba(232,237,246,0.25)" if _dark else "#d1d5db"
+    _pos_c  = "#2ed64f" if _dark else "#1a7f37"
+    _neg_c  = "#E63A5C" if _dark else "#C4153A"
     _rows_html = ""
     for l in _linhas:
         _desc = l["Descrição"]
         _val  = l["Valor (R$)"]
         _bold = "font-weight:700;" if _desc.startswith("=") else ""
-        _color = "color:#C4153A;" if (_desc.startswith("=") and "-" in _val) else ("color:#1a7f37;" if _desc.startswith("=") else "")
+        _color = f"color:{_neg_c};" if (_desc.startswith("=") and "-" in _val) else (f"color:{_pos_c};" if _desc.startswith("=") else "")
         _rows_html += (
             f"<tr>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;{_bold}'>{_desc}</td>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;text-align:right;{_bold}{_color}'>{_val}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:right;color:{_txt};{_bold}{_color}'>{_val}</td>"
             f"</tr>"
         )
     st.markdown(f"""
-<table style='width:100%;border-collapse:collapse;font-size:0.9rem;'>
+<table style='width:100%;border-collapse:collapse;font-size:0.9rem;background:transparent;'>
   <thead>
-    <tr style='background:#f3f4f6;'>
-      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid #d1d5db;'>Descrição</th>
-      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid #d1d5db;'>Valor (R$)</th>
+    <tr style='background:{_th_bg};'>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Descrição</th>
+      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_rows_html}</tbody>
@@ -518,19 +523,19 @@ with tab_dfc:
         _desc = row[""]
         _val  = row["Valor (R$)"]
         _bold = "font-weight:700;" if _desc.startswith("=") else ""
-        _color = "color:#C4153A;" if ("-" in _val and _desc.startswith("=")) else ("color:#1a7f37;" if (_desc.startswith("=") and "-" not in _val) else "")
+        _color = f"color:{_neg_c};" if ("-" in _val and _desc.startswith("=")) else (f"color:{_pos_c};" if (_desc.startswith("=") and "-" not in _val) else "")
         _conf_html += (
             f"<tr>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;{_bold}'>{_desc}</td>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;text-align:right;{_bold}{_color}'>{_val}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:right;color:{_txt};{_bold}{_color}'>{_val}</td>"
             f"</tr>"
         )
     st.markdown(f"""
-<table style='width:100%;border-collapse:collapse;font-size:0.9rem;'>
+<table style='width:100%;border-collapse:collapse;font-size:0.9rem;background:transparent;'>
   <thead>
-    <tr style='background:#f3f4f6;'>
-      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid #d1d5db;'></th>
-      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid #d1d5db;'>Valor (R$)</th>
+    <tr style='background:{_th_bg};'>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'></th>
+      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_conf_html}</tbody>

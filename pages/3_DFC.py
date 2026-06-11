@@ -401,7 +401,7 @@ with tab_dfc:
     _linhas.append({"Descrição": "🏢 Despesas",                       "Valor (R$)": fmt_br(dfc.total_despesas)})
     _linhas.append({"Descrição": "🏛️ Impostos",                       "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
-    _th_bg  = "#1E3060" if _dark else "#f3f4f6"
+    _th_bg  = "transparent" if _dark else "#f3f4f6"
     _border_c = "rgba(232,237,246,0.12)" if _dark else "#e5e7eb"
     _th_border = "rgba(232,237,246,0.25)" if _dark else "#d1d5db"
     _pos_c  = "#2ed64f" if _dark else "#1a7f37"

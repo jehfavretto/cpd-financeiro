@@ -445,6 +445,14 @@ with tab_dfc:
     _saldos_ant = _saldos_ant_dfc
     _saldo_ant_auto = float(_saldos_ant.get("saldo_banco") or 0.0) + float(_saldos_ant.get("saldo_caixa") or 0.0)
 
+    # CSS para alinhar botão verticalmente com o input
+    st.markdown("""
+    <style>
+    div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] {
+        display:flex; align-items:flex-end; padding-bottom:1px;
+    }
+    </style>""", unsafe_allow_html=True)
+
     # Se não encontrou saldo anterior, permite informar manualmente
     _chave_ant = f"saldo_ant_{mes}_{ano}"
     if _saldo_ant_auto == 0.0:
@@ -461,13 +469,12 @@ with tab_dfc:
                 key=f"txt_dis_{_chave_ant}",
             )
             with _col_btn:
-                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
                 if st.button("✏️ Editar", key=f"btn_edit_{_chave_ant}"):
                     del st.session_state[_chave_ant]
                     st.rerun()
         else:
             # Mostra campo editável + botão Aplicar
-            _col_inp, _col_btn, _col_rest = st.columns([2, 1, 6])
+            _col_inp, _col_btn, _col_rest = st.columns([2, 1, 8])
             with _col_inp:
                 _txt_ant = st.text_input(
                     f"Saldo {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
@@ -476,8 +483,7 @@ with tab_dfc:
                     key=f"txt_{_chave_ant}",
                 )
             with _col_btn:
-                st.markdown("<div style='margin-top:22px'></div>", unsafe_allow_html=True)
-                if st.button("✔ ok", key=f"btn_{_chave_ant}", type="primary", use_container_width=True):
+                if st.button("✔ ok", key=f"btn_{_chave_ant}", type="primary"):
                     _raw = st.session_state.get(f"txt_{_chave_ant}", "") or ""
                     try:
                         _v = _raw.strip().replace(" ", "").replace("R$", "").replace("\xa0", "")

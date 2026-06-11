@@ -6,3 +6,4 @@ supabase
 plotly
 matplotlib
 reportlab
+pdfplumber

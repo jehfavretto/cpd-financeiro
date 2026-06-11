@@ -11,6 +11,7 @@ from core.parser import (
     parse_banco_xlsx,
     parse_caixa_xlsx,
     parse_sponte_plano,
+    parse_extrato_fundos_pdf,
     detectar_mes_ano,
     MESES_ABREV,
 )
@@ -33,7 +34,7 @@ if _btn_col.button("✕ Limpar", help="Remover todos os arquivos enviados"):
     st.rerun()
 
 # ── Upload ────────────────────────────────────────────────────────────────────
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     st.markdown("**1. Fluxo de Caixa (Sponte)**")
@@ -61,10 +62,18 @@ with col4:
         help="Colunas: Data | Descrição | Valor | E/S",
     )
 
+with col5:
+    st.markdown("**5. Extrato de Fundos** _(opcional)_")
+    arquivo_fundos = st.file_uploader(
+        "PDF do Extrato de Fundos CEF", type=["pdf"],
+        key=f"fundos_{_cnt}",
+        help="PDF gerado pelo site da Caixa — preenche Aplicação, Rendimento e Resgate automaticamente",
+    )
+
 st.divider()
 
 # ── Exige pelo menos 1 arquivo ────────────────────────────────────────────────
-_algum = arquivo_sponte or arquivo_banco or arquivo_plano or arquivo_caixa
+_algum = arquivo_sponte or arquivo_banco or arquivo_plano or arquivo_caixa or arquivo_fundos
 if not _algum:
     st.info("Envie pelo menos um arquivo para continuar.")
     st.stop()
@@ -118,9 +127,10 @@ else:
 # ── Processa arquivos enviados ────────────────────────────────────────────────
 import io as _io, re as _re
 
-banco_df  = None
-plano_df  = None
-caixa_df  = None
+banco_df   = None
+plano_df   = None
+caixa_df   = None
+fundos_dat = None
 
 if arquivo_banco:
     try:
@@ -208,15 +218,31 @@ if arquivo_caixa:
     except Exception as e:
         st.warning(f"⚠️ Planilha de caixa ignorada: {e}")
 
+if arquivo_fundos:
+    try:
+        arquivo_fundos.seek(0)
+        fundos_dat = parse_extrato_fundos_pdf(arquivo_fundos.read())
+        if fundos_dat.get("mes") and fundos_dat.get("ano"):
+            _mes_f = fundos_dat["mes"]
+            _ano_f = fundos_dat["ano"]
+            if _mes_f != mes or _ano_f != ano:
+                st.warning(
+                    f"⚠️ O Extrato de Fundos é de **{MESES_ABREV[_mes_f]}/{_ano_f}** "
+                    f"mas o mês selecionado é **{mes_nome}/{ano}**. Verifique antes de importar."
+                )
+    except Exception as e:
+        st.warning(f"⚠️ Extrato de Fundos ignorado: {e}")
+
 # ── Resumo do que será importado ─────────────────────────────────────────────
 st.subheader(f"Resumo — {mes_nome}/{ano}")
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Lançamentos Sponte",   len(sponte_df) if sponte_df is not None else "—")
-col2.metric("Transações Banco",     len(banco_df)  if banco_df  is not None else "—")
+col1, col2, col3, col4, col5 = st.columns(5)
+col1.metric("Lançamentos Sponte",    len(sponte_df) if sponte_df is not None else "—")
+col2.metric("Transações Banco",      len(banco_df)  if banco_df  is not None else "—")
 col3.metric("Contas Plano de Contas",
             len(plano_df[plano_df["valor"] > 0]) if plano_df is not None else "—")
-col4.metric("Lançamentos Caixa",    len(caixa_df)  if caixa_df  is not None else "—")
+col4.metric("Lançamentos Caixa",     len(caixa_df)  if caixa_df  is not None else "—")
+col5.metric("Extrato de Fundos",     "✅ lido" if fundos_dat else "—")
 
 st.divider()
 
@@ -258,47 +284,105 @@ if caixa_df is not None:
         c2.metric("Saídas",   fmt_br(caixa_df[caixa_df["deb_cred"]=="S"]["valor"].sum()))
         st.dataframe(caixa_df, use_container_width=True, height=250)
 
+if fundos_dat:
+    with st.expander("📈 Preview — Extrato de Fundos", expanded=False):
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Saldo Anterior",  fmt_br(fundos_dat["saldo_anterior"]))
+        c2.metric("Rendimento",      fmt_br(fundos_dat["rendimento"]))
+        c3.metric("Aplicações",      fmt_br(fundos_dat["aplicacoes"]))
+        c4.metric("Saldo Final",     fmt_br(fundos_dat["saldo_bruto"]))
+
 st.divider()
 
-# ── Saldos manuais (só aparece se extrato banco enviado) ─────────────────────
+# ── Saldos automáticos ────────────────────────────────────────────────────────
+st.subheader(f"💰 Saldos em {mes_nome}/{ano}")
+st.caption("Calculados automaticamente — ajuste se necessário antes de confirmar.")
+
+# Busca saldos do mês anterior para base de cálculo
+_mes_ant = mes - 1 if mes > 1 else 12
+_ano_ant = ano   if mes > 1 else ano - 1
+_saldos_ant = db.carregar_saldos(_mes_ant, _ano_ant)
+_banco_ant  = float(_saldos_ant.get("saldo_banco") or 0.0)
+_caixa_ant  = float(_saldos_ant.get("saldo_caixa") or 0.0)
+
+# Saldo banco = mês anterior + créditos − débitos do extrato
 if banco_df is not None:
-    st.subheader(f"💰 Saldos em {mes_nome}/{ano}")
-    st.markdown(
-        "Informe os saldos ao final do mês. "
-        "O saldo bancário é calculado automaticamente pelo extrato, mas você pode ajustar."
-    )
-
-    saldo_banco_calc = (
-        banco_df[banco_df["deb_cred"] == "E"]["valor_num"].sum()
-        - banco_df[banco_df["deb_cred"] == "S"]["valor_num"].sum()
-    )
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        saldo_banco = st.number_input(
-            "Saldo Banco (R$)", value=float(round(saldo_banco_calc, 2)),
-            format="%.2f", step=100.0,
-        )
-    with c2:
-        saldo_aplicacao = st.number_input(
-            "Saldo Aplicação (R$)", value=0.0, format="%.2f", step=100.0,
-        )
-    with c3:
-        saldo_caixa = st.number_input(
-            "Saldo Caixa — dinheiro físico (R$)", value=0.0, format="%.2f", step=10.0,
-        )
-    st.divider()
+    _banco_cred = banco_df[banco_df["deb_cred"] == "E"]["valor_num"].sum()
+    _banco_deb  = banco_df[banco_df["deb_cred"] == "S"]["valor_num"].sum()
+    _saldo_banco_calc = round(_banco_ant + _banco_cred - _banco_deb, 2)
+    _banco_origem = f"calculado: {fmt_br(_banco_ant)} (ant.) + {fmt_br(_banco_cred)} − {fmt_br(_banco_deb)}"
 else:
-    saldo_banco = saldo_aplicacao = saldo_caixa = None
+    _saldo_banco_calc = float(db.carregar_saldos(mes, ano).get("saldo_banco") or 0.0)
+    _banco_origem = "valor salvo anteriormente"
+
+# Saldo caixa = mês anterior + entradas − saídas dos lançamentos de caixa
+if caixa_df is not None:
+    _caixa_ent = caixa_df[caixa_df["deb_cred"] == "E"]["valor"].sum()
+    _caixa_sai = caixa_df[caixa_df["deb_cred"] == "S"]["valor"].sum()
+    _saldo_caixa_calc = round(_caixa_ant + _caixa_ent - _caixa_sai, 2)
+    _caixa_origem = f"calculado: {fmt_br(_caixa_ant)} (ant.) + {fmt_br(_caixa_ent)} − {fmt_br(_caixa_sai)}"
+else:
+    _saldo_caixa_calc = float(db.carregar_saldos(mes, ano).get("saldo_caixa") or 0.0)
+    _caixa_origem = "valor salvo anteriormente"
+
+# Saldo aplicação, rendimento e resgate — do PDF de fundos
+if fundos_dat and fundos_dat.get("saldo_bruto"):
+    _saldo_aplic_calc   = fundos_dat["saldo_bruto"]
+    _rendimento_calc    = fundos_dat["rendimento"]
+    _resgate_calc       = fundos_dat["resgates"]
+    _aplic_origem       = "extraído do PDF do Extrato de Fundos CEF"
+else:
+    _saldos_atual = db.carregar_saldos(mes, ano)
+    _saldo_aplic_calc = float(_saldos_atual.get("saldo_aplicacao") or 0.0)
+    _rendimento_calc  = float(_saldos_atual.get("rendimento_aplicacao") or 0.0)
+    _resgate_calc     = float(_saldos_atual.get("resgate_aplicacao") or 0.0)
+    _aplic_origem     = "valor salvo anteriormente"
+
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.caption(f"🏦 {_banco_origem}")
+    saldo_banco = st.number_input(
+        "Saldo Banco (R$)", value=_saldo_banco_calc,
+        format="%.2f", step=100.0, key="inp_banco",
+    )
+with c2:
+    st.caption(f"📈 {_aplic_origem}")
+    saldo_aplicacao = st.number_input(
+        "Saldo Aplicação (R$)", value=_saldo_aplic_calc,
+        format="%.2f", step=100.0, key="inp_aplic",
+    )
+with c3:
+    st.caption(f"💵 {_caixa_origem}")
+    saldo_caixa = st.number_input(
+        "Saldo Caixa — dinheiro físico (R$)", value=_saldo_caixa_calc,
+        format="%.2f", step=10.0, key="inp_caixa",
+    )
+
+st.caption("Rendimentos e resgates do fundo de investimento — conforme Extrato de Fundos")
+c4, c5 = st.columns(2)
+with c4:
+    rendimento_aplicacao = st.number_input(
+        "💹 Rendimento da Aplicação no mês (R$)", value=_rendimento_calc,
+        format="%.2f", step=10.0, key="inp_rendimento",
+        help="Rendimento Bruto no Mês — conforme Extrato de Fundos CEF",
+    )
+with c5:
+    resgate_aplicacao = st.number_input(
+        "↩️ Resgate da Aplicação no mês (R$)", value=_resgate_calc,
+        format="%.2f", step=100.0, key="inp_resgate",
+        help="Resgates realizados no mês — conforme Extrato de Fundos CEF",
+    )
+
+st.divider()
 
 # ── Botão confirmar ───────────────────────────────────────────────────────────
-# lista do que vai ser salvo
 _itens_import = []
 if sponte_df is not None: _itens_import.append(f"{len(sponte_df)} lançamentos do Sponte")
 if banco_df  is not None: _itens_import.append(f"{len(banco_df)} transações do banco")
 if plano_df  is not None: _itens_import.append(f"{len(plano_df)} contas do Plano de Contas")
 if caixa_df  is not None: _itens_import.append(f"{len(caixa_df)} lançamentos de caixa")
-if saldo_banco is not None: _itens_import.append("saldos atualizados")
+if fundos_dat:             _itens_import.append("extrato de fundos")
+_itens_import.append("saldos atualizados")
 
 if st.button(f"✅ Confirmar importação de {mes_nome}/{ano}", type="primary", use_container_width=True):
     with st.spinner("Salvando dados..."):
@@ -309,10 +393,14 @@ if st.button(f"✅ Confirmar importação de {mes_nome}/{ano}", type="primary", 
                 db.salvar_transacoes_banco(mes, ano, banco_df)
             if plano_df is not None:
                 db.salvar_plano_contas(mes, ano, plano_df)
-            if saldo_banco is not None:
-                db.salvar_saldos(mes, ano, saldo_banco, saldo_aplicacao, saldo_caixa)
             if caixa_df is not None:
                 db.salvar_lancamentos_caixa(mes, ano, caixa_df)
+            db.salvar_saldos(
+                mes, ano,
+                saldo_banco, saldo_aplicacao, saldo_caixa,
+                rendimento_aplicacao=rendimento_aplicacao,
+                resgate_aplicacao=resgate_aplicacao,
+            )
         except Exception as e:
             st.error(f"Erro ao salvar: {e}")
             st.stop()

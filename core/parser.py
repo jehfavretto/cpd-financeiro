@@ -8,6 +8,42 @@ import pandas as pd
 from datetime import datetime
 
 
+def parse_extrato_fundos_pdf(pdf_bytes: bytes) -> dict:
+    """
+    Extrai dados do Extrato de Fundos Caixa (PDF gerado pelo site da CEF).
+    Retorna dict com: mes, ano, saldo_anterior, aplicacoes, resgates, rendimento, saldo_bruto.
+    """
+    import pdfplumber
+    import io
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        texto = "\n".join(page.extract_text() or "" for page in pdf.pages)
+
+    def _val(pattern):
+        m = re.search(pattern, texto, re.IGNORECASE)
+        if not m:
+            return 0.0
+        s = m.group(1).strip().rstrip("C").replace(".", "").replace(",", ".")
+        try:
+            return float(s)
+        except ValueError:
+            return 0.0
+
+    m_mes = re.search(r'M[eê]s/Ano\s+(\d{2})/(\d{4})', texto)
+    mes = int(m_mes.group(1)) if m_mes else None
+    ano = int(m_mes.group(2)) if m_mes else None
+
+    return {
+        "mes": mes,
+        "ano": ano,
+        "saldo_anterior": _val(r'Saldo Anterior\s+([\d.,]+C?)'),
+        "aplicacoes":     _val(r'Aplica[çc][oõ]es\s+([\d.,]+C?)'),
+        "resgates":       _val(r'Resgates\s+([\d.,]+)'),
+        "rendimento":     _val(r'Rendimento Bruto no M[eê]s\s+([\d.,]+C?)'),
+        "saldo_bruto":    _val(r'Saldo Bruto\*?\s+([\d.,]+C?)'),
+    }
+
+
 MESES_ABREV = {
     1: "Jan", 2: "Fev", 3: "Mar", 4: "Abr",
     5: "Mai", 6: "Jun", 7: "Jul", 8: "Ago",

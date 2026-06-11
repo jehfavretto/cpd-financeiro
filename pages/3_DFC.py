@@ -301,6 +301,8 @@ with tab_dfc:
 
     # Itens ignorados do banco — separados entre saídas (aplicação) e entradas extras
     _BANCO_SAIDA  = {"Aplicação Financeira"}
+    # Se o resgate já veio do PDF de Fundos (saldos), não duplica da conciliação
+    _BANCO_SKIP_SE_SALDO = {"Resgate Financeiro (Banco)", "Resgate Automat - Cliente", "Resgate Financeiro"}
     ignorados_bk  = [c for c in conciliacoes if c["tipo"] == "ignorado_banco"]
     _extras_banco = {}
     _saidas_banco = {}
@@ -310,6 +312,8 @@ with tab_dfc:
         if val > 0:
             if mot in _BANCO_SAIDA:
                 _saidas_banco[mot] = _saidas_banco.get(mot, 0.0) + val
+            elif mot in _BANCO_SKIP_SE_SALDO and _resgate_aplic > 0:
+                pass  # já contabilizado via resgate_aplicacao dos saldos
             else:
                 _extras_banco[mot] = _extras_banco.get(mot, 0.0) + val
 

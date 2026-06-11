@@ -94,7 +94,8 @@ if arquivo_sponte:
         if _mes_auto:
             _fonte_deteccao = "Fluxo de Caixa Sponte"
     except Exception as e:
-        st.error(f"Erro ao ler Fluxo de Caixa Sponte: {e}")
+        import traceback
+        st.error(f"Erro ao ler Fluxo de Caixa Sponte: {e}\n\n```\n{traceback.format_exc()}\n```")
         st.stop()
 
 # 2) Extrato CEF xlsx — "Extrato de 01/02/2026 à 28/02/2026" no cabeçalho

@@ -78,51 +78,88 @@ if not _algum:
     st.info("Envie pelo menos um arquivo para continuar.")
     st.stop()
 
-# ── Seletor de mês/ano (sempre visível; auto-preenchido se Sponte enviado) ───
+# ── Detecta mês/ano dos arquivos enviados ────────────────────────────────────
 _ano_atual = 2026
 _MESES_NOMES = [MESES_ABREV[m] for m in range(1, 13)]
 
-# detecta mês/ano do Sponte se disponível
 _mes_auto, _ano_auto = None, None
+_fonte_deteccao = None
 sponte_df = None
+
+# 1) Sponte
 if arquivo_sponte:
     try:
         sponte_df = parse_sponte_fluxo(arquivo_sponte)
         _mes_auto, _ano_auto = detectar_mes_ano(sponte_df)
+        if _mes_auto:
+            _fonte_deteccao = "Fluxo de Caixa Sponte"
     except Exception as e:
         st.error(f"Erro ao ler Fluxo de Caixa Sponte: {e}")
         st.stop()
 
-_col_mes, _col_ano, _col_info = st.columns([2, 1, 5])
-with _col_mes:
-    _mes_idx = (_mes_auto - 1) if _mes_auto else 0
-    mes_sel_nome = st.selectbox(
-        "Mês",
-        _MESES_NOMES,
-        index=_mes_idx,
-        disabled=bool(_mes_auto),
-        help="Detectado automaticamente pelo arquivo Sponte" if _mes_auto else "Selecione o mês",
-    )
-    mes = _MESES_NOMES.index(mes_sel_nome) + 1
+# 2) Extrato CEF xlsx — "Extrato de 01/02/2026 à 28/02/2026" no cabeçalho
+if not _mes_auto and arquivo_banco:
+    try:
+        import io as _io_det, re as _re_det
+        arquivo_banco.seek(0)
+        _hdr = pd.read_excel(_io_det.BytesIO(arquivo_banco.read()), dtype=str, nrows=0)
+        arquivo_banco.seek(0)
+        _hdr_str = str(list(_hdr.columns)[0])
+        _m = _re_det.search(r'(\d{2})/(\d{2})/(\d{4})', _hdr_str)
+        if _m:
+            _mes_auto = int(_m.group(2))
+            _ano_auto = int(_m.group(3))
+            _fonte_deteccao = "Extrato CEF"
+    except Exception:
+        pass
 
-with _col_ano:
-    ano = st.number_input(
-        "Ano",
-        min_value=2020,
-        max_value=2035,
-        value=_ano_auto or _ano_atual,
-        step=1,
-        disabled=bool(_ano_auto),
-        help="Detectado automaticamente pelo arquivo Sponte" if _ano_auto else "Informe o ano",
-    )
-    ano = int(ano)
+# 3) Extrato de Fundos PDF — processado mais adiante, mas lemos só o cabeçalho aqui
+if not _mes_auto and arquivo_fundos:
+    try:
+        import io as _io_det2
+        arquivo_fundos.seek(0)
+        _fd_tmp = parse_extrato_fundos_pdf(arquivo_fundos.read())
+        arquivo_fundos.seek(0)
+        if _fd_tmp.get("mes") and _fd_tmp.get("ano"):
+            _mes_auto = _fd_tmp["mes"]
+            _ano_auto = _fd_tmp["ano"]
+            _fonte_deteccao = "Extrato de Fundos"
+    except Exception:
+        pass
 
-mes_nome = MESES_ABREV[mes]
+# 4) Caixa xlsx — primeira data nas linhas
+if not _mes_auto and arquivo_caixa:
+    try:
+        import io as _io_det3
+        arquivo_caixa.seek(0)
+        _cx_tmp = pd.read_excel(_io_det3.BytesIO(arquivo_caixa.read()), dtype=str)
+        arquivo_caixa.seek(0)
+        for col in _cx_tmp.columns:
+            _dates = pd.to_datetime(_cx_tmp[col], dayfirst=True, errors="coerce").dropna()
+            if not _dates.empty:
+                _mes_auto = int(_dates.iloc[0].month)
+                _ano_auto = int(_dates.iloc[0].year)
+                _fonte_deteccao = "Planilha de Caixa"
+                break
+    except Exception:
+        pass
 
+# ── Exibe mês detectado ou pede para inserir ─────────────────────────────────
 if _mes_auto:
-    _col_info.info(f"📅 Mês detectado automaticamente: **{mes_nome}/{ano}**")
+    mes     = _mes_auto
+    ano     = _ano_auto
+    mes_nome = MESES_ABREV[mes]
+    st.info(f"📅 Mês detectado automaticamente: **{mes_nome}/{ano}** — via {_fonte_deteccao}")
 else:
-    _col_info.warning(f"📅 Mês selecionado manualmente: **{mes_nome}/{ano}** — confirme antes de importar")
+    st.warning("⚠️ Mês não detectado automaticamente — favor inserir o mês antes de importar.")
+    _col_mes, _col_ano, _ = st.columns([2, 1, 5])
+    with _col_mes:
+        mes_sel_nome = st.selectbox("Mês", _MESES_NOMES, index=0)
+        mes = _MESES_NOMES.index(mes_sel_nome) + 1
+    with _col_ano:
+        ano = int(st.number_input("Ano", min_value=2020, max_value=2035,
+                                  value=_ano_atual, step=1))
+    mes_nome = MESES_ABREV[mes]
 
 # ── Processa arquivos enviados ────────────────────────────────────────────────
 import io as _io, re as _re

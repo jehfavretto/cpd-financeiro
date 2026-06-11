@@ -253,66 +253,6 @@ with tab_dre:
 
     st.plotly_chart(fig, use_container_width=True, key=f"waterfall_{_dark}")
 
-    st.divider()
-
-    # ── Exportar ──────────────────────────────────────────────────────────
-    st.subheader("📤 Exportar")
-
-    @st.cache_data(ttl=60)
-    def _evolucao_para_export(ano: int, meses: tuple):
-        from core.dfc import calcular_dfc
-        rows = []
-        for m in meses:
-            p = db.carregar_plano_contas(m, ano)
-            a = db.carregar_ajustes(m, ano)
-            s = db.carregar_saldos(m, ano)
-            if p.empty:
-                continue
-            d = calcular_dfc(p, ar=a["AR"], ad=a["AD"], saldo_banco=s["saldo_banco"])
-            rows.append({
-                "mes":       m,
-                "label":     MESES_ABREV[m],
-                "receitas":  d.total_receitas,
-                "custos":    abs(d.total_custos),
-                "despesas":  abs(d.total_despesas),
-                "impostos":  abs(d.total_impostos),
-                "saidas":    abs(d.total_custos) + abs(d.total_despesas) + abs(d.total_impostos),
-                "resultado": d.resultado_liquido,
-            })
-        import pandas as _pd
-        return _pd.DataFrame(rows)
-
-    col_ex1, col_ex2 = st.columns(2)
-
-    with col_ex1:
-        st.markdown("**📊 Excel — DFC + Evolução**")
-        st.caption("Planilha com o DFC do mês selecionado e o comparativo de todos os meses do ano.")
-        if st.button("⬇️ Baixar Excel", use_container_width=True):
-            with st.spinner("Gerando Excel..."):
-                ev_df = _evolucao_para_export(ano, tuple(meses_com_dados))
-                excel_bytes = gerar_excel(mes, ano, dfc, plano_df, ev_df)
-            st.download_button(
-                label="📥 Clique para baixar o arquivo",
-                data=excel_bytes,
-                file_name=f"CPD_DFC_{MESES_ABREV[mes]}{ano}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-            )
-
-    with col_ex2:
-        st.markdown("**📄 PDF Executivo — para os CEOs**")
-        st.caption("Relatório com KPIs acumulados, gráficos de desempenho e análise de custos de eventos.")
-        if st.button("⬇️ Gerar PDF", use_container_width=True):
-            with st.spinner("Gerando PDF..."):
-                ev_df = _evolucao_para_export(ano, tuple(meses_com_dados))
-                pdf_bytes = gerar_pdf_ceo(ano, ev_df, dfc, mes)
-            st.download_button(
-                label="📥 Clique para baixar o PDF",
-                data=pdf_bytes,
-                file_name=f"CPD_Relatorio_Executivo_{ano}.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-            )
 
 # ════════════════════════════════════════════════════════════════════════════
 # ABA DFC

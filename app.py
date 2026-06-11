@@ -214,6 +214,7 @@ pages = {
         st.Page("pages/4_Evolucao.py",    title="Evolução Mensal",   icon="📈"),
         st.Page("pages/5_Saldos.py",      title="Saldos",            icon="💰"),
         st.Page("pages/6_Alunos.py",      title="Alunos",            icon="👨‍🎓"),
+        st.Page("pages/7_Relatorios.py",  title="Relatórios",        icon="📁"),
     ]
 }
 

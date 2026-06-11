@@ -341,11 +341,29 @@ with aba_tabela:
             .sort_values("turma", key=lambda s: s.map(_sort_turma))
         )
         st.markdown("**📊 Alunos por turma**")
-        st.dataframe(resumo, use_container_width=False, hide_index=True,
-                     column_config={
-                         "turma":  st.column_config.TextColumn("Turma",  width="medium"),
-                         "alunos": st.column_config.NumberColumn("Alunos", width="small"),
-                     })
+        _dark_a   = st.session_state.get("tema", "light") == "dark"
+        _th_bg_a  = "transparent" if _dark_a else "#f3f4f6"
+        _th_bdr_a = "rgba(232,237,246,0.25)" if _dark_a else "#d1d5db"
+        _bdr_a    = "rgba(232,237,246,0.12)" if _dark_a else "#e5e7eb"
+        _txt_a    = "#E8EDF6" if _dark_a else "#1C2B5F"
+        _rows_a   = "".join(
+            f"<tr>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_bdr_a};color:{_txt_a};'>{row['turma']}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_bdr_a};color:{_txt_a};text-align:right;'>{row['alunos']}</td>"
+            f"</tr>"
+            for _, row in resumo.iterrows()
+        )
+        st.markdown(f"""
+<table style='width:auto;min-width:280px;border-collapse:collapse;font-size:0.9rem;background:transparent;'>
+  <thead>
+    <tr style='background:{_th_bg_a};'>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_bdr_a};color:{_txt_a};'>Turma</th>
+      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid {_th_bdr_a};color:{_txt_a};'>Alunos</th>
+    </tr>
+  </thead>
+  <tbody>{_rows_a}</tbody>
+</table>
+""", unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

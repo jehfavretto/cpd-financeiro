@@ -1205,6 +1205,28 @@ def _mot_label(v):
 _sp_ign_rows = conc_df[conc_df["tipo"] == "ignorado_sponte"].copy()
 _bk_ign_rows = conc_df[conc_df["tipo"] == "ignorado_banco"].copy()
 
+# Vínculos manuais com divergência de valor (Sponte ≠ Banco)
+_manuais_rows = conc_df[conc_df["tipo"] == "manual"].copy()
+_divergencias = []   # (id, sp_txt, bk_txt, diff)
+for _, _mrow in _manuais_rows.iterrows():
+    _sp_ch = _mrow.get("sponte_chave")
+    _bk_ch = _mrow.get("banco_chave")
+    if not _sp_ch or not _bk_ch:
+        continue
+    _sp_r = sponte_df[sponte_df["chave"] == _sp_ch]
+    # banco_chave pode ter múltiplos separados por §§
+    _bk_chs = [c.strip() for c in str(_bk_ch).split("§§") if c.strip()]
+    _bk_total = sum(
+        abs(float(banco_df_full[banco_df_full["chave"] == c].iloc[0]["valor"]))
+        for c in _bk_chs if not banco_df_full[banco_df_full["chave"] == c].empty
+    )
+    if _sp_r.empty:
+        continue
+    _sp_val = abs(float(_sp_r.iloc[0]["valor"]))
+    _diff   = round(_sp_val - _bk_total, 2)
+    if abs(_diff) > 0.01:
+        _divergencias.append((_mrow["id"], _sp_txt(_sp_ch), _bk_txt(_bk_chs[0]), _diff))
+
 _sp_por_motivo: dict = {}
 for _, _irow in _sp_ign_rows.iterrows():
     _ch = _irow.get("sponte_chave")
@@ -1233,6 +1255,11 @@ _bk_pend_total = banco_pendente["valor"].abs().sum() if not banco_pendente.empty
 # ── Tabela resumo (selecionável) ──────────────────────────────────────────────
 _resumo_rows = []
 _resumo_meta = []   # guarda tipo e motivo para detalhar ao selecionar
+
+if _divergencias:
+    _div_total = sum(abs(d[3]) for d in _divergencias)
+    _resumo_rows.append({"Motivo": "⚖️ Divergência em vínculos manuais", "Valor (R$)": fmt_br(_div_total), "Itens": len(_divergencias)})
+    _resumo_meta.append(("divergencia", ""))
 
 for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
     _icon = _MOTIVO_ICONS.get(_mot, "📋")
@@ -1296,6 +1323,11 @@ else:
             for _, _pr in banco_pendente.iterrows():
                 _nome = str(_pr.get("origem_destino","") or _pr.get("historico","")).strip()
                 _det_rows.append({"Item": f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}"})
+
+        elif _tipo_sel == "divergencia":
+            for _id, _sp_t, _bk_t, _diff in _divergencias:
+                _sinal = "+" if _diff > 0 else "-"
+                _det_rows.append({"Item": f"🔵 {_sp_t}  ↔  🏦 {_bk_t}", "Diferença": f"{_sinal} {fmt_br(abs(_diff))}"})
 
         if _det_rows:
             _sel_det = st.dataframe(

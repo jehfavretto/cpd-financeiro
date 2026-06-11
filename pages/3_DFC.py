@@ -476,8 +476,8 @@ with tab_dfc:
                     key=f"txt_{_chave_ant}",
                 )
             with _col_btn:
-                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-                if st.button("✔ ok", key=f"btn_{_chave_ant}", type="primary"):
+                st.markdown("<div style='margin-top:22px'></div>", unsafe_allow_html=True)
+                if st.button("✔ ok", key=f"btn_{_chave_ant}", type="primary", use_container_width=True):
                     _raw = st.session_state.get(f"txt_{_chave_ant}", "") or ""
                     try:
                         _v = _raw.strip().replace(" ", "").replace("R$", "").replace("\xa0", "")

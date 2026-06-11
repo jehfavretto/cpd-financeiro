@@ -201,7 +201,28 @@ with tab_dre:
             if sp == "3." and dfc.ad != 0:
                 det.append({"Descrição": "    Ajuste Despesa (AD)", "Valor (R$)": _fmt_br(dfc.ad)})
             if det:
-                st.dataframe(pd.DataFrame(det), hide_index=True, use_container_width=True)
+                _det_rows = ""
+                for d in det:
+                    _dd = d["Descrição"]
+                    _dv = d["Valor (R$)"]
+                    _db = "font-weight:700;" if not _dd.startswith("    ") else ""
+                    _det_rows += (
+                        f"<tr>"
+                        f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_db}'>{_dd}</td>"
+                        f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_db};width:50%'>{_dv}</td>"
+                        f"</tr>"
+                    )
+                st.markdown(f"""
+<table style='width:100%;border-collapse:collapse;font-size:0.9rem;background:transparent;'>
+  <thead>
+    <tr style='background:{"transparent" if _dark else "#f3f4f6"};'>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Descrição</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};width:50%'>Valor (R$)</th>
+    </tr>
+  </thead>
+  <tbody>{_det_rows}</tbody>
+</table>
+""", unsafe_allow_html=True)
             else:
                 st.caption("Sem lançamentos nesta seção.")
 

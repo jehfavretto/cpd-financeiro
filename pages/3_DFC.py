@@ -409,16 +409,16 @@ with tab_dfc:
         _color = "color:#C4153A;" if (_desc.startswith("=") and "-" in _val) else ("color:#1a7f37;" if _desc.startswith("=") else "")
         _rows_html += (
             f"<tr>"
-            f"<td style='padding:7px 12px;border-bottom:1px solid #e5e7eb;{_bold}'>{_desc}</td>"
-            f"<td style='padding:7px 12px;border-bottom:1px solid #e5e7eb;text-align:right;{_bold}{_color}'>{_val}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;{_bold}'>{_desc}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;text-align:right;{_bold}{_color}'>{_val}</td>"
             f"</tr>"
         )
     st.markdown(f"""
 <table style='width:100%;border-collapse:collapse;font-size:0.9rem;'>
   <thead>
     <tr style='background:#f3f4f6;'>
-      <th style='padding:7px 12px;text-align:left;font-weight:600;border-bottom:2px solid #d1d5db;'>Descrição</th>
-      <th style='padding:7px 12px;text-align:right;font-weight:600;border-bottom:2px solid #d1d5db;'>Valor (R$)</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid #d1d5db;'>Descrição</th>
+      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid #d1d5db;'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_rows_html}</tbody>
@@ -513,7 +513,29 @@ with tab_dfc:
         {"":  "Saldo real (banco + caixa)",     "Valor (R$)": fmt_br(_saldo_real)},
         {"":  "Diferença",                      "Valor (R$)": fmt_br(_diferenca)},
     ]
-    st.dataframe(pd.DataFrame(_conf), hide_index=True, use_container_width=True, height=215)
+    _conf_html = ""
+    for row in _conf:
+        _desc = row[""]
+        _val  = row["Valor (R$)"]
+        _bold = "font-weight:700;" if _desc.startswith("=") else ""
+        _color = "color:#C4153A;" if ("-" in _val and _desc.startswith("=")) else ("color:#1a7f37;" if (_desc.startswith("=") and "-" not in _val) else "")
+        _conf_html += (
+            f"<tr>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;{_bold}'>{_desc}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid #e5e7eb;text-align:right;{_bold}{_color}'>{_val}</td>"
+            f"</tr>"
+        )
+    st.markdown(f"""
+<table style='width:100%;border-collapse:collapse;font-size:0.9rem;'>
+  <thead>
+    <tr style='background:#f3f4f6;'>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid #d1d5db;'></th>
+      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid #d1d5db;'>Valor (R$)</th>
+    </tr>
+  </thead>
+  <tbody>{_conf_html}</tbody>
+</table>
+""", unsafe_allow_html=True)
 
     if abs(_diferenca) < 0.01:
         st.success("✅ DFC confere com o saldo real de banco + caixa!")

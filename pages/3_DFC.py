@@ -175,7 +175,7 @@ with tab_dre:
   <thead>
     <tr style='background:{"transparent" if _dark else "#f3f4f6"};'>
       <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Seção</th>
-      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};width:30%'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_dre_rows}</tbody>
@@ -444,7 +444,7 @@ with tab_dfc:
   <thead>
     <tr style='background:{_th_bg};'>
       <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Descrição</th>
-      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};width:30%'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_rows_html}</tbody>
@@ -556,7 +556,7 @@ with tab_dfc:
   <thead>
     <tr style='background:{_th_bg};'>
       <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'></th>
-      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};width:30%'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_conf_html}</tbody>

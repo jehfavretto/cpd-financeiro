@@ -81,7 +81,7 @@ def parse_sponte_fluxo(file_bytes_or_path) -> pd.DataFrame:
     Retorna DataFrame: data, data_rep, categoria, es, origem_destino, valor.
     Valor sempre positivo (o campo es indica a direção).
     """
-    raw = pd.read_excel(file_bytes_or_path, header=None, skiprows=8, dtype=str)
+    raw = pd.read_excel(file_bytes_or_path, header=None, dtype=str)
     mask = raw[0].apply(
         lambda x: isinstance(x, str) and len(x) == 10 and x[2] == "/" and x[5] == "/"
     )

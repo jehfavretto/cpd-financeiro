@@ -17,7 +17,8 @@ st.title("📊 Resultado Mensal")
 anos_disponiveis = [2026, 2025]
 col1, col2 = st.columns([1, 3])
 with col1:
-    ano = st.selectbox("Ano", anos_disponiveis, index=0)
+    _ano_idx = anos_disponiveis.index(st.session_state.get("dfc_ano", anos_disponiveis[0])) if st.session_state.get("dfc_ano") in anos_disponiveis else 0
+    ano = st.selectbox("Ano", anos_disponiveis, index=_ano_idx, key="dfc_ano")
 
 meses_com_dados = db.meses_com_dados(ano)
 if not meses_com_dados:
@@ -26,9 +27,12 @@ if not meses_com_dados:
 
 with col2:
     mes_opcoes = {m: f"{MESES_ABREV[m]}/{ano}" for m in meses_com_dados}
-    mes = st.selectbox("Mês", list(mes_opcoes.keys()),
+    _mes_list  = list(mes_opcoes.keys())
+    _mes_saved = st.session_state.get("dfc_mes")
+    _mes_idx   = _mes_list.index(_mes_saved) if _mes_saved in _mes_list else len(_mes_list) - 1
+    mes = st.selectbox("Mês", _mes_list,
                        format_func=lambda m: mes_opcoes[m],
-                       index=len(meses_com_dados) - 1)
+                       index=_mes_idx, key="dfc_mes")
 
 # ── Carrega dados ─────────────────────────────────────────────────────────────
 plano_df = db.carregar_plano_contas(mes, ano)

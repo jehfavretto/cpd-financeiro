@@ -87,14 +87,28 @@ def parse_sponte_fluxo(file_bytes_or_path) -> pd.DataFrame:
     )
     data = raw[mask].reset_index(drop=True)
 
-    df = pd.DataFrame({
-        "data":           data[0],
-        "data_rep":       data[4],
-        "categoria":      data[6].fillna(""),
-        "es":             data[7].str.strip(),
-        "origem_destino": data[8].fillna(""),
-        "valor":          data[11].apply(_parse_valor_br).abs(),  # sempre positivo
-    })
+    # Detecta formato: novo (8 colunas, 0-7) ou antigo (12+ colunas)
+    _ncols = len(data.columns)
+    if _ncols <= 8:
+        # Formato novo: data|data_rep|categoria|E/S|origem|nan|valor|saldo
+        df = pd.DataFrame({
+            "data":           data[0],
+            "data_rep":       data[1],
+            "categoria":      data[2].fillna(""),
+            "es":             data[3].str.strip(),
+            "origem_destino": data[4].fillna(""),
+            "valor":          data[6].apply(_parse_valor_br).abs(),
+        })
+    else:
+        # Formato antigo
+        df = pd.DataFrame({
+            "data":           data[0],
+            "data_rep":       data[4],
+            "categoria":      data[6].fillna(""),
+            "es":             data[7].str.strip(),
+            "origem_destino": data[8].fillna(""),
+            "valor":          data[11].apply(_parse_valor_br).abs(),
+        })
 
     # Converte datas string → date
     df["data"]     = pd.to_datetime(df["data"],     format="%d/%m/%Y").dt.date

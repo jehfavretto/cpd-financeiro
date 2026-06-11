@@ -174,14 +174,14 @@ small {{ color: {txt2} !important; }}
 
 /* ── Botão secundário ──────────────────────────────────────────────────── */
 .stButton > button:not([kind="primary"]) {{
-    background-color: transparent !important;
+    background-color: {card} !important;
     border: 1.5px solid {accent} !important;
     color: {accent} !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
 }}
 .stButton > button:not([kind="primary"]):hover {{
-    background-color: rgba(196,21,58,0.08) !important;
+    background-color: {"rgba(196,21,58,0.15)" if dark else "rgba(196,21,58,0.08)"} !important;
 }}
 
 /* ── Métricas ──────────────────────────────────────────────────────────── */

@@ -258,6 +258,11 @@ small {{ color: {txt2} !important; }}
     border-color: {border} !important;
     border-radius: 8px !important;
 }}
+input:not([type="file"]), textarea {{
+    color: {txt} !important;
+    background-color: {inp_bg} !important;
+}}
+input::placeholder, textarea::placeholder {{ color: {txt2} !important; }}
 [data-baseweb="select"] span {{ color: {txt} !important; }}
 
 /* ── Alertas / info / success / warning ───────────────────────────────── */

@@ -445,14 +445,6 @@ with tab_dfc:
     _saldos_ant = _saldos_ant_dfc
     _saldo_ant_auto = float(_saldos_ant.get("saldo_banco") or 0.0) + float(_saldos_ant.get("saldo_caixa") or 0.0)
 
-    # CSS para alinhar botão verticalmente com o input
-    st.markdown("""
-    <style>
-    div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] {
-        display:flex; align-items:flex-end; padding-bottom:1px;
-    }
-    </style>""", unsafe_allow_html=True)
-
     # Se não encontrou saldo anterior, permite informar manualmente
     _chave_ant = f"saldo_ant_{mes}_{ano}"
     if _saldo_ant_auto == 0.0:
@@ -469,6 +461,7 @@ with tab_dfc:
                 key=f"txt_dis_{_chave_ant}",
             )
             with _col_btn:
+                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
                 if st.button("✏️ Editar", key=f"btn_edit_{_chave_ant}"):
                     del st.session_state[_chave_ant]
                     st.rerun()
@@ -483,6 +476,7 @@ with tab_dfc:
                     key=f"txt_{_chave_ant}",
                 )
             with _col_btn:
+                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
                 if st.button("✔ ok", key=f"btn_{_chave_ant}", type="primary"):
                     _raw = st.session_state.get(f"txt_{_chave_ant}", "") or ""
                     try:

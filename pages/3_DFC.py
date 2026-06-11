@@ -167,7 +167,7 @@ with tab_dre:
         _dre_rows += (
             f"<tr>"
             f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:right;color:{_txt};{_bold}{_color}'>{_val}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:left;color:{_txt};{_bold}{_color}'>{_val}</td>"
             f"</tr>"
         )
     st.markdown(f"""
@@ -175,7 +175,7 @@ with tab_dre:
   <thead>
     <tr style='background:{"transparent" if _dark else "#f3f4f6"};'>
       <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Seção</th>
-      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_dre_rows}</tbody>
@@ -436,7 +436,7 @@ with tab_dfc:
         _rows_html += (
             f"<tr>"
             f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:right;color:{_txt};{_bold}{_color}'>{_val}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:left;color:{_txt};{_bold}{_color}'>{_val}</td>"
             f"</tr>"
         )
     st.markdown(f"""
@@ -444,7 +444,7 @@ with tab_dfc:
   <thead>
     <tr style='background:{_th_bg};'>
       <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Descrição</th>
-      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_rows_html}</tbody>
@@ -548,7 +548,7 @@ with tab_dfc:
         _conf_html += (
             f"<tr>"
             f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:right;color:{_txt};{_bold}{_color}'>{_val}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:left;color:{_txt};{_bold}{_color}'>{_val}</td>"
             f"</tr>"
         )
     st.markdown(f"""
@@ -556,7 +556,7 @@ with tab_dfc:
   <thead>
     <tr style='background:{_th_bg};'>
       <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'></th>
-      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
     </tr>
   </thead>
   <tbody>{_conf_html}</tbody>

@@ -8,6 +8,7 @@ def fmt_br(v: float) -> str:
 
     Exemplo: 71028.99 → 'R$ 71.028,99'
     """
+    v = round(v, 2) or 0.0  # elimina -0.0
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 

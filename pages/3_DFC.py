@@ -76,27 +76,27 @@ st.markdown(f"""
 <div style="display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_txt};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">📈 Receitas</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">Receitas</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_txt};">{_br(dfc.total_receitas)}</div>
   </div>
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_accent};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">🏭 Custos</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">Custos</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_accent};">{_br(dfc.total_custos)}</div>
   </div>
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_accent};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">🏢 Despesas</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">Despesas</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_accent};">{_br(dfc.total_despesas)}</div>
   </div>
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_accent};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">🏛️ Impostos</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">Impostos</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_accent};">{_br(dfc.total_impostos)}</div>
   </div>
   <div style="flex:1.2; min-width:160px; background:{res_bg}; border-left:4px solid {res_color};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💡 Resultado Líquido</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">Resultado Líquido</div>
     <div style="font-size:1.35rem; font-weight:700; color:{res_color};">{res_sinal} {_br(resultado)}</div>
   </div>
 </div>
@@ -385,22 +385,22 @@ with tab_dfc:
 <div style="display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_txt};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">📈 Receitas Sponte</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">Receitas Sponte</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_txt};">{_br(_receitas_sponte)}</div>
   </div>
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid {_accent};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">➖ Deduções Sponte</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">− Deduções Sponte</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_accent};">{_br(_total_deducoes)}</div>
   </div>
   <div style="flex:1; min-width:140px; background:{_card}; border-left:4px solid #2A9D8F;
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">➕ Extras Banco</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">+ Extras Banco</div>
     <div style="font-size:1.35rem; font-weight:700; color:#2A9D8F;">{_br(_total_extras + _resgate_aplic)}</div>
   </div>
   <div style="flex:1.2; min-width:160px; background:{_rc_bg}; border-left:4px solid {_rc_color};
               border-radius:6px; padding:14px 16px;">
-    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💰 Resultado do Mês</div>
+    <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">Resultado do Mês</div>
     <div style="font-size:1.35rem; font-weight:700; color:{_rc_color};">{"▲" if _resultado_caixa >= 0 else "▼"} {_br(_resultado_caixa)}</div>
   </div>
 </div>

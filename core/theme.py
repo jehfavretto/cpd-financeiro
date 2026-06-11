@@ -654,6 +654,10 @@ h1 {{
    ONDINHA DECORATIVA CPD — linha sinusoidal vermelha (como no site CPD)
    Uso: st.markdown('<div class="cpd-ondinha"></div>', unsafe_allow_html=True)
    ══════════════════════════════════════════════════════════════════════════ */
+::selection {{
+    background: {"rgba(100,140,255,0.45)" if dark else "rgba(28,43,95,0.25)"} !important;
+    color: {txt} !important;
+}}
 .cpd-ondinha {{
     height: 26px;
     width: 100%;

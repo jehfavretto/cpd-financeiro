@@ -97,7 +97,7 @@ st.markdown(f"""
   <div style="flex:1.2; min-width:160px; background:{res_bg}; border-left:4px solid {res_color};
               border-radius:6px; padding:14px 16px;">
     <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💡 Resultado Líquido</div>
-    <div style="font-size:1.35rem; font-weight:700; color:{res_color};">{res_sinal} {_br(resultado)}</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{res_color};">{fmt_br(resultado)}</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -401,7 +401,7 @@ with tab_dfc:
   <div style="flex:1.2; min-width:160px; background:{_rc_bg}; border-left:4px solid {_rc_color};
               border-radius:6px; padding:14px 16px;">
     <div style="font-size:0.78rem; color:{_txt2}; margin-bottom:4px;">💰 Resultado do Mês</div>
-    <div style="font-size:1.35rem; font-weight:700; color:{_rc_color};">{_br(_resultado_caixa)}</div>
+    <div style="font-size:1.35rem; font-weight:700; color:{_rc_color};">{fmt_br(_resultado_caixa)}</div>
   </div>
 </div>
 """, unsafe_allow_html=True)

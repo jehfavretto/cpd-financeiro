@@ -341,6 +341,16 @@ hr {{ border-color: {border} !important; margin: 16px 0 !important; }}
     border-radius: 8px !important;
 }}
 /* Selectbox options dropdown */
+[data-testid="stPopover"] button,
+[data-testid="stPopover"] > div > button {{
+    background-color: {card} !important;
+    border: 1.5px solid {border} !important;
+    color: {txt} !important;
+    border-radius: 8px !important;
+}}
+[data-testid="stPopover"] button:hover {{
+    background-color: {inp_bg} !important;
+}}
 [data-baseweb="popover"] li,
 [data-baseweb="menu"] li {{
     background-color: {card} !important;

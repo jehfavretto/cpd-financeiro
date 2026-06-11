@@ -427,9 +427,9 @@ with tab_dfc:
 
         if _ja_salvo:
             # Mostra valor travado com botão de editar
-            _col_val, _col_btn = st.columns([3, 1])
+            _col_val, _col_btn, _col_rest = st.columns([1, 1, 4])
             _col_val.text_input(
-                f"Saldo banco + caixa em {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
+                f"Saldo {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
                 value=st.session_state.get(f"txt_{_chave_ant}", ""),
                 disabled=True,
                 key=f"txt_dis_{_chave_ant}",
@@ -441,10 +441,10 @@ with tab_dfc:
                     st.rerun()
         else:
             # Mostra campo editável + botão Aplicar
-            _col_inp, _col_btn = st.columns([3, 1])
+            _col_inp, _col_btn, _col_rest = st.columns([1, 1, 4])
             with _col_inp:
                 _txt_ant = st.text_input(
-                    f"Saldo banco + caixa em {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
+                    f"Saldo {MESES_ABREV[_mes_ant]}/{_ano_ant} (R$)",
                     value=st.session_state.get(f"txt_{_chave_ant}", ""),
                     placeholder="ex: 11.728,30",
                     key=f"txt_{_chave_ant}",

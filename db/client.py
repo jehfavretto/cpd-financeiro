@@ -182,6 +182,7 @@ def salvar_saldos(
     banco: float, aplicacao: float, caixa: float,
     rendimento_aplicacao: float = 0.0,
     resgate_aplicacao: float = 0.0,
+    diferenca_caixa: float = 0.0,
 ):
     client = get_client()
     client.table("saldos").upsert(
@@ -192,6 +193,7 @@ def salvar_saldos(
             "saldo_caixa": caixa,
             "rendimento_aplicacao": rendimento_aplicacao,
             "resgate_aplicacao": resgate_aplicacao,
+            "diferenca_caixa": diferenca_caixa,
         },
         on_conflict="mes,ano",
     ).execute()
@@ -213,7 +215,7 @@ def carregar_saldos(mes: int, ano: int) -> dict:
         return res.data[0]
     return {
         "saldo_banco": 0.0, "saldo_aplicacao": 0.0, "saldo_caixa": 0.0,
-        "rendimento_aplicacao": 0.0, "resgate_aplicacao": 0.0,
+        "rendimento_aplicacao": 0.0, "resgate_aplicacao": 0.0, "diferenca_caixa": 0.0,
     }
 
 

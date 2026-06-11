@@ -128,12 +128,21 @@ if st.session_state["mostrar_edicao"]:
                 help="Resgates realizados no mês — conforme Extrato de Fundos CEF"
             )
 
+        st.caption("Ajuste de caixa — diferença entre o valor lançado no Sponte e o valor realmente pago em dinheiro")
+        novo_dif_caixa = st.number_input(
+            "⚖️ Diferença Sponte/Caixa (R$)",
+            value=float(saldo_atual.get("diferenca_caixa") or 0.0),
+            format="%.2f", step=1.0, key="edit_dif_caixa",
+            help="Use valor positivo se o caixa recebeu mais do que o Sponte registrou, negativo se recebeu menos."
+        )
+
         if st.button("✅ Salvar saldos", type="primary"):
             db.salvar_saldos(
                 mes_edit, ano,
                 novo_banco, novo_aplic, novo_caixa,
                 rendimento_aplicacao=novo_rendimento,
                 resgate_aplicacao=novo_resgate,
+                diferenca_caixa=novo_dif_caixa,
             )
             st.session_state["mostrar_edicao"] = False
             st.toast("✅ Saldos atualizados!")

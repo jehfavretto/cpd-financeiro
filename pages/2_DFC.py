@@ -298,11 +298,8 @@ with tab_dfc:
     _variacao_caixa      = _saldo_caixa_final - _saldo_caixa_anterior
 
     # ── Classifica motivos ────────────────────────────────────────────────
-    # "Pago em caixa físico" deduz das Receitas Banco — a variação real do
-    # caixa é adicionada separadamente via _variacao_caixa.
     _DEDUZ       = {"Valor Desviado", "Desconto em folha", "Pagamento não localizado",
                     "Estorno/Cancelamento"}
-    _CAIXA_FISICO = {"Pago em caixa físico"}
 
     def _normalizar_motivo(just):
         s = str(just or "").strip()
@@ -324,15 +321,12 @@ with tab_dfc:
     conciliacoes = db.carregar_conciliacoes(mes, ano)
     ignorados_sp = [c for c in conciliacoes if c["tipo"] == "ignorado_sponte"]
 
-    _deducoes      = {}
-    _caixa_fisico  = {}
+    _deducoes = {}
     for c in ignorados_sp:
         mot = _normalizar_motivo(c.get("justificativa", ""))
         val = _valor_da_chave(c.get("sponte_chave", ""))
         if mot in _DEDUZ:
-            _deducoes[mot]     = _deducoes.get(mot, 0.0) + val
-        elif mot in _CAIXA_FISICO:
-            _caixa_fisico[mot] = _caixa_fisico.get(mot, 0.0) + val
+            _deducoes[mot] = _deducoes.get(mot, 0.0) + val
 
     # Itens ignorados do banco — separados entre saídas (aplicação) e entradas extras
     _BANCO_SAIDA  = {"Aplicação Financeira"}
@@ -348,23 +342,14 @@ with tab_dfc:
             else:
                 _extras_banco[mot] = _extras_banco.get(mot, 0.0) + val
 
-    _receitas_sponte     = dfc.total_receitas
-    _saidas_sponte       = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
+    _receitas_sponte = dfc.total_receitas
+    _saidas_sponte   = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
+    _diferenca_caixa = float(saldos.get("diferenca_caixa") or 0.0)
 
-    # Caixa físico calculado matematicamente: tudo em Sponte que não passou pelo banco.
-    # caixa_fisico = Sponte_receitas - deduções_ignoradas + extras_banco_créditos - banco_créditos_total
-    # Isso garante que o resultado bate com o extrato bancário real.
-    _banco_raw_dfc = db.carregar_transacoes_banco(mes, ano)
-    _banco_E_total = float(_banco_raw_dfc[_banco_raw_dfc["deb_cred"] == "E"]["valor"].sum()) if not _banco_raw_dfc.empty else 0.0
-    _extras_banco_total = sum(_extras_banco.values())
-    _caixa_calculado = _receitas_sponte - sum(_deducoes.values()) + _extras_banco_total - _banco_E_total
-    if _caixa_calculado > 0:
-        _caixa_fisico["Pago em caixa físico"] = round(_caixa_calculado, 2)
-
-    _total_extras        = _extras_banco_total - sum(_saidas_banco.values())
-    _total_deducoes      = sum(_deducoes.values()) + sum(_caixa_fisico.values())
-    _receitas_reais      = _receitas_sponte - _total_deducoes
-    _resultado_caixa     = _receitas_reais + _total_extras + _resgate_aplic + _saidas_sponte + _variacao_caixa
+    _total_extras    = sum(_extras_banco.values()) - sum(_saidas_banco.values())
+    _total_deducoes  = sum(_deducoes.values())
+    _receitas_reais  = _receitas_sponte - _total_deducoes
+    _resultado_caixa = _receitas_reais + _total_extras + _resgate_aplic + _saidas_sponte + _variacao_caixa - _diferenca_caixa
 
     # ── KPIs DFC ──────────────────────────────────────────────────────────
     _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
@@ -403,9 +388,7 @@ with tab_dfc:
     _linhas.append({"Descrição": "📈 Receitas (Sponte)",              "Valor (R$)": fmt_br(_receitas_sponte)})
     for mot, val in _deducoes.items():
         _linhas.append({"Descrição": f"    ➖ {mot}",                 "Valor (R$)": fmt_br(-val)})
-    for mot, val in _caixa_fisico.items():
-        _linhas.append({"Descrição": f"    💵 {mot} (deduzido do banco)", "Valor (R$)": fmt_br(-val)})
-    _linhas.append({"Descrição": "= Receitas Reais (Banco)",           "Valor (R$)": fmt_br(_receitas_reais)})
+    _linhas.append({"Descrição": "= Receitas Reais",                  "Valor (R$)": fmt_br(_receitas_reais)})
     for mot, val in _extras_banco.items():
         _linhas.append({"Descrição": f"    ➕ {mot} (Banco)",          "Valor (R$)": fmt_br(val)})
     for mot, val in _saidas_banco.items():
@@ -413,8 +396,10 @@ with tab_dfc:
     if _resgate_aplic:
         _linhas.append({"Descrição": "    ➕ Resgate da Aplicação",    "Valor (R$)": fmt_br(_resgate_aplic)})
     if _variacao_caixa != 0:
-        _linhas.append({"Descrição": f"    💵 Variação do Caixa Físico ({MESES_ABREV[_mes_ant_dfc]} → {MESES_ABREV[mes]})",
+        _linhas.append({"Descrição": f"    💵 Variação do Caixa ({MESES_ABREV[_mes_ant_dfc]} → {MESES_ABREV[mes]})",
                         "Valor (R$)": fmt_br(_variacao_caixa)})
+    if _diferenca_caixa != 0:
+        _linhas.append({"Descrição": "    ⚖️ Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
     _linhas.append({"Descrição": "🏭 Custos",                         "Valor (R$)": fmt_br(dfc.total_custos)})
     _linhas.append({"Descrição": "🏢 Despesas",                       "Valor (R$)": fmt_br(dfc.total_despesas)})
     _linhas.append({"Descrição": "🏛️ Impostos",                       "Valor (R$)": fmt_br(dfc.total_impostos)})

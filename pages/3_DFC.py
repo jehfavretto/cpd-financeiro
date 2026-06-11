@@ -401,8 +401,29 @@ with tab_dfc:
     _linhas.append({"Descrição": "🏢 Despesas",                       "Valor (R$)": fmt_br(dfc.total_despesas)})
     _linhas.append({"Descrição": "🏛️ Impostos",                       "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
-    st.dataframe(pd.DataFrame(_linhas), hide_index=True, use_container_width=True,
-                 height=38 + len(_linhas) * 35)
+    _rows_html = ""
+    for l in _linhas:
+        _desc = l["Descrição"]
+        _val  = l["Valor (R$)"]
+        _bold = "font-weight:700;" if _desc.startswith("=") else ""
+        _color = "color:#C4153A;" if (_desc.startswith("=") and "-" in _val) else ("color:#1a7f37;" if _desc.startswith("=") else "")
+        _rows_html += (
+            f"<tr>"
+            f"<td style='padding:7px 12px;border-bottom:1px solid #e5e7eb;{_bold}'>{_desc}</td>"
+            f"<td style='padding:7px 12px;border-bottom:1px solid #e5e7eb;text-align:right;{_bold}{_color}'>{_val}</td>"
+            f"</tr>"
+        )
+    st.markdown(f"""
+<table style='width:100%;border-collapse:collapse;font-size:0.9rem;'>
+  <thead>
+    <tr style='background:#f3f4f6;'>
+      <th style='padding:7px 12px;text-align:left;font-weight:600;border-bottom:2px solid #d1d5db;'>Descrição</th>
+      <th style='padding:7px 12px;text-align:right;font-weight:600;border-bottom:2px solid #d1d5db;'>Valor (R$)</th>
+    </tr>
+  </thead>
+  <tbody>{_rows_html}</tbody>
+</table>
+""", unsafe_allow_html=True)
 
     st.divider()
 

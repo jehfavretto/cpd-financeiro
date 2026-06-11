@@ -333,12 +333,14 @@ with tab_dfc:
     _caixa_raw_dfc = db.carregar_lancamentos_caixa(mes, ano)
     _caixa_chaves = set()
     if not _caixa_raw_dfc.empty:
+        import pandas as _pd_dfc
         for _, _cr in _caixa_raw_dfc.iterrows():
             try:
-                _data = str(_cr["data_mov"])[:5]
+                # Normaliza para DD/MM (mesmo formato usado na conciliação)
+                _data_fmt = _pd_dfc.to_datetime(str(_cr["data_mov"]), dayfirst=True).strftime("%d/%m")
                 _val  = f"{float(_cr['valor']):.2f}".replace(".", ",")
                 _desc = _norm_nome_dfc(str(_cr.get("descricao", "") or "").strip())
-                _caixa_chaves.add(f"{_data}|{_cr['deb_cred']}|{_val}|{_desc}")
+                _caixa_chaves.add(f"{_data_fmt}|{_cr['deb_cred']}|{_val}|{_desc}")
             except Exception:
                 pass
 

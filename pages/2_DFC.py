@@ -324,26 +324,6 @@ with tab_dfc:
     conciliacoes = db.carregar_conciliacoes(mes, ano)
     ignorados_sp = [c for c in conciliacoes if c["tipo"] == "ignorado_sponte"]
 
-    # Chaves do caixa físico — para detectar vínculos manuais com caixa (não banco)
-    import unicodedata as _ucd2
-    def _norm_nome_dfc(s: str) -> str:
-        s = _ucd2.normalize("NFD", str(s).lower().strip())
-        return "".join(c for c in s if _ucd2.category(c) != "Mn")
-
-    _caixa_raw_dfc = db.carregar_lancamentos_caixa(mes, ano)
-    _caixa_chaves = set()
-    if not _caixa_raw_dfc.empty:
-        import pandas as _pd_dfc
-        for _, _cr in _caixa_raw_dfc.iterrows():
-            try:
-                # Normaliza para DD/MM (mesmo formato usado na conciliação)
-                _data_fmt = _pd_dfc.to_datetime(str(_cr["data_mov"]), dayfirst=True).strftime("%d/%m")
-                _val  = f"{float(_cr['valor']):.2f}".replace(".", ",")
-                _desc = _norm_nome_dfc(str(_cr.get("descricao", "") or "").strip())
-                _caixa_chaves.add(f"{_data_fmt}|{_cr['deb_cred']}|{_val}|{_desc}")
-            except Exception:
-                pass
-
     _deducoes      = {}
     _caixa_fisico  = {}
     for c in ignorados_sp:
@@ -353,15 +333,6 @@ with tab_dfc:
             _deducoes[mot]     = _deducoes.get(mot, 0.0) + val
         elif mot in _CAIXA_FISICO:
             _caixa_fisico[mot] = _caixa_fisico.get(mot, 0.0) + val
-
-    # Vínculos manuais onde o banco_chave bate com uma chave de caixa
-    _manuais_caixa = [c for c in conciliacoes
-                      if c["tipo"] == "manual"
-                      and any(bk.strip() in _caixa_chaves
-                              for bk in str(c.get("banco_chave", "")).split("§§"))]
-    for c in _manuais_caixa:
-        val = _valor_da_chave(c.get("sponte_chave", ""))
-        _caixa_fisico["Pago em caixa físico"] = _caixa_fisico.get("Pago em caixa físico", 0.0) + val
 
     # Itens ignorados do banco — separados entre saídas (aplicação) e entradas extras
     _BANCO_SAIDA  = {"Aplicação Financeira"}
@@ -377,10 +348,21 @@ with tab_dfc:
             else:
                 _extras_banco[mot] = _extras_banco.get(mot, 0.0) + val
 
-    _total_extras        = sum(_extras_banco.values()) - sum(_saidas_banco.values())
-    _total_deducoes      = sum(_deducoes.values()) + sum(_caixa_fisico.values())
     _receitas_sponte     = dfc.total_receitas
     _saidas_sponte       = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
+
+    # Caixa físico calculado matematicamente: tudo em Sponte que não passou pelo banco.
+    # caixa_fisico = Sponte_receitas - deduções_ignoradas + extras_banco_créditos - banco_créditos_total
+    # Isso garante que o resultado bate com o extrato bancário real.
+    _banco_raw_dfc = db.carregar_transacoes_banco(mes, ano)
+    _banco_E_total = float(_banco_raw_dfc[_banco_raw_dfc["deb_cred"] == "E"]["valor"].sum()) if not _banco_raw_dfc.empty else 0.0
+    _extras_banco_total = sum(_extras_banco.values())
+    _caixa_calculado = _receitas_sponte - sum(_deducoes.values()) + _extras_banco_total - _banco_E_total
+    if _caixa_calculado > 0:
+        _caixa_fisico["Pago em caixa físico"] = round(_caixa_calculado, 2)
+
+    _total_extras        = _extras_banco_total - sum(_saidas_banco.values())
+    _total_deducoes      = sum(_deducoes.values()) + sum(_caixa_fisico.values())
     _receitas_reais      = _receitas_sponte - _total_deducoes
     _resultado_caixa     = _receitas_reais + _total_extras + _resgate_aplic + _saidas_sponte + _variacao_caixa
 

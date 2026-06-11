@@ -107,11 +107,15 @@ _partes_full = [p for p in [banco_df if not banco_df.empty else None,
 banco_df_full = pd.concat(_partes_full, ignore_index=True) if _partes_full else pd.DataFrame()
 
 # banco_df: apenas a fonte selecionada (usado nos pendentes)
+# Guarda o tamanho do banco original para reindexar o caixa igual ao banco_df_full
+_n_banco_orig = len(banco_df)
 if usar_caixa and not usar_banco:
     if _caixa_adaptado.empty:
         st.info("Nenhum lançamento de caixa importado para este mês. Use **📥 Importar Mês** para carregar a planilha de caixa.")
         st.stop()
-    banco_df = _caixa_adaptado
+    banco_df = _caixa_adaptado.copy()
+    # Alinha índices com os do banco_df_full (caixa começa depois do banco)
+    banco_df.index = range(_n_banco_orig, _n_banco_orig + len(banco_df))
 elif usar_banco and usar_caixa and not _caixa_adaptado.empty:
     banco_df = pd.concat([banco_df, _caixa_adaptado], ignore_index=True)
 # se só banco: banco_df já está correto
@@ -148,10 +152,23 @@ if not _alunos_df.empty:
             _resp_aluno_map[_norm_nome(resp)] = " / ".join(alunos)
 
 def _responsavel_do_aluno(nome_aluno: str) -> str:
-    return _aluno_resp_map.get(_norm_nome(nome_aluno), "")
+    key = _norm_nome(nome_aluno)
+    if key in _aluno_resp_map:
+        return _aluno_resp_map[key]
+    # Nome incompleto: procura aluno cujo nome começa com o que foi digitado
+    for k, v in _aluno_resp_map.items():
+        if k.startswith(key + " "):
+            return v
+    return ""
 
 def _aluno_do_responsavel(nome_resp: str) -> str:
-    return _resp_aluno_map.get(_norm_nome(nome_resp), "")
+    key = _norm_nome(nome_resp)
+    if key in _resp_aluno_map:
+        return _resp_aluno_map[key]
+    for k, v in _resp_aluno_map.items():
+        if k.startswith(key + " "):
+            return v
+    return ""
 
 
 # ── Funções auxiliares ─────────────────────────────────────────────────────────

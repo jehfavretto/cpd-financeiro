@@ -411,10 +411,10 @@ with tab_dfc:
     # ── Tabela detalhada ──────────────────────────────────────────────────
     st.subheader("Demonstração")
     _linhas = []
-    _linhas.append({"Descrição": "(+) Receitas (Sponte)",              "Valor (R$)": fmt_br(_receitas_sponte)})
+    _linhas.append({"Descrição": "= Receitas (Sponte)",               "Valor (R$)": fmt_br(_receitas_sponte)})
     for mot, val in _deducoes.items():
         _linhas.append({"Descrição": f"    (-) {mot}",                "Valor (R$)": fmt_br(-val)})
-    _linhas.append({"Descrição": "(=) Receitas Reais",                "Valor (R$)": fmt_br(_receitas_reais)})
+    _linhas.append({"Descrição": "= Receitas Reais",                  "Valor (R$)": fmt_br(_receitas_reais)})
     for mot, val in _extras_banco.items():
         _linhas.append({"Descrição": f"    (+) {mot} (Banco)",        "Valor (R$)": fmt_br(val)})
     for mot, val in _saidas_banco.items():
@@ -432,8 +432,10 @@ with tab_dfc:
     for l in _linhas:
         _desc = l["Descrição"]
         _val  = l["Valor (R$)"]
-        _bold = "font-weight:700;" if _desc.startswith("=") else ""
-        _color = f"color:{_neg_c};" if (_desc.startswith("=") and "-" in _val) else (f"color:{_pos_c};" if _desc.startswith("=") else "")
+        _is_total = _desc.startswith("= RESULTADO")
+        _is_bold  = _desc.startswith("=")
+        _bold  = "font-weight:700;" if _is_bold else ""
+        _color = (f"color:{_neg_c};" if "-" in _val else f"color:{_pos_c};") if _is_total else ""
         _rows_html += (
             f"<tr>"
             f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"

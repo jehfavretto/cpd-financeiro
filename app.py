@@ -209,8 +209,8 @@ with st.sidebar:
 pages = {
     "": [
         st.Page("pages/1_Importar.py",    title="Importar Mês",      icon="📥"),
-        st.Page("pages/2_DFC.py",         title="DFC / Resumo",      icon="📊"),
-        st.Page("pages/3_Conciliacao.py", title="Conciliação",       icon="🔍"),
+        st.Page("pages/2_Conciliacao.py", title="Conciliação",       icon="🔍"),
+        st.Page("pages/3_DFC.py",         title="DFC / Resumo",      icon="📊"),
         st.Page("pages/4_Evolucao.py",    title="Evolução Mensal",   icon="📈"),
         st.Page("pages/5_Saldos.py",      title="Saldos",            icon="💰"),
         st.Page("pages/6_Alunos.py",      title="Alunos",            icon="👨‍🎓"),

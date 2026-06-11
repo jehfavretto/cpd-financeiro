@@ -11,7 +11,7 @@ from core.parser import MESES_ABREV
 from core.utils import fmt_br, fmt_br_kpi
 from core.exportar import gerar_excel, gerar_pdf_ceo
 
-st.title("📊 DFC — Demonstração de Fluxo de Caixa")
+st.title("📊 Resultado Mensal")
 
 # ── Seleção de mês ────────────────────────────────────────────────────────────
 anos_disponiveis = [2026, 2025]
@@ -112,26 +112,6 @@ tab_dre, tab_dfc = st.tabs(["📊 DRE — Resultado Gerencial", "💰 DFC — Fl
 # ════════════════════════════════════════════════════════════════════════════
 with tab_dre:
 
-    # ── Ajustes manuais (AR / AD) ─────────────────────────────────────────
-    with st.expander("✏️ Ajustes manuais (AR / AD)", expanded=False):
-        st.markdown(
-            "Preenchidos manualmente, como no Book Excel. "
-            "**AR** reduz Receitas, **AD** reduz Despesas."
-        )
-        c1, c2 = st.columns(2)
-        with c1:
-            novo_ar = st.number_input("AR — Ajuste Receita (R$)",
-                                      value=float(ajustes["AR"]), format="%.2f", step=100.0)
-        with c2:
-            novo_ad = st.number_input("AD — Ajuste Despesa (R$)",
-                                      value=float(ajustes["AD"]), format="%.2f", step=100.0)
-        if st.button("Salvar ajustes", type="secondary"):
-            db.salvar_ajuste(mes, ano, "AR", novo_ar)
-            db.salvar_ajuste(mes, ano, "AD", novo_ad)
-            st.success("Ajustes salvos!")
-            st.rerun()
-
-    st.divider()
 
     # ── Demonstração: resumo compacto + analítico retrátil ────────────────
     st.subheader("Demonstração")

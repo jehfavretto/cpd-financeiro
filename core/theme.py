@@ -643,8 +643,14 @@ h1 {{
 }}
 [data-testid="stExpander"] summary {{
     padding: 10px 14px !important;
+    background-color: {card} !important;
+    border-radius: 10px !important;
 }}
-[data-testid="stExpander"] summary p {{
+[data-testid="stExpander"] summary:hover {{
+    background-color: {card} !important;
+}}
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span {{
     color: {txt} !important;
     font-weight: 700 !important;
     font-size: 0.92rem !important;

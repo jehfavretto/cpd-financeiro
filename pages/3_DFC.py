@@ -423,9 +423,11 @@ with tab_dfc:
         _linhas.append({"Descrição": "    (+) Resgate da Aplicação",  "Valor (R$)": fmt_br(_resgate_aplic)})
     if _diferenca_caixa != 0:
         _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
-    _linhas.append({"Descrição": "(-) Custos",                        "Valor (R$)": fmt_br(dfc.total_custos)})
-    _linhas.append({"Descrição": "(-) Despesas",                      "Valor (R$)": fmt_br(dfc.total_despesas)})
-    _linhas.append({"Descrição": "(-) Impostos",                      "Valor (R$)": fmt_br(dfc.total_impostos)})
+    _total_saidas = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
+    _linhas.append({"Descrição": "= Saídas do Mês",                   "Valor (R$)": fmt_br(_total_saidas)})
+    _linhas.append({"Descrição": "    (-) Custos",                    "Valor (R$)": fmt_br(dfc.total_custos)})
+    _linhas.append({"Descrição": "    (-) Despesas",                  "Valor (R$)": fmt_br(dfc.total_despesas)})
+    _linhas.append({"Descrição": "    (-) Impostos",                  "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
     _th_bg  = "transparent" if _dark else "#f3f4f6"
     _rows_html = ""

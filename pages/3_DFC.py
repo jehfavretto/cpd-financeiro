@@ -477,7 +477,7 @@ with tab_dfc:
                 )
             with _col_btn:
                 st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-                if st.button("✔ ok", key=f"btn_{_chave_ant}", type="primary"):
+                if st.button("✔ ok", key=f"btn_{_chave_ant}"):
                     _raw = st.session_state.get(f"txt_{_chave_ant}", "") or ""
                     try:
                         _v = _raw.strip().replace(" ", "").replace("R$", "").replace("\xa0", "")

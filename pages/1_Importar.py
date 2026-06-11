@@ -197,8 +197,8 @@ if arquivo_banco:
                     pass
             _r = _r[_r["Histórico"] != "SALDO DIA"].copy()
             _r["data_mov"] = pd.to_datetime(
-                _r["Data Movimento"], dayfirst=True, errors="coerce"
-            ).dt.strftime("%d/%m/%Y").fillna(_r["Data Movimento"])
+                _r["Data Lancamento"], dayfirst=True, errors="coerce"
+            ).dt.strftime("%d/%m/%Y").fillna(_r["Data Lancamento"])
             _r["nr_doc"]    = _r["Documento"].fillna("").str.strip()
             _r["historico"] = _r["Histórico"].str.strip()
             _r["_vs"]       = _r["Valor Lançamento"].apply(_parse_val2)

@@ -131,6 +131,7 @@ banco_df   = None
 plano_df   = None
 caixa_df   = None
 fundos_dat = None
+_saldo_banco_extrato = None
 
 if arquivo_banco:
     try:
@@ -184,6 +185,16 @@ if arquivo_banco:
             _r = pd.read_excel(_io.BytesIO(_banco_bytes), dtype=str)
             _r.columns = _r.iloc[0]
             _r = _r.iloc[1:].reset_index(drop=True)
+            # extrai saldo final do último SALDO DIA antes de filtrar
+            _saldo_dia_rows = _r[_r["Histórico"] == "SALDO DIA"]
+            _saldo_banco_extrato = None
+            if not _saldo_dia_rows.empty:
+                try:
+                    _saldo_banco_extrato = _parse_val2(
+                        _saldo_dia_rows.iloc[-1]["Saldo"]
+                    )
+                except Exception:
+                    pass
             _r = _r[_r["Histórico"] != "SALDO DIA"].copy()
             _r["data_mov"] = pd.to_datetime(
                 _r["Data Movimento"], dayfirst=True, errors="coerce"
@@ -305,12 +316,16 @@ _saldos_ant = db.carregar_saldos(_mes_ant, _ano_ant)
 _banco_ant  = float(_saldos_ant.get("saldo_banco") or 0.0)
 _caixa_ant  = float(_saldos_ant.get("saldo_caixa") or 0.0)
 
-# Saldo banco = mês anterior + créditos − débitos do extrato
+# Saldo banco — lê direto da última linha SALDO DIA do extrato; fallback: cálculo
 if banco_df is not None:
-    _banco_cred = banco_df[banco_df["deb_cred"] == "E"]["valor_num"].sum()
-    _banco_deb  = banco_df[banco_df["deb_cred"] == "S"]["valor_num"].sum()
-    _saldo_banco_calc = round(_banco_ant + _banco_cred - _banco_deb, 2)
-    _banco_origem = f"calculado: {fmt_br(_banco_ant)} (ant.) + {fmt_br(_banco_cred)} − {fmt_br(_banco_deb)}"
+    if _saldo_banco_extrato is not None:
+        _saldo_banco_calc = round(_saldo_banco_extrato, 2)
+        _banco_origem = f"extraído do extrato CEF (última linha Saldo Dia)"
+    else:
+        _banco_cred = banco_df[banco_df["deb_cred"] == "E"]["valor_num"].sum()
+        _banco_deb  = banco_df[banco_df["deb_cred"] == "S"]["valor_num"].sum()
+        _saldo_banco_calc = round(_banco_ant + _banco_cred - _banco_deb, 2)
+        _banco_origem = f"calculado: {fmt_br(_banco_ant)} (ant.) + {fmt_br(_banco_cred)} − {fmt_br(_banco_deb)}"
 else:
     _saldo_banco_calc = float(db.carregar_saldos(mes, ano).get("saldo_banco") or 0.0)
     _banco_origem = "valor salvo anteriormente"

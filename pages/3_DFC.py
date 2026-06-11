@@ -53,12 +53,16 @@ dfc = calcular_dfc(
 )
 
 # ── Cores dinâmicas conforme o tema ──────────────────────────────────────────
-_dark   = st.session_state.get("tema", "light") == "dark"
-_card   = "#1A2550" if _dark else "#f8f9fb"
-_txt    = "#E8EDF6" if _dark else "#1C2B5F"
-_txt2   = "#8FA0C0" if _dark else "#555555"
-_accent = "#E63A5C" if _dark else "#C4153A"
-_br     = fmt_br_kpi
+_dark      = st.session_state.get("tema", "light") == "dark"
+_card      = "#1A2550" if _dark else "#f8f9fb"
+_txt       = "#E8EDF6" if _dark else "#1C2B5F"
+_txt2      = "#8FA0C0" if _dark else "#555555"
+_accent    = "#E63A5C" if _dark else "#C4153A"
+_br        = fmt_br_kpi
+_border_c  = "rgba(232,237,246,0.12)" if _dark else "#e5e7eb"
+_th_border = "rgba(232,237,246,0.25)" if _dark else "#d1d5db"
+_pos_c     = "#2ed64f" if _dark else "#1a7f37"
+_neg_c     = "#E63A5C" if _dark else "#C4153A"
 
 # ── KPIs principais (comuns às duas abas) ────────────────────────────────────
 st.subheader(f"{MESES_ABREV[mes]}/{ano}")
@@ -154,8 +158,29 @@ with tab_dre:
         resumo.append({"Seção": "↩️ Resgate da Aplicação", "Valor (R$)": _fmt_br(_resgate_aplic)})
     _resultado_total = dfc.resultado_liquido + _rendimento_aplic + _resgate_aplic
     resumo.append({"Seção": "RESULTADO LÍQUIDO", "Valor (R$)": _fmt_br(_resultado_total)})
-    _altura_resumo = 215 + (26 * ((_rendimento_aplic != 0) + (_resgate_aplic != 0)))
-    st.dataframe(pd.DataFrame(resumo), hide_index=True, use_container_width=True, height=_altura_resumo)
+    _dre_rows = ""
+    for r in resumo:
+        _desc = r["Seção"]
+        _val  = r["Valor (R$)"]
+        _bold = "font-weight:700;" if _desc in ("RESULTADO LÍQUIDO",) else ""
+        _color = f"color:{('#2ed64f' if _dark else '#1a7f37')};" if (_bold and "-" not in _val) else (f"color:{('#E63A5C' if _dark else '#C4153A')};" if (_bold and "-" in _val) else "")
+        _dre_rows += (
+            f"<tr>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
+            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:right;color:{_txt};{_bold}{_color}'>{_val}</td>"
+            f"</tr>"
+        )
+    st.markdown(f"""
+<table style='width:100%;border-collapse:collapse;font-size:0.9rem;background:transparent;'>
+  <thead>
+    <tr style='background:{"transparent" if _dark else "#f3f4f6"};'>
+      <th style='padding:4px 12px;text-align:left;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Seção</th>
+      <th style='padding:4px 12px;text-align:right;font-weight:600;border-bottom:2px solid {_th_border};color:{_txt};'>Valor (R$)</th>
+    </tr>
+  </thead>
+  <tbody>{_dre_rows}</tbody>
+</table>
+""", unsafe_allow_html=True)
 
     for sp, si in SECOES.items():
         with st.expander(f"{si['label']}  —  {_fmt_br(sec_totals[sp])}"):
@@ -402,10 +427,6 @@ with tab_dfc:
     _linhas.append({"Descrição": "🏛️ Impostos",                       "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
     _th_bg  = "transparent" if _dark else "#f3f4f6"
-    _border_c = "rgba(232,237,246,0.12)" if _dark else "#e5e7eb"
-    _th_border = "rgba(232,237,246,0.25)" if _dark else "#d1d5db"
-    _pos_c  = "#2ed64f" if _dark else "#1a7f37"
-    _neg_c  = "#E63A5C" if _dark else "#C4153A"
     _rows_html = ""
     for l in _linhas:
         _desc = l["Descrição"]

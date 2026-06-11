@@ -324,6 +324,24 @@ with tab_dfc:
     conciliacoes = db.carregar_conciliacoes(mes, ano)
     ignorados_sp = [c for c in conciliacoes if c["tipo"] == "ignorado_sponte"]
 
+    # Chaves do caixa físico — para detectar vínculos manuais com caixa (não banco)
+    import unicodedata as _ucd2
+    def _norm_nome_dfc(s: str) -> str:
+        s = _ucd2.normalize("NFD", str(s).lower().strip())
+        return "".join(c for c in s if _ucd2.category(c) != "Mn")
+
+    _caixa_raw_dfc = db.carregar_lancamentos_caixa(mes, ano)
+    _caixa_chaves = set()
+    if not _caixa_raw_dfc.empty:
+        for _, _cr in _caixa_raw_dfc.iterrows():
+            try:
+                _data = str(_cr["data_mov"])[:5]
+                _val  = f"{float(_cr['valor']):.2f}".replace(".", ",")
+                _desc = _norm_nome_dfc(str(_cr.get("descricao", "") or "").strip())
+                _caixa_chaves.add(f"{_data}|{_cr['deb_cred']}|{_val}|{_desc}")
+            except Exception:
+                pass
+
     _deducoes      = {}
     _caixa_fisico  = {}
     for c in ignorados_sp:
@@ -333,6 +351,15 @@ with tab_dfc:
             _deducoes[mot]     = _deducoes.get(mot, 0.0) + val
         elif mot in _CAIXA_FISICO:
             _caixa_fisico[mot] = _caixa_fisico.get(mot, 0.0) + val
+
+    # Vínculos manuais onde o banco_chave bate com uma chave de caixa
+    _manuais_caixa = [c for c in conciliacoes
+                      if c["tipo"] == "manual"
+                      and any(bk.strip() in _caixa_chaves
+                              for bk in str(c.get("banco_chave", "")).split("§§"))]
+    for c in _manuais_caixa:
+        val = _valor_da_chave(c.get("sponte_chave", ""))
+        _caixa_fisico["Pago em caixa físico"] = _caixa_fisico.get("Pago em caixa físico", 0.0) + val
 
     # Itens ignorados do banco — separados entre saídas (aplicação) e entradas extras
     _BANCO_SAIDA  = {"Aplicação Financeira"}

@@ -174,27 +174,29 @@ small {{ color: {txt2} !important; }}
 
 /* ── Botão secundário ──────────────────────────────────────────────────── */
 /* ── Multiselect ───────────────────────────────────────────────────────── */
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div,
 [data-testid="stMultiSelect"] [data-baseweb="select"] > div:first-child {{
     background-color: {inp_bg} !important;
     border-color: {border} !important;
     border-radius: 8px !important;
-}}
-[data-testid="stMultiSelect"] [data-baseweb="select"] span {{
     color: {txt} !important;
 }}
+[data-testid="stMultiSelect"] [data-baseweb="select"] span,
+[data-testid="stMultiSelect"] [data-baseweb="select"] input {{
+    color: {txt} !important;
+    background-color: transparent !important;
+}}
 
-.stButton > button:not([kind="primary"]),
-.stButton > button[kind="secondary"],
-.stButton > button:not([kind]) {{
+[data-testid="stButton"] button,
+.stButton > button {{
     background-color: {card} !important;
     border: 1.5px solid {accent} !important;
     color: {accent} !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
 }}
-.stButton > button:not([kind="primary"]):hover,
-.stButton > button[kind="secondary"]:hover,
-.stButton > button:not([kind]):hover {{
+[data-testid="stButton"] button:hover,
+.stButton > button:hover {{
     background-color: {"rgba(196,21,58,0.15)" if dark else "rgba(196,21,58,0.08)"} !important;
 }}
 

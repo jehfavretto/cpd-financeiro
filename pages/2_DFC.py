@@ -349,7 +349,7 @@ with tab_dfc:
     _total_extras    = sum(_extras_banco.values()) - sum(_saidas_banco.values())
     _total_deducoes  = sum(_deducoes.values())
     _receitas_reais  = _receitas_sponte - _total_deducoes
-    _resultado_caixa = _receitas_reais + _total_extras + _resgate_aplic + _saidas_sponte + _variacao_caixa - _diferenca_caixa
+    _resultado_caixa = _receitas_reais + _total_extras + _resgate_aplic + _saidas_sponte - _diferenca_caixa
 
     # ── KPIs DFC ──────────────────────────────────────────────────────────
     _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
@@ -395,9 +395,6 @@ with tab_dfc:
         _linhas.append({"Descrição": f"    ➖ {mot} (Banco)",          "Valor (R$)": fmt_br(-val)})
     if _resgate_aplic:
         _linhas.append({"Descrição": "    ➕ Resgate da Aplicação",    "Valor (R$)": fmt_br(_resgate_aplic)})
-    if _variacao_caixa != 0:
-        _linhas.append({"Descrição": f"    💵 Variação do Caixa ({MESES_ABREV[_mes_ant_dfc]} → {MESES_ABREV[mes]})",
-                        "Valor (R$)": fmt_br(_variacao_caixa)})
     if _diferenca_caixa != 0:
         _linhas.append({"Descrição": "    ⚖️ Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
     _linhas.append({"Descrição": "🏭 Custos",                         "Valor (R$)": fmt_br(dfc.total_custos)})

@@ -173,6 +173,16 @@ small {{ color: {txt2} !important; }}
 }}
 
 /* ── Botão secundário ──────────────────────────────────────────────────── */
+/* ── Multiselect ───────────────────────────────────────────────────────── */
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div:first-child {{
+    background-color: {inp_bg} !important;
+    border-color: {border} !important;
+    border-radius: 8px !important;
+}}
+[data-testid="stMultiSelect"] [data-baseweb="select"] span {{
+    color: {txt} !important;
+}}
+
 .stButton > button:not([kind="primary"]) {{
     background-color: {card} !important;
     border: 1.5px solid {accent} !important;

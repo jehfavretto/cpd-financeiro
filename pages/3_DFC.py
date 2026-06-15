@@ -367,8 +367,7 @@ with tab_dfc:
     _linhas.append({"Descrição": "= Receitas Reais",                  "Valor (R$)": fmt_br(_receitas_reais)})
     for mot, val in _extras_banco.items():
         _linhas.append({"Descrição": f"    (+) {mot} (Banco)",        "Valor (R$)": fmt_br(val)})
-    for mot, val in _saidas_banco.items():
-        _linhas.append({"Descrição": f"    (-) {mot} (Banco)",        "Valor (R$)": fmt_br(-val)})
+
     if _diferenca_caixa != 0:
         _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
     _total_saidas = dfc.total_custos + dfc.total_despesas + dfc.total_impostos

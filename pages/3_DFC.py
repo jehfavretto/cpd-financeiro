@@ -321,10 +321,11 @@ with tab_dfc:
     _saidas_sponte   = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
     _diferenca_caixa = float(saldos.get("diferenca_caixa") or 0.0)
 
-    _total_extras    = sum(_extras_banco.values()) - sum(_saidas_banco.values())
-    _total_deducoes  = sum(_deducoes.values())
-    _receitas_reais  = _receitas_sponte - _total_deducoes
-    _resultado_caixa = _receitas_reais + _total_extras + _saidas_sponte - _diferenca_caixa
+    _total_extras      = sum(_extras_banco.values())
+    _aplicacao_total   = sum(_saidas_banco.values())
+    _total_deducoes    = sum(_deducoes.values())
+    _receitas_reais    = _receitas_sponte - _total_deducoes
+    _resultado_caixa   = _receitas_reais + _total_extras + _saidas_sponte - _diferenca_caixa
 
     # ── KPIs DFC ──────────────────────────────────────────────────────────
     _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
@@ -376,9 +377,12 @@ with tab_dfc:
     _linhas.append({"Descrição": "    (-) Impostos",                  "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= Saídas do Mês",                   "Valor (R$)": fmt_br(_total_saidas)})
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
-    if _resgate_aplic:
+    if _resgate_aplic or _aplicacao_total:
         _linhas.append({"Descrição": "── Movimentações Financeiras ──", "Valor (R$)": ""})
-        _linhas.append({"Descrição": "    (+) Resgate da Aplicação",    "Valor (R$)": fmt_br(_resgate_aplic)})
+        if _resgate_aplic:
+            _linhas.append({"Descrição": "    (+) Resgate da Aplicação",    "Valor (R$)": fmt_br(_resgate_aplic)})
+        if _aplicacao_total:
+            _linhas.append({"Descrição": "    (-) Aplicação Financeira",    "Valor (R$)": fmt_br(-_aplicacao_total)})
     _th_bg  = "transparent" if _dark else "#f3f4f6"
     _rows_html = ""
     for l in _linhas:
@@ -484,7 +488,7 @@ with tab_dfc:
     else:
         _saldo_ant = _saldo_ant_auto
 
-    _saldo_calc = _saldo_ant + _resultado_caixa + _resgate_aplic
+    _saldo_calc = _saldo_ant + _resultado_caixa + _resgate_aplic - _aplicacao_total
     _diferenca  = _saldo_real - _saldo_calc
 
     _conf = [

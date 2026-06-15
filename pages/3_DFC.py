@@ -360,43 +360,64 @@ with tab_dfc:
 
     # ── Tabela detalhada ──────────────────────────────────────────────────
     st.subheader("Demonstração")
-    _linhas = []
-    _linhas.append({"Descrição": "= Receitas (Sponte)",               "Valor (R$)": fmt_br(_receitas_sponte)})
-    for mot, val in _deducoes.items():
-        _linhas.append({"Descrição": f"    (-) {mot}",                "Valor (R$)": fmt_br(-val)})
-    _linhas.append({"Descrição": "= Receitas Reais",                  "Valor (R$)": fmt_br(_receitas_reais)})
-    for mot, val in _extras_banco.items():
-        _linhas.append({"Descrição": f"    (+) {mot} (Banco)",        "Valor (R$)": fmt_br(val)})
+    _total_saidas          = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
+    _resultado_operacional = _receitas_reais + _total_saidas
 
-    if _diferenca_caixa != 0:
-        _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
-    _total_saidas = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
-    _linhas.append({"Descrição": "    (-) Custos",                    "Valor (R$)": fmt_br(dfc.total_custos)})
-    _linhas.append({"Descrição": "    (-) Despesas",                  "Valor (R$)": fmt_br(dfc.total_despesas)})
-    _linhas.append({"Descrição": "    (-) Impostos",                  "Valor (R$)": fmt_br(dfc.total_impostos)})
-    _linhas.append({"Descrição": "= Saídas do Mês",                   "Valor (R$)": fmt_br(_total_saidas)})
-    _linhas.append({"Descrição": "= RESULTADO DO MÊS",                 "Valor (R$)": fmt_br(_resultado_caixa)})
+    _linhas = []
+    _linhas.append({"Descrição": "= Receitas (Sponte)",    "Valor (R$)": fmt_br(_receitas_sponte)})
+    for mot, val in _deducoes.items():
+        _linhas.append({"Descrição": f"    (-) {mot}",     "Valor (R$)": fmt_br(-val)})
+    _linhas.append({"Descrição": "= Receitas Reais",       "Valor (R$)": fmt_br(_receitas_reais)})
+    _linhas.append({"Descrição": "    (-) Custos",         "Valor (R$)": fmt_br(dfc.total_custos)})
+    _linhas.append({"Descrição": "    (-) Despesas",       "Valor (R$)": fmt_br(dfc.total_despesas)})
+    _linhas.append({"Descrição": "    (-) Impostos",       "Valor (R$)": fmt_br(dfc.total_impostos)})
+    _linhas.append({"Descrição": "= Saídas do Mês",        "Valor (R$)": fmt_br(_total_saidas)})
+    _linhas.append({"Descrição": "= Resultado Operacional","Valor (R$)": fmt_br(_resultado_operacional)})
+
+    _ajustes_entradas = {k: v for k, v in _extras_banco.items() if v > 0}
+    _ajustes_saidas   = {k: v for k, v in _extras_banco.items() if v < 0}
+    if _ajustes_entradas:
+        _linhas.append({"Descrição": "── Ajustes do Banco/Caixa — Entradas ──", "Valor (R$)": ""})
+        for mot, val in _ajustes_entradas.items():
+            _linhas.append({"Descrição": f"    (+) {mot}", "Valor (R$)": fmt_br(val)})
+    if _ajustes_saidas or _diferenca_caixa != 0:
+        _linhas.append({"Descrição": "── Ajustes do Banco/Caixa — Saídas ──", "Valor (R$)": ""})
+        for mot, val in _ajustes_saidas.items():
+            _linhas.append({"Descrição": f"    (-) {mot}", "Valor (R$)": fmt_br(val)})
+        if _diferenca_caixa != 0:
+            _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
+
+    _linhas.append({"Descrição": "= RESULTADO DO MÊS",     "Valor (R$)": fmt_br(_resultado_caixa)})
     if _resgate_aplic or _aplicacao_total:
         _linhas.append({"Descrição": "── Movimentações Financeiras ──", "Valor (R$)": ""})
         if _resgate_aplic:
-            _linhas.append({"Descrição": "    (+) Resgate da Aplicação",    "Valor (R$)": fmt_br(_resgate_aplic)})
+            _linhas.append({"Descrição": "    (+) Resgate da Aplicação", "Valor (R$)": fmt_br(_resgate_aplic)})
         if _aplicacao_total:
-            _linhas.append({"Descrição": "    (-) Aplicação Financeira",    "Valor (R$)": fmt_br(-_aplicacao_total)})
+            _linhas.append({"Descrição": "    (-) Aplicação Financeira", "Valor (R$)": fmt_br(-_aplicacao_total)})
     _th_bg  = "transparent" if _dark else "#f3f4f6"
     _rows_html = ""
     for l in _linhas:
         _desc = l["Descrição"]
         _val  = l["Valor (R$)"]
-        _is_total = _desc.startswith("= RESULTADO")
-        _is_bold  = _desc.startswith("=")
+        _is_total   = _desc.startswith("= RESULTADO")
+        _is_bold    = _desc.startswith("=")
+        _is_section = _desc.startswith("──")
         _bold  = "font-weight:700;" if _is_bold else ""
         _color = (f"color:{_neg_c};" if "-" in _val else f"color:{_pos_c};") if _is_total else ""
-        _rows_html += (
-            f"<tr>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
-            f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:left;color:{_txt};{_bold}{_color}'>{_val}</td>"
-            f"</tr>"
-        )
+        if _is_section:
+            _rows_html += (
+                f"<tr>"
+                f"<td colspan='2' style='padding:8px 12px 4px;border-bottom:1px solid {_th_border};"
+                f"font-size:0.78rem;font-weight:600;color:{_txt2};letter-spacing:0.04em;'>{_desc}</td>"
+                f"</tr>"
+            )
+        else:
+            _rows_html += (
+                f"<tr>"
+                f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
+                f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:left;color:{_txt};{_bold}{_color}'>{_val}</td>"
+                f"</tr>"
+            )
     st.markdown(f"""
 <table style='width:100%;border-collapse:collapse;font-size:0.9rem;background:transparent;'>
   <thead>

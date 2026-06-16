@@ -395,6 +395,8 @@ with tab_dfc:
         if _aplicacao_total:
             _linhas.append({"Descrição": "    (-) Aplicação Financeira", "Valor (R$)": fmt_br(-_aplicacao_total)})
     _th_bg  = "transparent" if _dark else "#f3f4f6"
+    _res_color_val = _neg_c if "-" in fmt_br(_resultado_caixa) else _pos_c
+    _res_bg        = ("#0d2a1a" if _dark else "#eaffea") if _resultado_caixa >= 0 else ("#2a0d14" if _dark else "#fff0f0")
     _rows_html = ""
     for l in _linhas:
         _desc = l["Descrição"]
@@ -403,18 +405,27 @@ with tab_dfc:
         _is_bold    = _desc.startswith("=")
         _is_section = _desc.startswith("──")
         _bold  = "font-weight:700;" if _is_bold else ""
-        _color = (f"color:{_neg_c};" if "-" in _val else f"color:{_pos_c};") if _is_total else ""
+        _color = (f"color:{_neg_c};" if "-" in _val else f"color:{_pos_c};") if (_is_bold and not _is_total) else ""
         if _is_section:
             _rows_html += (
                 f"<tr>"
-                f"<td colspan='2' style='padding:8px 12px 4px;border-bottom:1px solid {_th_border};"
+                f"<td colspan='2' style='padding:10px 12px 4px;border-bottom:1px solid {_th_border};"
                 f"font-size:0.78rem;font-weight:600;color:{_txt2};letter-spacing:0.04em;'>{_desc}</td>"
+                f"</tr>"
+            )
+        elif _is_total:
+            _rows_html += (
+                f"<tr style='background:{_res_bg};'>"
+                f"<td style='padding:10px 16px;border-top:2px solid {_res_color_val};border-bottom:2px solid {_res_color_val};"
+                f"font-size:1.05rem;font-weight:800;color:{_res_color_val};'>{_desc}</td>"
+                f"<td style='padding:10px 16px;border-top:2px solid {_res_color_val};border-bottom:2px solid {_res_color_val};"
+                f"font-size:1.05rem;font-weight:800;color:{_res_color_val};'>{_val}</td>"
                 f"</tr>"
             )
         else:
             _rows_html += (
                 f"<tr>"
-                f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}'>{_desc}</td>"
+                f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};color:{_txt};{_bold}{_color}'>{_desc}</td>"
                 f"<td style='padding:4px 12px;border-bottom:1px solid {_border_c};text-align:left;color:{_txt};{_bold}{_color}'>{_val}</td>"
                 f"</tr>"
             )

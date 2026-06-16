@@ -33,8 +33,8 @@ def salvar_plano_contas(mes: int, ano: int, plano_df: pd.DataFrame):
         }
         for _, r in plano_df.iterrows()
     ]
-    # Upsert com conflict em (mes, ano, codigo)
-    client.table("plano_contas").upsert(rows, on_conflict="mes,ano,codigo").execute()
+    if rows:
+        client.table("plano_contas").upsert(rows, on_conflict="mes,ano,codigo").execute()
     carregar_plano_contas.clear()
     carregar_plano_contas_multiplos.clear()
     meses_com_dados.clear()

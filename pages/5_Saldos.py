@@ -96,19 +96,20 @@ if st.session_state["mostrar_edicao"]:
 
         c1, c2, c3 = st.columns(3)
         with c1:
-            novo_banco = st.number_input(
+            _mk = f"{mes_edit}_{ano}"
+        novo_banco = st.number_input(
                 "🏦 Saldo Banco (R$)", value=float(saldo_atual["saldo_banco"]),
-                format="%.2f", step=100.0, key="edit_banco"
+                format="%.2f", step=100.0, key=f"edit_banco_{_mk}"
             )
         with c2:
             novo_aplic = st.number_input(
                 "📈 Saldo Aplicação (R$)", value=float(saldo_atual["saldo_aplicacao"]),
-                format="%.2f", step=100.0, key="edit_aplic"
+                format="%.2f", step=100.0, key=f"edit_aplic_{_mk}"
             )
         with c3:
             novo_caixa = st.number_input(
                 "💵 Saldo Caixa (R$)", value=float(saldo_atual["saldo_caixa"]),
-                format="%.2f", step=10.0, key="edit_caixa"
+                format="%.2f", step=10.0, key=f"edit_caixa_{_mk}"
             )
 
         st.caption("Rendimentos e resgates do fundo de investimento — conforme Extrato de Fundos")
@@ -117,14 +118,14 @@ if st.session_state["mostrar_edicao"]:
             novo_rendimento = st.number_input(
                 "💹 Rendimento da Aplicação no mês (R$)",
                 value=float(saldo_atual.get("rendimento_aplicacao") or 0.0),
-                format="%.2f", step=10.0, key="edit_rendimento",
+                format="%.2f", step=10.0, key=f"edit_rendimento_{_mk}",
                 help="Rendimento Bruto no Mês — conforme Extrato de Fundos CEF"
             )
         with c5:
             novo_resgate = st.number_input(
                 "↩️ Resgate da Aplicação no mês (R$)",
                 value=float(saldo_atual.get("resgate_aplicacao") or 0.0),
-                format="%.2f", step=100.0, key="edit_resgate",
+                format="%.2f", step=100.0, key=f"edit_resgate_{_mk}",
                 help="Resgates realizados no mês — conforme Extrato de Fundos CEF"
             )
 
@@ -132,7 +133,7 @@ if st.session_state["mostrar_edicao"]:
         novo_dif_caixa = st.number_input(
             "⚖️ Diferença Sponte/Caixa (R$)",
             value=float(saldo_atual.get("diferenca_caixa") or 0.0),
-            format="%.2f", step=1.0, key="edit_dif_caixa",
+            format="%.2f", step=1.0, key=f"edit_dif_caixa_{_mk}",
             help="Use valor positivo se o caixa recebeu mais do que o Sponte registrou, negativo se recebeu menos."
         )
 

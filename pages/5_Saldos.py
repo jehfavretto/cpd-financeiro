@@ -94,10 +94,10 @@ if st.session_state["mostrar_edicao"]:
         )
         saldo_atual = db.carregar_saldos(mes_edit, ano)
 
+        _mk = f"{mes_edit}_{ano}"
         c1, c2, c3 = st.columns(3)
         with c1:
-            _mk = f"{mes_edit}_{ano}"
-        novo_banco = st.number_input(
+            novo_banco = st.number_input(
                 "🏦 Saldo Banco (R$)", value=float(saldo_atual["saldo_banco"]),
                 format="%.2f", step=100.0, key=f"edit_banco_{_mk}"
             )

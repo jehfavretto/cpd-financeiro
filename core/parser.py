@@ -449,13 +449,17 @@ def parse_sponte_plano(file_bytes_or_path) -> pd.DataFrame:
     raw = pd.read_excel(file_bytes_or_path, header=None, dtype=str)
     records = []
 
+    # Detecta formato: novo (2 colunas, valor em col1) vs antigo (7+ colunas, valor em col6)
+    _ncols = len(raw.columns)
+    _val_col = 1 if _ncols <= 3 else 6
+
     for _, row in raw.iterrows():
         col0 = str(row[0]).strip() if pd.notna(row[0]) else ""
-        col6 = str(row[6]).strip() if (len(row) > 6 and pd.notna(row[6])) else ""
+        col_val = str(row[_val_col]).strip() if (len(row) > _val_col and pd.notna(row[_val_col])) else ""
 
         if "¯" not in col0:
             continue
-        if not col6 or col6 in ("nan", "None", ""):
+        if not col_val or col_val in ("nan", "None", ""):
             continue
 
         m = re.search(r"(\d+(?:\.\d+)*)-(.+)", col0)
@@ -465,9 +469,12 @@ def parse_sponte_plano(file_bytes_or_path) -> pd.DataFrame:
         codigo    = m.group(1).strip()
         descricao = re.sub(r"\.{2,}\s*$", "", m.group(2)).strip()
 
-        val_str = col6.replace("R$", "").strip().replace(".", "").replace(",", ".")
+        val_str = col_val.replace("R$", "").strip()
         try:
-            valor = float(val_str)
+            if "," in val_str:  # formato BR: 1.300,00
+                valor = float(val_str.replace(".", "").replace(",", "."))
+            else:               # formato numérico puro: 129141.49
+                valor = float(val_str)
         except ValueError:
             continue
 

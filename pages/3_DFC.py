@@ -405,7 +405,7 @@ with tab_dfc:
         _is_bold    = _desc.startswith("=")
         _is_section = _desc.startswith("──")
         _bold  = "font-weight:700;" if _is_bold else ""
-        _color = (f"color:{_neg_c};" if "-" in _val else f"color:{_pos_c};") if (_is_bold and not _is_total) else ""
+        _color = ""
         if _is_section:
             _rows_html += (
                 f"<tr>"

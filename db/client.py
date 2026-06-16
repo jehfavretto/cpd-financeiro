@@ -106,7 +106,8 @@ def salvar_lancamentos_sponte(mes: int, ano: int, df: pd.DataFrame):
         }
         for _, r in df.iterrows()
     ]
-    client.table("lancamentos_sponte").insert(rows).execute()
+    if rows:
+        client.table("lancamentos_sponte").insert(rows).execute()
     carregar_lancamentos_sponte.clear()
 
 
@@ -148,7 +149,8 @@ def salvar_transacoes_banco(mes: int, ano: int, df: pd.DataFrame):
         }
         for _, r in df.iterrows()
     ]
-    client.table("transacoes_banco").insert(rows).execute()
+    if rows:
+        client.table("transacoes_banco").insert(rows).execute()
     carregar_transacoes_banco.clear()
 
 

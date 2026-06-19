@@ -152,13 +152,26 @@ if not _alunos_df.empty:
             _resp_aluno_map[_norm_nome(resp)] = " / ".join(alunos)
 
 def _responsavel_do_aluno(nome_aluno: str) -> str:
-    key = _norm_nome(nome_aluno)
-    if key in _aluno_resp_map:
-        return _aluno_resp_map[key]
-    # Nome incompleto: procura aluno cujo nome começa com o que foi digitado
-    for k, v in _aluno_resp_map.items():
-        if k.startswith(key + " "):
-            return v
+    # Trata múltiplos alunos separados por vírgula (ex: "Bernardo Rosa, Julio Rosa")
+    partes = [p.strip() for p in str(nome_aluno).replace(";", ",").split(",") if p.strip()]
+    resps = []
+    for parte in partes:
+        key = _norm_nome(parte)
+        if key in _aluno_resp_map:
+            resps.append(_aluno_resp_map[key])
+            continue
+        for k, v in _aluno_resp_map.items():
+            if k.startswith(key + " "):
+                resps.append(v)
+                break
+    if resps:
+        # Une responsáveis únicos
+        _todos = []
+        for r in resps:
+            for nome in r.split(" / "):
+                if nome not in _todos:
+                    _todos.append(nome)
+        return " / ".join(_todos)
     return ""
 
 def _aluno_do_responsavel(nome_resp: str) -> str:

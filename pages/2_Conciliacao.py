@@ -57,6 +57,14 @@ if not usar_banco and not usar_caixa:
     st.stop()
 
 # ── Carrega dados ──────────────────────────────────────────────────────────────
+_col_refresh, _ = st.columns([1, 8])
+if _col_refresh.button("🔄 Atualizar dados", help="Use após importar um mês para forçar o recarregamento"):
+    db.carregar_lancamentos_sponte.clear()
+    db.carregar_transacoes_banco.clear()
+    db.carregar_lancamentos_caixa.clear()
+    db.carregar_conciliacoes.clear() if hasattr(db.carregar_conciliacoes, "clear") else None
+    st.rerun()
+
 sponte_df = db.carregar_lancamentos_sponte(mes, ano)
 banco_df  = db.carregar_transacoes_banco(mes, ano)
 

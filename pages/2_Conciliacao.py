@@ -62,8 +62,7 @@ if _col_refresh.button("🔄 Atualizar dados", help="Use após importar um mês 
     db.carregar_lancamentos_sponte.clear()
     db.carregar_transacoes_banco.clear()
     db.carregar_lancamentos_caixa.clear()
-    db.carregar_conciliacoes.clear() if hasattr(db.carregar_conciliacoes, "clear") else None
-    st.rerun()
+    st.toast("✅ Cache atualizado — dados recarregados do banco.")
 
 sponte_df = db.carregar_lancamentos_sponte(mes, ano)
 banco_df  = db.carregar_transacoes_banco(mes, ano)

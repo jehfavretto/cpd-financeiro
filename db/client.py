@@ -111,7 +111,7 @@ def salvar_lancamentos_sponte(mes: int, ano: int, df: pd.DataFrame):
     carregar_lancamentos_sponte.clear()
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def carregar_lancamentos_sponte(mes: int, ano: int) -> pd.DataFrame:
     client = get_client()
     res = (
@@ -154,7 +154,7 @@ def salvar_transacoes_banco(mes: int, ano: int, df: pd.DataFrame):
     carregar_transacoes_banco.clear()
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def carregar_transacoes_banco(mes: int, ano: int) -> pd.DataFrame:
     client = get_client()
     res = (

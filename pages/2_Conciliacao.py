@@ -1151,8 +1151,12 @@ with st.expander("🗑️ Limpar conciliação do mês", expanded=False):
             if st.button("🗑️ Limpar tudo", type="primary", use_container_width=True):
                 db.limpar_conciliacoes_mes(mes, ano)
                 st.cache_data.clear()
-                st.toast(f"Conciliações de {MESES_ABREV[mes]}/{ano} apagadas!", icon="✅")
+                st.session_state["limpar_ok"] = f"{MESES_ABREV[mes]}/{ano}"
                 st.rerun()
+
+_limpar_ok = st.session_state.pop("limpar_ok", None)
+if _limpar_ok:
+    st.success(f"✅ Conciliações de {_limpar_ok} apagadas com sucesso!")
 
 # ── Resumo Financeiro ─────────────────────────────────────────────────────────
 st.divider()

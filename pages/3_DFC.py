@@ -320,6 +320,7 @@ with tab_dfc:
     _receitas_sponte = dfc.total_receitas
     _saidas_sponte   = dfc.total_custos + dfc.total_despesas + dfc.total_impostos
     _diferenca_caixa = float(saldos.get("diferenca_caixa") or 0.0)
+    st.caption(f"🔍 DEBUG diferenca_caixa = {_diferenca_caixa}")
 
     _total_extras      = sum(_extras_banco.values())
     _aplicacao_total   = sum(_saidas_banco.values())

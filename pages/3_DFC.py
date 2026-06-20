@@ -325,7 +325,7 @@ with tab_dfc:
     _aplicacao_total   = sum(_saidas_banco.values())
     _total_deducoes    = sum(_deducoes.values())
     _receitas_reais    = _receitas_sponte - _total_deducoes
-    _resultado_caixa   = _receitas_reais + _total_extras + _saidas_sponte - _diferenca_caixa
+    _resultado_caixa   = _receitas_reais + _total_extras + _saidas_sponte + _diferenca_caixa
 
     # ── KPIs DFC ──────────────────────────────────────────────────────────
     _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
@@ -385,7 +385,7 @@ with tab_dfc:
         for mot, val in _ajustes_saidas.items():
             _linhas.append({"Descrição": f"    (-) {mot}", "Valor (R$)": fmt_br(val)})
         if _diferenca_caixa != 0:
-            _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(-_diferenca_caixa)})
+            _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
 
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",     "Valor (R$)": fmt_br(_resultado_caixa)})
     if _resgate_aplic or _aplicacao_total:

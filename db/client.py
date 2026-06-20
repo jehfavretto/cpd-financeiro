@@ -203,7 +203,7 @@ def salvar_saldos(
     carregar_saldos_ano.clear()
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def carregar_saldos(mes: int, ano: int) -> dict:
     client = get_client()
     res = (

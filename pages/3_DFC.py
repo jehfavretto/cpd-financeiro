@@ -376,15 +376,17 @@ with tab_dfc:
 
     _ajustes_entradas = {k: v for k, v in _extras_banco.items() if v > 0}
     _ajustes_saidas   = {k: v for k, v in _extras_banco.items() if v < 0}
-    if _ajustes_entradas:
+    if _ajustes_entradas or _diferenca_caixa > 0:
         _linhas.append({"Descrição": "── Ajustes do Banco/Caixa — Entradas ──", "Valor (R$)": ""})
         for mot, val in _ajustes_entradas.items():
             _linhas.append({"Descrição": f"    (+) {mot}", "Valor (R$)": fmt_br(val)})
-    if _ajustes_saidas or _diferenca_caixa != 0:
+        if _diferenca_caixa > 0:
+            _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
+    if _ajustes_saidas or _diferenca_caixa < 0:
         _linhas.append({"Descrição": "── Ajustes do Banco/Caixa — Saídas ──", "Valor (R$)": ""})
         for mot, val in _ajustes_saidas.items():
             _linhas.append({"Descrição": f"    (-) {mot}", "Valor (R$)": fmt_br(val)})
-        if _diferenca_caixa != 0:
+        if _diferenca_caixa < 0:
             _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
 
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",     "Valor (R$)": fmt_br(_resultado_caixa)})

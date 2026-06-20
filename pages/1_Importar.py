@@ -438,6 +438,21 @@ with c5:
 
 st.divider()
 
+# ── Aviso de conciliações existentes ────────────────────────────────────────
+_concs_existentes = db.carregar_conciliacoes(mes, ano)
+_apagar_concs = False
+if _concs_existentes and (sponte_df is not None or banco_df is not None):
+    _n_concs = len(_concs_existentes)
+    st.warning(
+        f"⚠️ **{mes_nome}/{ano} já tem {_n_concs} conciliação(ões) salva(s).**\n\n"
+        "Se os dados do Sponte ou Banco mudaram, os vínculos existentes podem ficar inválidos. "
+        "Marque a opção abaixo para apagá-los e começar a conciliação do zero."
+    )
+    _apagar_concs = st.checkbox(
+        f"🗑️ Apagar as {_n_concs} conciliações de {mes_nome}/{ano} ao reimportar",
+        value=False,
+    )
+
 # ── Botão confirmar ───────────────────────────────────────────────────────────
 _itens_import = []
 if sponte_df is not None: _itens_import.append(f"{len(sponte_df)} lançamentos do Sponte")
@@ -450,6 +465,8 @@ _itens_import.append("saldos atualizados")
 if st.button(f"✅ Confirmar importação de {mes_nome}/{ano}", type="primary", use_container_width=True):
     with st.spinner("Salvando dados..."):
         try:
+            if _apagar_concs:
+                db.limpar_conciliacoes_mes(mes, ano)
             if sponte_df is not None:
                 db.salvar_lancamentos_sponte(mes, ano, sponte_df)
             if banco_df is not None:

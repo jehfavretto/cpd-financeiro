@@ -425,6 +425,118 @@ sponte_pendente = sponte_df[~mask_sp_ok].reset_index(drop=True)
 banco_pendente  = banco_df[mask_bk_ok].reset_index(drop=True)
 
 
+# ── Sugestões fuzzy (N→1, data ±5 dias, valor ±R$0,50) ───────────────────────
+_TOLE_DIAS = 5
+_TOLE_VAL  = 0.50
+
+def _resp_canonico(nome: str) -> str:
+    n = _norm_nome(str(nome))
+    resp = _aluno_resp_map.get(n, "")
+    if resp:
+        return _norm_nome(resp.split(" / ")[0])
+    aluno = _resp_aluno_map.get(n, "")
+    if aluno:
+        r2 = _aluno_resp_map.get(_norm_nome(aluno.split(" / ")[0]), "")
+        if r2:
+            return _norm_nome(r2.split(" / ")[0])
+    return n
+
+def _parse_d(v):
+    try:
+        import datetime as _dt
+        if isinstance(v, _dt.date):
+            return v
+        return pd.to_datetime(str(v), dayfirst=True).date()
+    except Exception:
+        return None
+
+_sug_ignoradas = set()
+for _, _r in conc_df.iterrows():
+    if _r.get("tipo") == "sugestao_ignorada":
+        _sk = str(_r.get("sponte_chave") or "")
+        _bk = str(_r.get("banco_chave") or "")
+        for _s in _sk.split("§§"):
+            if _s.strip():
+                _sug_ignoradas.add((_s.strip(), _bk))
+
+sugestoes: list[dict] = []
+_sp_chaves_em_sug: set = set()
+_bk_chaves_em_sug: set = set()
+
+from itertools import combinations as _combins
+
+for _bk_i, _bk_r in banco_pendente.iterrows():
+    _bk_ch = _bk_r["chave"]
+    if _bk_ch in _bk_chaves_em_sug:
+        continue
+    _bk_val  = float(_bk_r["valor"])
+    _bk_dt   = _parse_d(_bk_r["data_mov"])
+    _bk_nome = _resp_canonico(str(_bk_r.get("origem_destino", "") or ""))
+    _bk_es   = _bk_r["deb_cred"]
+
+    _cands = []
+    for _sp_i, _sp_r in sponte_pendente.iterrows():
+        if _sp_r["chave"] in _sp_chaves_em_sug:
+            continue
+        if _sp_r["es"] != _bk_es:
+            continue
+        _sp_nome = _resp_canonico(str(_sp_r.get("origem_destino", "") or ""))
+        if _bk_nome and _sp_nome:
+            if _bk_nome != _sp_nome and _bk_nome not in _sp_nome and _sp_nome not in _bk_nome:
+                continue
+        _sp_dt = _parse_d(_sp_r["data"])
+        if _bk_dt and _sp_dt and abs((_bk_dt - _sp_dt).days) > _TOLE_DIAS:
+            continue
+        _cands.append((_sp_i, _sp_r, float(_sp_r["valor"])))
+
+    if not _cands:
+        continue
+
+    # 1→1 tolerância de valor (e/ou data)
+    _found = False
+    for _si, _sr, _sv in _cands:
+        if abs(_sv - _bk_val) <= _TOLE_VAL and _sr["chave"] != _bk_ch:
+            _key = (_sr["chave"], _bk_ch)
+            if _key not in _sug_ignoradas:
+                sugestoes.append({
+                    "tipo": "1→1",
+                    "sp_rows": [(_si, _sr)],
+                    "bk_i": _bk_i, "bk_r": _bk_r,
+                    "diff_val": abs(_sv - _bk_val),
+                })
+                _sp_chaves_em_sug.add(_sr["chave"])
+                _bk_chaves_em_sug.add(_bk_ch)
+                _found = True
+            break
+    if _found:
+        continue
+
+    # N→1: combinações de candidatos cuja soma ≈ bk_val
+    for _nc in [2, 3]:
+        if len(_cands) < _nc:
+            continue
+        _found2 = False
+        for _combo in _combins(_cands, _nc):
+            _soma = sum(v for _, _, v in _combo)
+            if abs(_soma - _bk_val) <= _TOLE_VAL:
+                _sp_chs = "§§".join(_r["chave"] for _, _r, _ in _combo)
+                _key2 = (_sp_chs, _bk_ch)
+                if _key2 not in _sug_ignoradas:
+                    sugestoes.append({
+                        "tipo": f"{_nc}→1",
+                        "sp_rows": [(_i, _r) for _i, _r, _ in _combo],
+                        "bk_i": _bk_i, "bk_r": _bk_r,
+                        "diff_val": abs(_soma - _bk_val),
+                    })
+                    for _, _r, _ in _combo:
+                        _sp_chaves_em_sug.add(_r["chave"])
+                    _bk_chaves_em_sug.add(_bk_ch)
+                    _found2 = True
+                break
+        if _found2:
+            break
+
+
 # ── Barra de progresso ─────────────────────────────────────────────────────────
 total_sp   = len(sponte_df)
 total_bk   = len(banco_df_full)
@@ -468,6 +580,47 @@ with aba_pend:
             "Selecione **uma ou mais linhas** do Sponte e **uma linha** do Banco para vincular, "
             "ou apenas **um lado** para ignorar com justificativa."
         )
+
+        # ── Sugestões fuzzy ───────────────────────────────────────────────────
+        if sugestoes:
+            with st.expander(f"💡 **{len(sugestoes)} sugestão(ões) de vínculo** — data, valor ou quantidade aproximados", expanded=True):
+                for _idx_sug, _sug in enumerate(sugestoes):
+                    _bk_r2 = _sug["bk_r"]
+                    _sp_rows2 = _sug["sp_rows"]
+                    _tipo_sug = _sug["tipo"]
+                    _diff_val = _sug["diff_val"]
+
+                    with st.container(border=True):
+                        _sc1, _sc2 = st.columns([6, 2])
+                        with _sc1:
+                            st.caption(f"Sugestão {_tipo_sug}" + (f" · diferença R$ {_diff_val:.2f}" if _diff_val > 0 else ""))
+                            for _, _sp_r2 in _sp_rows2:
+                                _sp_dt2 = pd.to_datetime(_sp_r2["data"]).strftime("%d/%m") if pd.notna(_sp_r2.get("data")) else "—"
+                                st.markdown(
+                                    f"🔵 **Sponte** {_sp_dt2} · {_sp_r2['es']} · "
+                                    f"**R$ {float(_sp_r2['valor']):,.2f}** · {_sp_r2.get('origem_destino','')}"
+                                )
+                            _bk_dt2 = str(_bk_r2["data_mov"])[:5] if _bk_r2.get("data_mov") else "—"
+                            st.markdown(
+                                f"🏦 **Banco** {_bk_dt2} · {_bk_r2['deb_cred']} · "
+                                f"**R$ {float(_bk_r2['valor']):,.2f}** · {_bk_r2.get('origem_destino','')}"
+                            )
+                        with _sc2:
+                            if st.button("✅ Confirmar", key=f"sug_ok_{_idx_sug}_{cnt}", use_container_width=True, type="primary"):
+                                for _, _sp_r2 in _sp_rows2:
+                                    db.salvar_conciliacao(mes, ano, "manual",
+                                                          sponte_chave=_sp_r2["chave"],
+                                                          banco_chave=_bk_r2["chave"],
+                                                          justificativa=f"Sugestão {_tipo_sug}")
+                                st.session_state["conc_cnt"] += 1
+                                st.rerun()
+                            if st.button("✕ Ignorar", key=f"sug_no_{_idx_sug}_{cnt}", use_container_width=True):
+                                _sp_chs2 = "§§".join(_r2["chave"] for _, _r2 in _sp_rows2)
+                                db.salvar_conciliacao(mes, ano, "sugestao_ignorada",
+                                                      sponte_chave=_sp_chs2,
+                                                      banco_chave=_bk_r2["chave"])
+                                st.session_state["conc_cnt"] += 1
+                                st.rerun()
 
         # ── Filtros ───────────────────────────────────────────────────────────
         if "flt_cnt" not in st.session_state:

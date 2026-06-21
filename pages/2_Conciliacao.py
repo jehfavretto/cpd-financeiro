@@ -1004,6 +1004,12 @@ with aba_pend:
                             "Motivo:", _MOTIVOS_DIF,
                             key=f"motivo_dif_{cnt}",
                         )
+                        if _justificativa == "Outro":
+                            _outro_dif = st.text_input(
+                                "Descreva:", placeholder="ex: FGTS rescisão — compensado internamente",
+                                key=f"outro_dif_{cnt}",
+                            )
+                            _justificativa = _outro_dif.strip() or "Outro"
 
                     if n_sp > 1:
                         lbl = f"🔗 Vincular {n_sp}→1"

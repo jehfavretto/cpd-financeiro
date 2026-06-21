@@ -1404,7 +1404,7 @@ _bk_ign_rows = conc_df[conc_df["tipo"] == "ignorado_banco"].copy()
 # Vínculos manuais com divergência de valor (Sponte ≠ Banco)
 # Agrupa por banco_chave para tratar N Sponte → 1 Banco corretamente
 _manuais_rows = conc_df[conc_df["tipo"] == "manual"].copy()
-_divergencias = []   # (ids, sp_txts, bk_txt, sp_total, bk_total, diff)
+_divergencias = []   # (ids, sp_txts, bk_txt, sp_total, bk_total, diff, justificativa)
 _grupos_bk: dict = {}   # banco_chave → lista de linhas manuais
 for _, _mrow in _manuais_rows.iterrows():
     _bk_ch = _mrow.get("banco_chave") or ""
@@ -1419,7 +1419,7 @@ for _bk_ch, _grupo in _grupos_bk.items():
         for c in _bk_chs if not banco_df_full[banco_df_full["chave"] == c].empty
     )
     _sp_total = 0.0
-    _sp_txts, _ids = [], []
+    _sp_txts, _ids, _justs = [], [], []
     for _mrow in _grupo:
         _sp_ch = _mrow.get("sponte_chave")
         if not _sp_ch:
@@ -1430,10 +1430,14 @@ for _bk_ch, _grupo in _grupos_bk.items():
         _sp_total += abs(float(_sp_r.iloc[0]["valor"]))
         _sp_txts.append(_sp_txt(_sp_ch))
         _ids.append(_mrow["id"])
+        _j = _mrow.get("justificativa")
+        if _j and str(_j).strip() and str(_j).strip() not in ("Sugestão 1→1", "Sugestão 2→1", "Sugestão 3→1"):
+            _justs.append(str(_j).strip())
     _diff = round(_sp_total - _bk_total, 2)
     if abs(_diff) > 0.01 and _ids:
         _bk_label = _bk_txt(_bk_chs[0]) if _bk_chs else _bk_ch
-        _divergencias.append((_ids, _sp_txts, _bk_label, _sp_total, _bk_total, _diff))
+        _just_div = _justs[0] if _justs else ""
+        _divergencias.append((_ids, _sp_txts, _bk_label, _sp_total, _bk_total, _diff, _just_div))
 
 _sp_por_motivo: dict = {}
 for _, _irow in _sp_ign_rows.iterrows():
@@ -1465,9 +1469,19 @@ _resumo_rows = []
 _resumo_meta = []   # guarda tipo e motivo para detalhar ao selecionar
 
 if _divergencias:
-    _div_total = sum(abs(d[5]) for d in _divergencias)
-    _resumo_rows.append({"Motivo": "⚖️ Divergência em vínculos manuais", "Valor (R$)": fmt_br(_div_total), "Itens": len(_divergencias)})
-    _resumo_meta.append(("divergencia", ""))
+    _div_sem_motivo = [d for d in _divergencias if not d[6]]
+    _div_com_motivo: dict = {}
+    for _d in _divergencias:
+        if _d[6]:
+            _div_com_motivo.setdefault(_d[6], []).append(_d)
+    if _div_sem_motivo:
+        _div_total = sum(abs(d[5]) for d in _div_sem_motivo)
+        _resumo_rows.append({"Motivo": "⚖️ Divergência em vínculos manuais", "Valor (R$)": fmt_br(_div_total), "Itens": len(_div_sem_motivo)})
+        _resumo_meta.append(("divergencia", ""))
+    for _dmot, _ditens in sorted(_div_com_motivo.items(), key=lambda x: -sum(abs(d[5]) for d in x[1])):
+        _dtotal = sum(abs(d[5]) for d in _ditens)
+        _resumo_rows.append({"Motivo": f"⚖️ {_dmot}", "Valor (R$)": fmt_br(_dtotal), "Itens": len(_ditens)})
+        _resumo_meta.append(("divergencia", _dmot))
 
 for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
     _icon = _MOTIVO_ICONS.get(_mot, "📋")
@@ -1533,7 +1547,9 @@ else:
                 _det_rows.append({"Item": f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}"})
 
         elif _tipo_sel == "divergencia":
-            for _ids, _sp_txts, _bk_t, _sp_total, _bk_total, _diff in _divergencias:
+            for _ids, _sp_txts, _bk_t, _sp_total, _bk_total, _diff, _just_d in _divergencias:
+                if _mot_sel and _just_d != _mot_sel:
+                    continue
                 _sinal = "+" if _diff > 0 else "-"
                 _sp_label = " + ".join(_sp_txts)
                 _motivo = "Sponte maior que Banco" if _diff > 0 else "Banco maior que Sponte"
@@ -1545,7 +1561,7 @@ else:
                     "Diferença": f"{_sinal} {fmt_br(abs(_diff))}",
                     "Motivo": _motivo,
                 })
-                _det_ids.append(list(_ids))
+                _det_ids.append(list(_ids))  # type: ignore[arg-type]
 
         if _det_rows:
             _sel_det = st.dataframe(

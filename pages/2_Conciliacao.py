@@ -613,12 +613,23 @@ with aba_pend:
                                 f"**R$ {float(_bk_r2['valor']):,.2f}** · {_bk_label2}"
                             )
                         with _sc2:
-                            if st.button("✅ Confirmar", key=f"sug_ok_{_idx_sug}_{_cnt_sug}", use_container_width=True, type="primary"):
+                            _just_key = f"sug_just_{_idx_sug}_{_cnt_sug}"
+                            if _diff_val > 0:
+                                _just_sug = st.text_input(
+                                    "Justificativa (obrigatória):",
+                                    placeholder="ex: arredondamento, taxa bancária…",
+                                    key=_just_key,
+                                )
+                            else:
+                                _just_sug = f"Sugestão {_tipo_sug}"
+                            _just_invalida = _diff_val > 0 and not (_just_sug or "").strip()
+                            if st.button("✅ Confirmar", key=f"sug_ok_{_idx_sug}_{_cnt_sug}", use_container_width=True, type="primary", disabled=_just_invalida):
+                                _just_final = (_just_sug or "").strip() or f"Sugestão {_tipo_sug}"
                                 for _, _sp_r2 in _sp_rows2:
                                     db.salvar_conciliacao(mes, ano, "manual",
                                                           sponte_chave=_sp_r2["chave"],
                                                           banco_chave=_bk_r2["chave"],
-                                                          justificativa=f"Sugestão {_tipo_sug}")
+                                                          justificativa=_just_final)
                                 st.session_state["conc_cnt"] = _cnt_sug + 1
                                 st.rerun()
                             if st.button("✕ Ignorar", key=f"sug_no_{_idx_sug}_{_cnt_sug}", use_container_width=True):

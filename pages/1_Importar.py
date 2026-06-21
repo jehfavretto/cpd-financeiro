@@ -223,8 +223,17 @@ if arquivo_banco:
             _r = pd.read_excel(_io.BytesIO(_banco_bytes), dtype=str)
             _r.columns = _r.iloc[0]
             _r = _r.iloc[1:].reset_index(drop=True)
-            # extrai saldo final do último SALDO DIA antes de filtrar
+            # usa Data Lançamento (data de processamento pelo banco)
+            _r["_dt_lanc"] = pd.to_datetime(
+                _r["Data Lancamento"], dayfirst=True, errors="coerce"
+            )
+            # extrai saldo final do último SALDO DIA dentro do mês detectado
             _saldo_dia_rows = _r[_r["Histórico"] == "SALDO DIA"]
+            if _mes_auto:
+                _saldo_dia_rows = _saldo_dia_rows[
+                    (_r["_dt_lanc"].dt.month == _mes_auto) &
+                    (_r["_dt_lanc"].dt.year  == _ano_auto)
+                ]
             _saldo_banco_extrato = None
             if not _saldo_dia_rows.empty:
                 try:
@@ -234,9 +243,15 @@ if arquivo_banco:
                 except Exception:
                     pass
             _r = _r[_r["Histórico"] != "SALDO DIA"].copy()
-            _r["data_mov"] = pd.to_datetime(
-                _r["Data Movimento"], dayfirst=True, errors="coerce"
-            ).dt.strftime("%d/%m/%Y").fillna(_r["Data Movimento"])
+            # filtra apenas transações do mês correto pela Data Lançamento
+            if _mes_auto:
+                _r = _r[
+                    (_r["_dt_lanc"].dt.month == _mes_auto) &
+                    (_r["_dt_lanc"].dt.year  == _ano_auto)
+                ].copy()
+            _r["data_mov"] = _r["_dt_lanc"].dt.strftime("%d/%m/%Y").fillna(
+                _r["Data Lancamento"]
+            )
             _r["nr_doc"]    = _r["Documento"].fillna("").str.strip()
             _r["historico"] = _r["Histórico"].str.strip()
             _r["_vs"]       = _r["Valor Lançamento"].apply(_parse_val2)

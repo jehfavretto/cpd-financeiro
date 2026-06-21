@@ -597,14 +597,20 @@ with aba_pend:
                             st.caption(f"Sugestão {_tipo_sug}" + (f" · diferença R$ {_diff_val:.2f}" if _diff_val > 0 else ""))
                             for _, _sp_r2 in _sp_rows2:
                                 _sp_dt2 = pd.to_datetime(_sp_r2["data"]).strftime("%d/%m") if pd.notna(_sp_r2.get("data")) else "—"
+                                _sp_aluno2 = str(_sp_r2.get("origem_destino", ""))
+                                _sp_resp2  = _responsavel_do_aluno(_sp_aluno2)
+                                _sp_nome2  = f"{_sp_aluno2}" + (f" ({_sp_resp2})" if _sp_resp2 and _sp_resp2 != _sp_aluno2 else "")
                                 st.markdown(
                                     f"🔵 **Sponte** {_sp_dt2} · {_sp_r2['es']} · "
-                                    f"**R$ {float(_sp_r2['valor']):,.2f}** · {_sp_r2.get('origem_destino','')}"
+                                    f"**R$ {float(_sp_r2['valor']):,.2f}** · {_sp_nome2}"
                                 )
-                            _bk_dt2 = str(_bk_r2["data_mov"])[:5] if _bk_r2.get("data_mov") else "—"
+                            _bk_dt2   = str(_bk_r2["data_mov"])[:5] if _bk_r2.get("data_mov") else "—"
+                            _bk_nome2 = str(_bk_r2.get("origem_destino", "") or "")
+                            _bk_aluno2 = _aluno_do_responsavel(_bk_nome2)
+                            _bk_label2 = f"{_bk_nome2}" + (f" (aluno: {_bk_aluno2})" if _bk_aluno2 else "")
                             st.markdown(
                                 f"🏦 **Banco** {_bk_dt2} · {_bk_r2['deb_cred']} · "
-                                f"**R$ {float(_bk_r2['valor']):,.2f}** · {_bk_r2.get('origem_destino','')}"
+                                f"**R$ {float(_bk_r2['valor']):,.2f}** · {_bk_label2}"
                             )
                         with _sc2:
                             if st.button("✅ Confirmar", key=f"sug_ok_{_idx_sug}_{_cnt_sug}", use_container_width=True, type="primary"):

@@ -1509,12 +1509,12 @@ else:
         if _tipo_sel == "sponte" and _mot_sel in _sp_por_motivo:
             for _id, _ch, _txt, _v in _sp_por_motivo[_mot_sel]:
                 _det_rows.append({"Item": f"🔵 {_txt}"})
-                _det_ids.append(_id)
+                _det_ids.append([_id])
 
         elif _tipo_sel == "banco" and _mot_sel in _bk_por_motivo:
             for _id, _ch, _txt, _v in _bk_por_motivo[_mot_sel]:
                 _det_rows.append({"Item": f"🏦 {_txt}"})
-                _det_ids.append(_id)
+                _det_ids.append([_id])
 
         elif _tipo_sel == "pend_sp":
             for _, _pr in sponte_pendente.iterrows():
@@ -1539,6 +1539,7 @@ else:
                     "Diferença": f"{_sinal} {fmt_br(abs(_diff))}",
                     "Motivo": _motivo,
                 })
+                _det_ids.append(list(_ids))
 
         if _det_rows:
             _sel_det = st.dataframe(
@@ -1551,9 +1552,10 @@ else:
                 key=f"df_det_{mes}_{ano}_{_ri}",
             )
             _sel_det_rows = _sel_det.selection.rows if hasattr(_sel_det, "selection") else []
+            _sel_det_rows = [i for i in _sel_det_rows if i < len(_det_ids)]
             if _sel_det_rows and _det_ids:
                 if st.button(f"↩️ Desconciliar {len(_sel_det_rows)} selecionado(s)", type="primary"):
                     for _idx in _sel_det_rows:
-                        if _idx < len(_det_ids):
-                            db.deletar_conciliacao(int(_det_ids[_idx]))
+                        for _id in _det_ids[_idx]:
+                            db.deletar_conciliacao(int(_id))
                     st.rerun()

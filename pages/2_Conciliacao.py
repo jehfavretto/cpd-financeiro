@@ -1276,6 +1276,7 @@ with aba_conc:
                 key=f"df_manual_{mes}_{ano}",
             )
             sel_m_rows = sel_m.selection.rows if hasattr(sel_m, "selection") else []
+            sel_m_rows = [idx for idx in sel_m_rows if idx < len(manual_actions)]
             if sel_m_rows:
                 if st.button(f"🔓 Desvincular {len(sel_m_rows)} selecionado(s)",
                              type="primary", key="btn_desv_m"):
@@ -1310,6 +1311,7 @@ with aba_conc:
             key=f"df_ign_{mes}_{ano}",
         )
         sel_i_rows = sel_i.selection.rows if hasattr(sel_i, "selection") else []
+        sel_i_rows = [idx for idx in sel_i_rows if idx < len(ign_ids)]
         if sel_i_rows:
             if st.button(f"🗑️ Remover {len(sel_i_rows)} selecionado(s)", key="btn_rem_i"):
                 for idx in sel_i_rows:

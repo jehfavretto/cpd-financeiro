@@ -582,6 +582,7 @@ with aba_pend:
         )
 
         # ── Sugestões fuzzy ───────────────────────────────────────────────────
+        _cnt_sug = st.session_state.get("conc_cnt", 0)
         if sugestoes:
             with st.expander(f"💡 **{len(sugestoes)} sugestão(ões) de vínculo** — data, valor ou quantidade aproximados", expanded=True):
                 for _idx_sug, _sug in enumerate(sugestoes):
@@ -606,20 +607,20 @@ with aba_pend:
                                 f"**R$ {float(_bk_r2['valor']):,.2f}** · {_bk_r2.get('origem_destino','')}"
                             )
                         with _sc2:
-                            if st.button("✅ Confirmar", key=f"sug_ok_{_idx_sug}_{cnt}", use_container_width=True, type="primary"):
+                            if st.button("✅ Confirmar", key=f"sug_ok_{_idx_sug}_{_cnt_sug}", use_container_width=True, type="primary"):
                                 for _, _sp_r2 in _sp_rows2:
                                     db.salvar_conciliacao(mes, ano, "manual",
                                                           sponte_chave=_sp_r2["chave"],
                                                           banco_chave=_bk_r2["chave"],
                                                           justificativa=f"Sugestão {_tipo_sug}")
-                                st.session_state["conc_cnt"] += 1
+                                st.session_state["conc_cnt"] = _cnt_sug + 1
                                 st.rerun()
-                            if st.button("✕ Ignorar", key=f"sug_no_{_idx_sug}_{cnt}", use_container_width=True):
+                            if st.button("✕ Ignorar", key=f"sug_no_{_idx_sug}_{_cnt_sug}", use_container_width=True):
                                 _sp_chs2 = "§§".join(_r2["chave"] for _, _r2 in _sp_rows2)
                                 db.salvar_conciliacao(mes, ano, "sugestao_ignorada",
                                                       sponte_chave=_sp_chs2,
                                                       banco_chave=_bk_r2["chave"])
-                                st.session_state["conc_cnt"] += 1
+                                st.session_state["conc_cnt"] = _cnt_sug + 1
                                 st.rerun()
 
         # ── Filtros ───────────────────────────────────────────────────────────

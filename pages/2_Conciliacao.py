@@ -1477,12 +1477,14 @@ if _divergencias:
         if _d[6]:
             _div_com_motivo.setdefault(_d[6], []).append(_d)
     if _div_sem_motivo:
-        _div_total = sum(abs(d[5]) for d in _div_sem_motivo)
-        _resumo_rows.append({"Motivo": "⚖️ Divergência em vínculos manuais", "Valor (R$)": fmt_br(_div_total), "Itens": len(_div_sem_motivo)})
+        _div_total = sum(d[5] for d in _div_sem_motivo)
+        _sinal_div = "+" if _div_total >= 0 else ""
+        _resumo_rows.append({"Motivo": "⚖️ Divergência em vínculos manuais", "Valor (R$)": f"{_sinal_div}{fmt_br(_div_total)}", "Itens": len(_div_sem_motivo)})
         _resumo_meta.append(("divergencia", ""))
     for _dmot, _ditens in sorted(_div_com_motivo.items(), key=lambda x: -sum(abs(d[5]) for d in x[1])):
-        _dtotal = sum(abs(d[5]) for d in _ditens)
-        _resumo_rows.append({"Motivo": f"⚖️ {_dmot}", "Valor (R$)": fmt_br(_dtotal), "Itens": len(_ditens)})
+        _dtotal = sum(d[5] for d in _ditens)
+        _sinal_dm = "+" if _dtotal >= 0 else ""
+        _resumo_rows.append({"Motivo": f"⚖️ {_dmot}", "Valor (R$)": f"{_sinal_dm}{fmt_br(_dtotal)}", "Itens": len(_ditens)})
         _resumo_meta.append(("divergencia", _dmot))
 
 for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -abs(sum(i[3] for i in x[1]))):

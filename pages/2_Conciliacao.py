@@ -1456,7 +1456,9 @@ for _, _irow in _bk_ign_rows.iterrows():
     if not _ch:
         continue
     _r = banco_df_full[banco_df_full["chave"] == _ch]
-    _v = abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
+    _v_abs = abs(float(_r.iloc[0]["valor"])) if not _r.empty else 0.0
+    _sinal_bk = -1 if (not _r.empty and str(_r.iloc[0].get("deb_cred","E")) == "S") else 1
+    _v = _v_abs * _sinal_bk
     _txt = _bk_txt(_ch) if not _r.empty else str(_ch)
     _mot = _mot_label(_irow.get("justificativa"))
     _bk_por_motivo.setdefault(_mot, []).append((_irow["id"], _ch, _txt, _v))
@@ -1483,16 +1485,18 @@ if _divergencias:
         _resumo_rows.append({"Motivo": f"⚖️ {_dmot}", "Valor (R$)": fmt_br(_dtotal), "Itens": len(_ditens)})
         _resumo_meta.append(("divergencia", _dmot))
 
-for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
+for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -abs(sum(i[3] for i in x[1]))):
     _icon = _MOTIVO_ICONS.get(_mot, "📋")
     _total = sum(i[3] for i in _itens)
-    _resumo_rows.append({"Motivo": f"{_icon} {_mot}", "Valor (R$)": fmt_br(_total), "Itens": len(_itens)})
+    _sinal_str = "+" if _total >= 0 else ""
+    _resumo_rows.append({"Motivo": f"{_icon} {_mot}", "Valor (R$)": f"{_sinal_str}{fmt_br(_total)}", "Itens": len(_itens)})
     _resumo_meta.append(("sponte", _mot))
 
-for _mot, _itens in sorted(_bk_por_motivo.items(), key=lambda x: -sum(i[3] for i in x[1])):
+for _mot, _itens in sorted(_bk_por_motivo.items(), key=lambda x: -abs(sum(i[3] for i in x[1]))):
     _icon = _MOTIVO_ICONS.get(_mot, "📋")
     _total = sum(i[3] for i in _itens)
-    _resumo_rows.append({"Motivo": f"{_icon} {_mot} (Banco)", "Valor (R$)": fmt_br(_total), "Itens": len(_itens)})
+    _sinal_str = "+" if _total >= 0 else ""
+    _resumo_rows.append({"Motivo": f"{_icon} {_mot} (Banco)", "Valor (R$)": f"{_sinal_str}{fmt_br(_total)}", "Itens": len(_itens)})
     _resumo_meta.append(("banco", _mot))
 
 if _sp_pend_total > 0:

@@ -617,13 +617,16 @@ with aba_pend:
                             if _diff_val > 0:
                                 _motivos_sug = [
                                     "Selecione o motivo…",
+                                    "Divergência de valor",
                                     "Diferença de centavos / arredondamento",
                                     "Desconto concedido",
                                     "Juros / multa por atraso",
                                     "Pagamento parcial",
                                     "Complemento de pagamento anterior",
+                                    "Agrupamento de pagamentos",
                                     "Pagamento agrupado (vários alunos)",
                                     "Pagamento agrupado com diferença",
+                                    "Outros",
                                     "Erro de lançamento no Sponte",
                                     "FGTS / rescisão — não operacional",
                                     "Outro motivo…",

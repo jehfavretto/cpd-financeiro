@@ -615,11 +615,35 @@ with aba_pend:
                         with _sc2:
                             _just_key = f"sug_just_{_idx_sug}_{_cnt_sug}"
                             if _diff_val > 0:
-                                _just_sug = st.text_input(
+                                _motivos_sug = [
+                                    "Selecione o motivo…",
+                                    "Diferença de centavos / arredondamento",
+                                    "Desconto concedido",
+                                    "Juros / multa por atraso",
+                                    "Pagamento parcial",
+                                    "Complemento de pagamento anterior",
+                                    "Pagamento agrupado (vários alunos)",
+                                    "Pagamento agrupado com diferença",
+                                    "Erro de lançamento no Sponte",
+                                    "FGTS / rescisão — não operacional",
+                                    "Outro motivo…",
+                                ]
+                                _mot_sug = st.selectbox(
                                     "Justificativa (obrigatória):",
-                                    placeholder="ex: arredondamento, taxa bancária…",
+                                    _motivos_sug,
                                     key=_just_key,
                                 )
+                                if _mot_sug == "Outro motivo…":
+                                    _outro_sug = st.text_input(
+                                        "Descreva o motivo:",
+                                        key=_just_key + "_outro",
+                                        placeholder="Descreva o motivo…",
+                                    )
+                                    _just_sug = _outro_sug.strip()
+                                elif _mot_sug == "Selecione o motivo…":
+                                    _just_sug = ""
+                                else:
+                                    _just_sug = _mot_sug
                             else:
                                 _just_sug = f"Sugestão {_tipo_sug}"
                             _just_invalida = _diff_val > 0 and not (_just_sug or "").strip()

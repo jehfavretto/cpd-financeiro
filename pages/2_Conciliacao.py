@@ -1017,7 +1017,7 @@ with aba_pend:
                                 key=f"outro_dif_{cnt}",
                             )
                             _justificativa = _outro_dif.strip() or "Outro motivo"
-                        _just_invalida_dif = _justificativa in ("Selecione o motivo…", "Divergência de valor", "Agrupamento de pagamentos", "Outros")
+                        _just_invalida_dif = _justificativa == "Selecione o motivo…"
                     else:
                         _just_invalida_dif = False
 

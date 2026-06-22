@@ -990,16 +990,16 @@ with aba_pend:
 
                     _MOTIVOS_DIF = [
                         "Selecione o motivo…",
-                        "── Divergência de valor ──",
+                        "Divergência de valor",
                         "Diferença de centavos / arredondamento",
                         "Desconto concedido",
                         "Juros / multa por atraso",
                         "Pagamento parcial",
                         "Complemento de pagamento anterior",
-                        "── Agrupamento ──",
+                        "Agrupamento de pagamentos",
                         "Pagamento agrupado (vários alunos)",
                         "Pagamento agrupado com diferença",
-                        "── Outros ──",
+                        "Outros",
                         "Erro de lançamento no Sponte",
                         "FGTS / rescisão — não operacional",
                         "Outro motivo…",
@@ -1017,7 +1017,7 @@ with aba_pend:
                                 key=f"outro_dif_{cnt}",
                             )
                             _justificativa = _outro_dif.strip() or "Outro motivo"
-                        _just_invalida_dif = _justificativa in ("Selecione o motivo…", "── Divergência de valor ──", "── Agrupamento ──", "── Outros ──")
+                        _just_invalida_dif = _justificativa in ("Selecione o motivo…", "Divergência de valor", "Agrupamento de pagamentos", "Outros")
                     else:
                         _just_invalida_dif = False
 

@@ -989,13 +989,20 @@ with aba_pend:
                         )
 
                     _MOTIVOS_DIF = [
-                        "Pagamento agrupado (vários alunos)",
+                        "Selecione o motivo…",
+                        "── Divergência de valor ──",
+                        "Diferença de centavos / arredondamento",
                         "Desconto concedido",
                         "Juros / multa por atraso",
                         "Pagamento parcial",
                         "Complemento de pagamento anterior",
+                        "── Agrupamento ──",
+                        "Pagamento agrupado (vários alunos)",
+                        "Pagamento agrupado com diferença",
+                        "── Outros ──",
                         "Erro de lançamento no Sponte",
-                        "Outro",
+                        "FGTS / rescisão — não operacional",
+                        "Outro motivo…",
                     ]
                     _justificativa = None
                     if diff > 0.02:
@@ -1004,12 +1011,15 @@ with aba_pend:
                             "Motivo:", _MOTIVOS_DIF,
                             key=f"motivo_dif_{cnt}",
                         )
-                        if _justificativa == "Outro":
+                        if _justificativa == "Outro motivo…":
                             _outro_dif = st.text_input(
                                 "Descreva:", placeholder="ex: FGTS rescisão — compensado internamente",
                                 key=f"outro_dif_{cnt}",
                             )
-                            _justificativa = _outro_dif.strip() or "Outro"
+                            _justificativa = _outro_dif.strip() or "Outro motivo"
+                        _just_invalida_dif = _justificativa in ("Selecione o motivo…", "── Divergência de valor ──", "── Agrupamento ──", "── Outros ──")
+                    else:
+                        _just_invalida_dif = False
 
                     if n_sp > 1:
                         lbl = f"🔗 Vincular {n_sp}→1"
@@ -1017,7 +1027,7 @@ with aba_pend:
                         lbl = f"🔗 Vincular 1→{n_bk}"
                     else:
                         lbl = "🔗 Vincular"
-                    if st.button(lbl, type="primary", use_container_width=True):
+                    if st.button(lbl, type="primary", use_container_width=True, disabled=_just_invalida_dif):
                         if n_bk == 1:
                             bk_r = bk_selecionados[0]
                             for r in sp_selecionados:

@@ -1415,19 +1415,7 @@ with _col2:
 # Diferença explicada pelos ignorados
 st.markdown("**🔍 Diferença explicada** — selecione uma linha para ver os detalhes")
 
-_MOTIVO_ICONS = {
-    "Valor Desviado":           "🚨",
-    "Desconto em folha":        "📝",
-    "Pago em caixa físico":     "💵",
-    "Estorno/Cancelamento":     "↩️",
-    "Pagamento não localizado": "❓",
-    "Origem desconhecida":      "❓",
-    "Não lançado no Sponte":    "📭",
-    "Aplicação Financeira":     "💹",
-    "Resgate Financeiro":       "💹",
-    "Tarifa/Taxa bancária":     "🏦",
-    "Sem motivo":               "📋",
-}
+_MOTIVO_ICONS: dict = {}
 
 def _mot_label(v):
     """Normaliza justificativa nula/nan para 'Sem motivo'."""
@@ -1515,32 +1503,29 @@ if _divergencias:
             _div_com_motivo.setdefault(_d[6], []).append(_d)
     if _div_sem_motivo:
         _div_total = sum(d[5] for d in _div_sem_motivo)
-        _resumo_raw.append(("⚖️ Divergência em vínculos manuais", _div_total, len(_div_sem_motivo), [("divergencia", "")]))
+        _resumo_raw.append(("Divergência em vínculos manuais", _div_total, len(_div_sem_motivo), [("divergencia", "")]))
     for _dmot, _ditens in sorted(_div_com_motivo.items(), key=lambda x: -sum(abs(d[5]) for d in x[1])):
         _dtotal = sum(d[5] for d in _ditens)
-        _resumo_raw.append((f"⚖️ {_dmot}", _dtotal, len(_ditens), [("divergencia", _dmot)]))
+        _resumo_raw.append((_dmot, _dtotal, len(_ditens), [("divergencia", _dmot)]))
 
 for _mot, _itens in sorted(_sp_por_motivo.items(), key=lambda x: -abs(sum(i[3] for i in x[1]))):
-    _icon = _MOTIVO_ICONS.get(_mot, "📋")
     _total = sum(i[3] for i in _itens)
-    _resumo_raw.append((f"{_icon} {_mot}", _total, len(_itens), [("sponte", _mot)]))
+    _resumo_raw.append((_mot, _total, len(_itens), [("sponte", _mot)]))
 
 for _mot, _itens in sorted(_bk_por_motivo.items(), key=lambda x: -abs(sum(i[3] for i in x[1]))):
-    _icon = _MOTIVO_ICONS.get(_mot, "📋")
     _total = sum(i[3] for i in _itens)
-    _resumo_raw.append((f"{_icon} {_mot} (Banco)", _total, len(_itens), [("banco", _mot)]))
+    _resumo_raw.append((f"{_mot} (Banco)", _total, len(_itens), [("banco", _mot)]))
 
 if _sp_pend_total > 0:
-    _resumo_raw.append(("⏳ Sponte pendente", _sp_pend_total, len(sponte_pendente), [("pend_sp", "")]))
+    _resumo_raw.append(("Sponte pendente", _sp_pend_total, len(sponte_pendente), [("pend_sp", "")]))
 if _bk_pend_total > 0:
-    _resumo_raw.append(("⏳ Banco/Caixa pendente", _bk_pend_total, len(banco_pendente), [("pend_bk", "")]))
+    _resumo_raw.append(("Banco/Caixa pendente", _bk_pend_total, len(banco_pendente), [("pend_bk", "")]))
 
 # Mescla linhas com label idêntico (ex: divergência + banco ignorado com mesmo motivo)
 _merge: dict = {}
 _merge_order: list = []
 for _lbl, _val, _cnt, _metas in _resumo_raw:
-    # chave normalizada: remove ícone do início (1 char + espaço)
-    _lbl_norm = _lbl[2:].strip() if len(_lbl) > 2 else _lbl
+    _lbl_norm = _lbl
     if _lbl_norm in _merge:
         _merge[_lbl_norm]["val"] += _val
         _merge[_lbl_norm]["cnt"] += _cnt
@@ -1585,24 +1570,23 @@ else:
         for _tipo_sel, _mot_sel in _metas_sel:
             if _tipo_sel == "sponte" and _mot_sel in _sp_por_motivo:
                 for _id, _ch, _txt, _v in _sp_por_motivo[_mot_sel]:
-                    _det_rows.append({"Item": f"🔵 {_txt}"})
+                    _det_rows.append({"Item": _txt})
                     _det_ids.append([_id])
 
             elif _tipo_sel == "banco" and _mot_sel in _bk_por_motivo:
                 for _id, _ch, _txt, _v in _bk_por_motivo[_mot_sel]:
-                    _det_rows.append({"Item": f"🏦 {_txt}"})
+                    _det_rows.append({"Item": _txt})
                     _det_ids.append([_id])
 
             elif _tipo_sel == "pend_sp":
                 for _, _pr in sponte_pendente.iterrows():
                     _d = pd.to_datetime(_pr["data"]).strftime("%d/%m")
-                    _det_rows.append({"Item": f"🔵 {_d} · {_pr['categoria']} · {_pr.get('origem_destino','')} · {fmt_br(abs(_pr['valor']))}"})
+                    _det_rows.append({"Item": f"{_d} · {_pr['categoria']} · {_pr.get('origem_destino','')} · {fmt_br(abs(_pr['valor']))}"})
 
             elif _tipo_sel == "pend_bk":
                 for _, _pr in banco_pendente.iterrows():
                     _nome = str(_pr.get("origem_destino","") or _pr.get("historico","")).strip()
-                    _det_rows.append({"Item": f"🏦 {str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}"})
-
+                    _det_rows.append({"Item": f"{str(_pr['data_fmt'])[:5]} · {_nome} · {fmt_br(abs(float(_pr['valor'])))}"})
             elif _tipo_sel == "divergencia":
                 for _ids, _sp_txts, _bk_t, _sp_total, _bk_total, _diff, _just_d in _divergencias:
                     if _mot_sel and _just_d != _mot_sel:

@@ -270,9 +270,8 @@ with tab_dfc:
 
     # ── Classifica motivos ────────────────────────────────────────────────
     # Motivos que deduzem das RECEITAS (ignorado_sponte de entradas não recebidas)
-    _DEDUZ       = {"Valor Desviado", "Desconto em folha", "Estorno/Cancelamento"}
-    # Motivos que devolvem SAÍDAS ao resultado (ignorado_sponte de saídas não pagas)
-    _SAIDA_NAO_PAGA = {"Pagamento não localizado"}
+    _DEDUZ       = {"Valor Desviado", "Desconto em folha", "Estorno/Cancelamento",
+                    "Pagamento não localizado"}
 
     def _normalizar_motivo(just):
         s = str(just or "").strip()
@@ -301,16 +300,18 @@ with tab_dfc:
             return ""
 
     _deducoes = {}
-    _saidas_nao_pagas = {}
+    _ajustes_sponte = {}  # saídas do Sponte não pagas → devolvem ao resultado como ajuste positivo
     for c in ignorados_sp:
         mot = _normalizar_motivo(c.get("justificativa", ""))
         chave = c.get("sponte_chave", "")
         val = _valor_da_chave(chave)
         es = _es_da_chave(chave)
-        if mot in _DEDUZ and es == "E":
-            _deducoes[mot] = _deducoes.get(mot, 0.0) + val
-        elif mot in _SAIDA_NAO_PAGA and es == "S":
-            _saidas_nao_pagas[mot] = _saidas_nao_pagas.get(mot, 0.0) + val
+        if mot in _DEDUZ:
+            if es == "E":
+                _deducoes[mot] = _deducoes.get(mot, 0.0) + val
+            elif es == "S":
+                # saída registrada no Sponte mas não paga — devolve ao resultado
+                _ajustes_sponte[mot] = _ajustes_sponte.get(mot, 0.0) + val
 
     # Itens ignorados do banco — separados entre saídas (aplicação) e entradas extras
     _BANCO_SAIDA  = {"Aplicação Financeira"}
@@ -339,13 +340,12 @@ with tab_dfc:
     _diferenca_caixa = float(saldos.get("diferenca_caixa") or 0.0)
     st.caption(f"🔍 DEBUG diferenca_caixa = {_diferenca_caixa}")
 
-    _total_extras        = sum(_extras_banco.values())
-    _aplicacao_total     = sum(_saidas_banco.values())
-    _total_deducoes      = sum(_deducoes.values())
-    _total_saidas_np     = sum(_saidas_nao_pagas.values())
-    _receitas_reais      = _receitas_sponte - _total_deducoes
-    # saídas não pagas: estão em _saidas_sponte mas o dinheiro ainda não saiu → devolver ao resultado
-    _resultado_caixa     = _receitas_reais + _total_extras + _saidas_sponte + _total_saidas_np + _diferenca_caixa
+    _total_extras      = sum(_extras_banco.values())
+    _aplicacao_total   = sum(_saidas_banco.values())
+    _total_deducoes    = sum(_deducoes.values())
+    _total_aj_sponte   = sum(_ajustes_sponte.values())
+    _receitas_reais    = _receitas_sponte - _total_deducoes
+    _resultado_caixa   = _receitas_reais + _total_extras + _total_aj_sponte + _saidas_sponte + _diferenca_caixa
 
     # ── KPIs DFC ──────────────────────────────────────────────────────────
     _rc_color = ("#2ed64f" if _dark else "#1a7f37") if _resultado_caixa >= 0 else _accent
@@ -393,25 +393,24 @@ with tab_dfc:
     _linhas.append({"Descrição": "    (-) Impostos",       "Valor (R$)": fmt_br(dfc.total_impostos)})
     _linhas.append({"Descrição": "= Saídas do Mês",        "Valor (R$)": fmt_br(_total_saidas)})
     _linhas.append({"Descrição": "= Resultado Operacional","Valor (R$)": fmt_br(_resultado_operacional)})
-    if _saidas_nao_pagas:
-        _linhas.append({"Descrição": "── Saídas não pagas (Sponte) ──", "Valor (R$)": ""})
-        for mot, val in _saidas_nao_pagas.items():
-            _linhas.append({"Descrição": f"    (+) {mot}", "Valor (R$)": fmt_br(val)})
 
     _ajustes_entradas = {k: v for k, v in _extras_banco.items() if v > 0}
     _ajustes_saidas   = {k: v for k, v in _extras_banco.items() if v < 0}
-    if _ajustes_entradas or _diferenca_caixa > 0:
-        _linhas.append({"Descrição": "── Ajustes do Banco/Caixa — Entradas ──", "Valor (R$)": ""})
+    if _ajustes_entradas or _ajustes_sponte or _diferenca_caixa > 0:
+        _linhas.append({"Descrição": "── Ajustes ──", "Valor (R$)": ""})
+        for mot, val in _ajustes_sponte.items():
+            _linhas.append({"Descrição": f"    (+) {mot}", "Valor (R$)": fmt_br(val)})
         for mot, val in _ajustes_entradas.items():
             _linhas.append({"Descrição": f"    (+) {mot}", "Valor (R$)": fmt_br(val)})
         if _diferenca_caixa > 0:
             _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
-    if _ajustes_saidas or _diferenca_caixa < 0:
-        _linhas.append({"Descrição": "── Ajustes do Banco/Caixa — Saídas ──", "Valor (R$)": ""})
+    if _ajustes_saidas:
         for mot, val in _ajustes_saidas.items():
             _linhas.append({"Descrição": f"    (-) {mot}", "Valor (R$)": fmt_br(val)})
-        if _diferenca_caixa < 0:
-            _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
+    if _diferenca_caixa != 0 and not (_ajustes_entradas or _ajustes_sponte or _diferenca_caixa > 0):
+        _linhas.append({"Descrição": "── Ajustes ──", "Valor (R$)": ""})
+    if _diferenca_caixa != 0:
+        _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
 
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",     "Valor (R$)": fmt_br(_resultado_caixa)})
     if _resgate_aplic or _aplicacao_total:

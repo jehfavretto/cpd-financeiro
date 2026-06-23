@@ -303,6 +303,8 @@ with tab_dfc:
     _BANCO_SAIDA  = {"Aplicação Financeira"}
     # Se o resgate já veio do PDF de Fundos (saldos), não duplica da conciliação
     _BANCO_SKIP_SE_SALDO = {"Resgate Financeiro (Banco)", "Resgate Automat - Cliente", "Resgate Financeiro"}
+    # Entradas do banco marcadas como não operacionais — não entram no resultado da DFC
+    _BANCO_NAO_OPERACIONAL = {"FGTS / rescisão — não operacional", "FGTS Rescisão", "FGTS Rescisão (Banco)"}
     ignorados_bk  = [c for c in conciliacoes if c["tipo"] == "ignorado_banco"]
     _extras_banco = {}
     _saidas_banco = {}
@@ -314,6 +316,8 @@ with tab_dfc:
                 _saidas_banco[mot] = _saidas_banco.get(mot, 0.0) + val
             elif mot in _BANCO_SKIP_SE_SALDO and _resgate_aplic > 0:
                 pass  # já contabilizado via resgate_aplicacao dos saldos
+            elif mot in _BANCO_NAO_OPERACIONAL:
+                pass  # não operacional — excluído da DFC
             else:
                 _extras_banco[mot] = _extras_banco.get(mot, 0.0) + val
 

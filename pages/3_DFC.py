@@ -396,21 +396,17 @@ with tab_dfc:
 
     _ajustes_entradas = {k: v for k, v in _extras_banco.items() if v > 0}
     _ajustes_saidas   = {k: v for k, v in _extras_banco.items() if v < 0}
-    if _ajustes_entradas or _ajustes_sponte or _diferenca_caixa > 0:
+    _tem_ajustes = _ajustes_sponte or _ajustes_entradas or _ajustes_saidas or _diferenca_caixa != 0
+    if _tem_ajustes:
         _linhas.append({"Descrição": "── Ajustes ──", "Valor (R$)": ""})
         for mot, val in _ajustes_sponte.items():
             _linhas.append({"Descrição": f"    (+) {mot}", "Valor (R$)": fmt_br(val)})
         for mot, val in _ajustes_entradas.items():
             _linhas.append({"Descrição": f"    (+) {mot}", "Valor (R$)": fmt_br(val)})
-        if _diferenca_caixa > 0:
-            _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
-    if _ajustes_saidas:
         for mot, val in _ajustes_saidas.items():
             _linhas.append({"Descrição": f"    (-) {mot}", "Valor (R$)": fmt_br(val)})
-    if _diferenca_caixa != 0 and not (_ajustes_entradas or _ajustes_sponte or _diferenca_caixa > 0):
-        _linhas.append({"Descrição": "── Ajustes ──", "Valor (R$)": ""})
-    if _diferenca_caixa != 0:
-        _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
+        if _diferenca_caixa != 0:
+            _linhas.append({"Descrição": "    (+/-) Diferença Sponte/Caixa", "Valor (R$)": fmt_br(_diferenca_caixa)})
 
     _linhas.append({"Descrição": "= RESULTADO DO MÊS",     "Valor (R$)": fmt_br(_resultado_caixa)})
     if _resgate_aplic or _aplicacao_total:

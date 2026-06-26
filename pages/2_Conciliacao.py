@@ -647,7 +647,6 @@ with aba_pend:
 
         # ── Sugestões fuzzy ───────────────────────────────────────────────────
         _cnt_sug = st.session_state.get("conc_cnt", 0)
-        st.caption(f"🔍 DEBUG sugestões: {len(sugestoes)} — tipos: {[s['tipo'] for s in sugestoes]}")
         if sugestoes:
             with st.expander(f"💡 **{len(sugestoes)} sugestão(ões) de vínculo** — data, valor ou quantidade aproximados", expanded=True):
                 for _idx_sug, _sug in enumerate(sugestoes):

@@ -465,6 +465,30 @@ _bk_chaves_em_sug: set = set()
 
 from itertools import combinations as _combins
 
+def _nomes_compativeis(n1: str, n2: str) -> bool:
+    """True se os nomes são iguais ou um contém o outro (após normalização)."""
+    if not n1 or not n2:
+        return True
+    return n1 == n2 or n1 in n2 or n2 in n1
+
+def _cands_banco_para_sponte(sp_es, sp_dt, sp_nome, exclude_bk_chs):
+    """Candidatos do banco para um dado lançamento Sponte."""
+    out = []
+    for _bi, _br in banco_pendente.iterrows():
+        if _br["chave"] in exclude_bk_chs:
+            continue
+        if _br["deb_cred"] != sp_es:
+            continue
+        _bdt = _parse_d(_br["data_mov"])
+        if sp_dt and _bdt and abs((_bdt - sp_dt).days) > _TOLE_DIAS:
+            continue
+        _bnome = _resp_canonico(str(_br.get("origem_destino", "") or ""))
+        if not _nomes_compativeis(sp_nome, _bnome):
+            continue
+        out.append((_bi, _br, float(_br["valor"])))
+    return out
+
+# ── Passagem 1: N→1 e 1→1 (várias entradas Sponte → uma do banco) ────────────
 for _bk_i, _bk_r in banco_pendente.iterrows():
     _bk_ch = _bk_r["chave"]
     if _bk_ch in _bk_chaves_em_sug:
@@ -474,25 +498,27 @@ for _bk_i, _bk_r in banco_pendente.iterrows():
     _bk_nome = _resp_canonico(str(_bk_r.get("origem_destino", "") or ""))
     _bk_es   = _bk_r["deb_cred"]
 
+    # candidatos Sponte: mesmo E/S, data próxima, nome compatível OU valor exato
     _cands = []
     for _sp_i, _sp_r in sponte_pendente.iterrows():
         if _sp_r["chave"] in _sp_chaves_em_sug:
             continue
         if _sp_r["es"] != _bk_es:
             continue
-        _sp_nome = _resp_canonico(str(_sp_r.get("origem_destino", "") or ""))
-        if _bk_nome and _sp_nome:
-            if _bk_nome != _sp_nome and _bk_nome not in _sp_nome and _sp_nome not in _bk_nome:
-                continue
         _sp_dt = _parse_d(_sp_r["data"])
         if _bk_dt and _sp_dt and abs((_bk_dt - _sp_dt).days) > _TOLE_DIAS:
             continue
-        _cands.append((_sp_i, _sp_r, float(_sp_r["valor"])))
+        _sp_nome = _resp_canonico(str(_sp_r.get("origem_destino", "") or ""))
+        _sp_val  = float(_sp_r["valor"])
+        # aceita se nome compatível OU valor bate exato (nome diferente é o motivo de não ter casado automaticamente)
+        if not _nomes_compativeis(_bk_nome, _sp_nome) and abs(_sp_val - _bk_val) > _TOLE_VAL:
+            continue
+        _cands.append((_sp_i, _sp_r, _sp_val))
 
     if not _cands:
         continue
 
-    # 1→1 tolerância de valor (e/ou data)
+    # 1→1
     _found = False
     for _si, _sr, _sv in _cands:
         if abs(_sv - _bk_val) <= _TOLE_VAL and _sr["chave"] != _bk_ch:
@@ -534,6 +560,44 @@ for _bk_i, _bk_r in banco_pendente.iterrows():
                     _found2 = True
                 break
         if _found2:
+            break
+
+# ── Passagem 2: 1→N (uma entrada Sponte → várias do banco) ───────────────────
+for _sp_i, _sp_r in sponte_pendente.iterrows():
+    if _sp_r["chave"] in _sp_chaves_em_sug:
+        continue
+    _sp_val  = float(_sp_r["valor"])
+    _sp_dt   = _parse_d(_sp_r["data"])
+    _sp_nome = _resp_canonico(str(_sp_r.get("origem_destino", "") or ""))
+    _sp_es   = _sp_r["es"]
+
+    _bk_cands = _cands_banco_para_sponte(_sp_es, _sp_dt, _sp_nome, _bk_chaves_em_sug)
+    if len(_bk_cands) < 2:
+        continue
+
+    for _nc in [2, 3]:
+        if len(_bk_cands) < _nc:
+            continue
+        _found3 = False
+        for _combo in _combins(_bk_cands, _nc):
+            _soma = sum(v for _, _, v in _combo)
+            if abs(_soma - _sp_val) <= _TOLE_VAL:
+                _bk_chs = "§§".join(_r["chave"] for _, _r, _ in _combo)
+                _key3 = (_sp_r["chave"], _bk_chs)
+                if _key3 not in _sug_ignoradas:
+                    sugestoes.append({
+                        "tipo": f"1→{_nc}",
+                        "sp_rows": [(_sp_i, _sp_r)],
+                        "bk_rows": [(_i, _r) for _i, _r, _ in _combo],
+                        "bk_i": None, "bk_r": None,
+                        "diff_val": abs(_soma - _sp_val),
+                    })
+                    _sp_chaves_em_sug.add(_sp_r["chave"])
+                    for _, _r, _ in _combo:
+                        _bk_chaves_em_sug.add(_r["chave"])
+                    _found3 = True
+                break
+        if _found3:
             break
 
 
@@ -583,6 +647,7 @@ with aba_pend:
 
         # ── Sugestões fuzzy ───────────────────────────────────────────────────
         _cnt_sug = st.session_state.get("conc_cnt", 0)
+        st.caption(f"🔍 DEBUG sugestões: {len(sugestoes)} — tipos: {[s['tipo'] for s in sugestoes]}")
         if sugestoes:
             with st.expander(f"💡 **{len(sugestoes)} sugestão(ões) de vínculo** — data, valor ou quantidade aproximados", expanded=True):
                 for _idx_sug, _sug in enumerate(sugestoes):
@@ -590,6 +655,9 @@ with aba_pend:
                     _sp_rows2 = _sug["sp_rows"]
                     _tipo_sug = _sug["tipo"]
                     _diff_val = _sug["diff_val"]
+
+                    # suporte a 1→N: bk_rows é lista de banco; para N→1 e 1→1 bk_rows vem de bk_r
+                    _bk_rows2 = _sug.get("bk_rows") or [(_sug["bk_i"], _sug["bk_r"])]
 
                     with st.container(border=True):
                         _sc1, _sc2 = st.columns([6, 2])
@@ -604,14 +672,15 @@ with aba_pend:
                                     f"🔵 **Sponte** {_sp_dt2} · {_sp_r2['es']} · "
                                     f"**R$ {float(_sp_r2['valor']):,.2f}** · {_sp_nome2}"
                                 )
-                            _bk_dt2   = str(_bk_r2["data_mov"])[:5] if _bk_r2.get("data_mov") else "—"
-                            _bk_nome2 = str(_bk_r2.get("origem_destino", "") or "")
-                            _bk_aluno2 = _aluno_do_responsavel(_bk_nome2)
-                            _bk_label2 = f"{_bk_nome2}" + (f" (aluno: {_bk_aluno2})" if _bk_aluno2 else "")
-                            st.markdown(
-                                f"🏦 **Banco** {_bk_dt2} · {_bk_r2['deb_cred']} · "
-                                f"**R$ {float(_bk_r2['valor']):,.2f}** · {_bk_label2}"
-                            )
+                            for _, _bkr2 in _bk_rows2:
+                                _bk_dt2   = str(_bkr2["data_mov"])[:5] if _bkr2.get("data_mov") else "—"
+                                _bk_nome2 = str(_bkr2.get("origem_destino", "") or "")
+                                _bk_aluno2 = _aluno_do_responsavel(_bk_nome2)
+                                _bk_label2 = f"{_bk_nome2}" + (f" (aluno: {_bk_aluno2})" if _bk_aluno2 else "")
+                                st.markdown(
+                                    f"🏦 **Banco** {_bk_dt2} · {_bkr2['deb_cred']} · "
+                                    f"**R$ {float(_bkr2['valor']):,.2f}** · {_bk_label2}"
+                                )
                         with _sc2:
                             _just_key = f"sug_just_{_idx_sug}_{_cnt_sug}"
                             if _diff_val > 0:
@@ -652,18 +721,20 @@ with aba_pend:
                             _just_invalida = _diff_val > 0 and not (_just_sug or "").strip()
                             if st.button("✅ Confirmar", key=f"sug_ok_{_idx_sug}_{_cnt_sug}", use_container_width=True, type="primary", disabled=_just_invalida):
                                 _just_final = (_just_sug or "").strip() or f"Sugestão {_tipo_sug}"
-                                for _, _sp_r2 in _sp_rows2:
-                                    db.salvar_conciliacao(mes, ano, "manual",
-                                                          sponte_chave=_sp_r2["chave"],
-                                                          banco_chave=_bk_r2["chave"],
-                                                          justificativa=_just_final)
+                                _sp_chs_final = "§§".join(_r2["chave"] for _, _r2 in _sp_rows2)
+                                _bk_chs_final = "§§".join(_r2["chave"] for _, _r2 in _bk_rows2)
+                                db.salvar_conciliacao(mes, ano, "manual",
+                                                      sponte_chave=_sp_chs_final,
+                                                      banco_chave=_bk_chs_final,
+                                                      justificativa=_just_final)
                                 st.session_state["conc_cnt"] = _cnt_sug + 1
                                 st.rerun()
                             if st.button("✕ Ignorar", key=f"sug_no_{_idx_sug}_{_cnt_sug}", use_container_width=True):
                                 _sp_chs2 = "§§".join(_r2["chave"] for _, _r2 in _sp_rows2)
+                                _bk_chs2 = "§§".join(_r2["chave"] for _, _r2 in _bk_rows2)
                                 db.salvar_conciliacao(mes, ano, "sugestao_ignorada",
                                                       sponte_chave=_sp_chs2,
-                                                      banco_chave=_bk_r2["chave"])
+                                                      banco_chave=_bk_chs2)
                                 st.session_state["conc_cnt"] = _cnt_sug + 1
                                 st.rerun()
 
